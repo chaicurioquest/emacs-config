@@ -15,3 +15,12 @@ dist/
 
 # Undo-tree save-files
 *.~undo-tree
+
+# Custom setting Dated:19-06-2025
+# Ignore generated and temporary files to keep the repository clean.
+config.el           # Tangled output from config.org
+*.elc              # Compiled Emacs Lisp files
+backups/           # Backup files for config.org
+straight/          # straight.el package directory
+elpa/              # package.el directory (if used)
+auto-save-list/    # Auto-save files
