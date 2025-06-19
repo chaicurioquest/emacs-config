@@ -142,6 +142,6 @@ jobs:
 
 ## 📬 Questions?
 
-Open an issue or ping [@yourusername](https://github.com/yourusername).
+Open an issue or ping [@chaicurioquest](https://github.com/chaicurioquest).
 
 Happy hacking!
