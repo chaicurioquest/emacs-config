@@ -1,5 +1,5 @@
 #+TITLE: Emacs Configuration
-#+TOC: headlines 2
+#+TOC: Common configuration tangled to config.el
 #+DATE: 2025-06-19
 
 * Purpose
