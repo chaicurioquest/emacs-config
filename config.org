@@ -1,0 +1,63 @@
+#+TITLE: Emacs Configuration
+#+TOC: Common configuration tangled to config.el
+#+DATE: 2025-06-19
+
+* Purpose
+This Org-mode file is the literate configuration for Emacs.
+Startup/UI tweaks are handled early in early-init.el.
+Device logic is centralized in device.el.
+
+* Core Setup
+#+BEGIN_SRC emacs-lisp
+(setq inhibit-startup-screen t)
+
+;; Reset GC threshold after startup
+(add-hook 'emacs-startup-hook
+          (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
+
+;; Use straight.el for packages
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 6))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+(straight-use-package 'use-package)
+#+END_SRC
+
+* Load Device Detection
+#+BEGIN_SRC emacs-lisp
+(load (expand-file-name "device.el" user-emacs-directory))
+(when (getenv "MY_DEBUG_DEVICE")
+  (message "Device: %s (system-name: %s)" my-device system-name))
+#+END_SRC
+
+* Keybindings
+#+BEGIN_SRC emacs-lisp
+(use-package general
+  :ensure t
+  :config
+  (general-create-definer my-leader :prefix "C-c")
+  (my-leader
+   "f" 'find-file
+   "b" 'switch-to-buffer))
+#+END_SRC
+
+* Termux Config :termux:
+#+BEGIN_SRC emacs-lisp
+(when (eq my-device 'termux)
+  (global-set-key (kbd "C-c t") 'termux-toast))
+#+END_SRC
+
+* CANCELLED Old Theme
+#+BEGIN_SRC emacs-lisp
+(use-package old-theme
+  :disabled
+  :config (message "Old theme not loaded"))
+#+END_SRC
