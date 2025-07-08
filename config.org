@@ -1,21 +1,88 @@
-#+TITLE: Emacs Configuration
-#+TOC: headlines 2
-#+DATE: 2025-06-19
+#+TITLE: Emacs Literate Config
+#+TODO: ACTIVE | CANCELLED
+#+STARTUP: indent
+#+PROPERTY: header-args:emacs-lisp :tangle config.el :results silent :exports none :comments no :mkdirp yes :eval never-export :noweb yes
+
+#+DATE: 2025-07-05
 
 * Purpose
-This Org-mode file is the literate configuration for Emacs.
-Startup/UI tweaks are handled early in early-init.el.
-Device logic is centralized in device.el.
+This Org-mode configuration is the single source for my Emacs 28.1 setup, designed to be:
+- **Future-proof**: Structured with comments, tables, CANCELLED blocks.
+- **Reliable**: Reproducible packages via straight.el, lazy loading.
+- **Minimal**: Single config.org, minimal hooks/keybindings, early-init.el for GUI.
+- **Portable**: Device-specific settings (laptop, Termux, tablet) via device.el.
+- **Synced**: Via GitHub (https://github.com/chaicurioquest/emacs-config) and Syncthing.
+- **Modular**: Uses org/ for snippets (yankpad.org), workflows (workflows.org), note-taking (org-roam.org), and filetags (filetags.org).
+Tangle with `C-c t` or `M-x my-tangle-config-org`.
 
-* Core Setup
+* My Digital Workflow
+| *Workflow*                          | *Solution*                                         | *Notes*                                                        | *Device* | *Keybindings*         |
+|-------------------------------------+----------------------------------------------------+----------------------------------------------------------------|----------|-----------------------|
+| Installing packages                 | use-package with straight.el                       | Lazy loading in config.org, org/workflows.org, org/filetags.org | All      | None                  |
+| Filter Org files                    | sparse trees                                       | C-c / for sparse tree                                          | All      | C-c /                 |
+| Focus on Org sub-hierarchy          | org-tree-to-indirect-buffer                        |                                                                | All      | C-c C-x b             |
+| Enhanced search/selection           | ivy, swiper, counsel (laptop only)                  | In org/workflows.org                                           | Laptop   | C-c C-r, C-c s, C-c c |
+| Switching buffers                   | ibuffer                                            |                                                                | All      | C-x C-b               |
+| Inserting date/time-stamps          | my-insert-timestamp(), my-insert-datestamp()       |                                                                | All      | C-c i t, C-c i d      |
+| Org to PDF export                   | Org mode export via LaTeX                          | Requires pdf-tools in org/workflows.org                        | Laptop   | C-c C-e l p           |
+| Passwords                           | org-crypt                                          |                                                                | All      | None                  |
+| Snippet management                  | yankpad with yasnippet                             | Org-style snippets in org/yankpad.org, tab-completion          | All      | C-c y, C-c TAB        |
+| Spell checking                      | flyspell with aspell                               | Requires aspell installation                                   | All      | M-$                   |
+| PDF reading/annotating              | pdf-tools                                          | In org/workflows.org, laptop only                              | Laptop   | None                  |
+| Record screencasts                  | gif-screencast                                     | In org/workflows.org, laptop only                              | Laptop   | C-c g                 |
+| Zettelkasten note-taking            | org-roam                                           | In org/org-roam.org, graph UI on laptop                        | All      | C-c r n, C-c r f, C-c r g |
+| Tag Org sections                    | filetags with .filetags                            | In org/filetags.org, tag completion with ivy/completing-read   | All      | C-c f t               |
+
+* ACTIVE Startup Optimizations
 #+BEGIN_SRC emacs-lisp
-(setq inhibit-startup-screen t)
+;; Debug startup (toggle with MY_DEBUG_DEVICE environment variable).
+(when (getenv "MY_DEBUG_DEVICE")
+  (message "=== STARTING CONFIG ==="))
 
-;; Reset GC threshold after startup
+;; Reset garbage collection threshold to 2MB after startup.
 (add-hook 'emacs-startup-hook
           (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
 
-;; Use straight.el for packages
+;; Disable startup screen.
+(setq inhibit-startup-screen t)
+
+;; Load device detection.
+(load (expand-file-name "device.el" user-emacs-directory))
+
+;; Set default directory per device.
+(setq default-directory
+      (cond ((eq my-device 'laptop) "~/wspace/org/notes/")
+            ((eq my-device 'termux) "~/storage/shared/notes/")
+            ((eq my-device 'tablet) "~/path/to/tablet/notes/")
+            (t "~")))
+(message "📁 Default directory set to: %s" default-directory)
+
+;; Debug: Confirm startup.
+(when (getenv "MY_DEBUG_DEVICE")
+  (message "=== STARTUP OPTIMIZATIONS COMPLETE ==="))
+#+END_SRC
+
+* ACTIVE Package Management
+Configure package managers and lightweight, universal packages with lazy loading.
+Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-roam.org; filetags in org/filetags.org.
+| Package      | Purpose                     | Device  | Keybindings         | Loading Trigger |
+|--------------|-----------------------------|---------|---------------------|-----------------|
+| f            | File/directory manipulation | All     | None                | On demand       |
+| ht           | Hash table utilities        | All     | None                | On demand       |
+| ibuffer      | Buffer management           | All     | C-x C-b             | C-x C-b         |
+| org-crypt    | Password encryption         | All     | None                | org-mode hook   |
+| yasnippet    | Snippet framework           | All     | C-c TAB             | C-c TAB         |
+| yankpad      | Snippet management          | All     | C-c y               | C-c y           |
+| flyspell     | Spell checking              | All     | M-$                 | M-$             |
+
+#+BEGIN_SRC emacs-lisp
+;; Configure package.el as a fallback for straight.el.
+(require 'package)
+(setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                         ("gnu" . "https://elpa.gnu.org/packages/")))
+(setq package-user-dir (expand-file-name "elpa" user-emacs-directory))
+
+;; Bootstrap straight.el for reproducible package management.
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -29,35 +96,169 @@ Device logic is centralized in device.el.
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 (straight-use-package 'use-package)
-#+END_SRC
 
-* Load Device Detection
-#+BEGIN_SRC emacs-lisp
-(load (expand-file-name "device.el" user-emacs-directory))
-(when (getenv "MY_DEBUG_DEVICE")
-  (message "Device: %s (system-name: %s)" my-device system-name))
-#+END_SRC
+;; Ensure use-package is available.
+(eval-when-compile
+  (require 'use-package))
 
-* Keybindings
-#+BEGIN_SRC emacs-lisp
-(use-package general
+;; File manipulation library (loaded on demand).
+(use-package f
   :ensure t
+  :straight t
+  :defer t)
+
+;; Hash table utilities (loaded on demand).
+(use-package ht
+  :ensure t
+  :straight t
+  :defer t)
+
+;; Ibuffer for buffer management (loaded on C-x C-b).
+(use-package ibuffer
+  :ensure t
+  :straight t
+  :defer t
+  :bind ("C-x C-b" . ibuffer))
+
+;; Org-crypt for password encryption (built-in, loaded on demand).
+(use-package org-crypt
+  :ensure nil
+  :straight (:type built-in)
+  :defer t
   :config
-  (general-create-definer my-leader :prefix "C-c")
-  (my-leader
-   "f" 'find-file
-   "b" 'switch-to-buffer))
+  (condition-case err
+      (progn
+        (require 'org-crypt)
+        (setq org-crypt-use-before-save nil))  ;; Disable automatic encryption
+    (error (message "Failed to load org-crypt: %s" err))))
+
+;; Yasnippet for snippet framework (loaded on C-c TAB).
+(use-package yasnippet
+  :ensure t
+  :straight t
+  :defer t
+  :bind ("C-c TAB" . yas-expand)
+  :config
+  (yas-global-mode 1))
+
+;; Yankpad for snippet management (loaded on C-c y).
+(use-package yankpad
+  :ensure t
+  :straight t
+  :defer t
+  :bind ("C-c y" . yankpad-expand)
+  :config
+  (setq yankpad-file (expand-file-name "org/yankpad.org" user-emacs-directory))
+  (add-hook 'org-mode-hook 'yankpad-local-category-to-org-mode))
+
+;; Flyspell for spell checking (loaded on M-$).
+(use-package flyspell
+  :ensure t
+  :straight t
+  :defer t
+  :bind ("M-$" . flyspell-correct-word-before-point)
+  :config
+  (when (executable-find "aspell")
+    (setq ispell-program-name "aspell")))
 #+END_SRC
 
-* Termux Config :termux:
+* ACTIVE UI Tweaks
 #+BEGIN_SRC emacs-lisp
 (when (eq my-device 'termux)
-  (global-set-key (kbd "C-c t") 'termux-toast))
+  (set-fringe-mode 0)
+  (setq mouse-wheel-progressive-speed nil))
 #+END_SRC
 
-* CANCELLED Old Theme
+* ACTIVE General Settings
 #+BEGIN_SRC emacs-lisp
-(use-package old-theme
-  :disabled
-  :config (message "Old theme not loaded"))
+;; Profiling
+(defvar my-config-el-start-time (current-time) "Time when config.el was started")
+(setq my-config-el-start-time-iso (format-time-string "%Y-%m-%dT%T%:z"))
+
+;; Theme and word wrap
+(load-theme 'tsdh-dark t)
+(global-visual-line-mode 1)
+(setq backup-directory-alist '((".*" . "~/.emacs.d/backups"))
+      version-control t
+      kept-new-versions 10
+      kept-old-versions 5
+      delete-old-versions t)
+
+;; Calendar: Monday as start of week
+(setq-default calendar-week-start-day 1)
+
+;; Sentences: No double space after periods
+(setq-default sentence-end-double-space nil)
+
+;; Truncate lines
+(setq-default truncate-lines t)
+
+;; Read-only files in view mode
+(setq view-read-only t)
+
+;; Timestamp functions
+(defun my-insert-timestamp ()
+  (interactive)
+  (insert (format-time-string "%Y-%m-%d %H:%M:%S")))
+(defun my-insert-datestamp ()
+  (interactive)
+  (insert (format-time-string "%Y-%m-%d")))
+#+END_SRC
+
+* ACTIVE Keybindings
+#+BEGIN_SRC emacs-lisp
+;; Tangle shortcut
+(global-set-key (kbd "C-c t") (lambda ()
+  (interactive)
+  (org-babel-tangle-file (expand-file-name "config.org" user-emacs-directory))
+  (message "✅ config.org tangled")))
+
+;; Timestamp keybindings
+(global-set-key (kbd "C-c i t") 'my-insert-timestamp)
+(global-set-key (kbd "C-c i d") 'my-insert-datestamp)
+#+END_SRC
+
+* ACTIVE Modular Configs
+#+BEGIN_SRC emacs-lisp
+;; Load workflow-specific settings from org/workflows.org (e.g., ivy, pdf-tools).
+(when (file-exists-p (expand-file-name "org/workflows.org" user-emacs-directory))
+  (org-babel-load-file (expand-file-name "org/workflows.org" user-emacs-directory)))
+
+;; Load org-roam settings from org/org-roam.org (tangles to org/org-roam.el).
+(when (file-exists-p (expand-file-name "org/org-roam.org" user-emacs-directory))
+  (org-babel-load-file (expand-file-name "org/org-roam.org" user-emacs-directory)))
+
+
+
+
+;; Load filetags settings from org/filetags.org.
+(when (file-exists-p (expand-file-name "org/filetags.org" user-emacs-directory))
+  (org-babel-load-file (expand-file-name "org/filetags.org" user-emacs-directory)))
+#+END_SRC
+
+* ACTIVE Startup Confirmation
+#+BEGIN_SRC emacs-lisp
+(message "✅ config.el loaded successfully on device: %s" my-device)
+#+END_SRC
+
+* CANCELLED Deprecated Settings
+#+BEGIN_SRC emacs-lisp
+;; Old timestamp code for Emacs < 27.1
+;; (setq my-config-el-start-time-iso
+;;       (concat (format-time-string "%Y-%m-%dT%T")
+;;               ((lambda (x) (concat (substring x 0 3) ":" (substring x 3 5)))
+;;                (format-time-string "%z"))))
+#+END_SRC
+
+* Deprecated TLS Workaround
+:PROPERTIES:
+:tangle: no
+:END:
+#+BEGIN_SRC emacs-lisp
+(if (fboundp 'gnutls-available-p)
+    (fmakunbound 'gnutls-available-p))
+(setq tls-program '("gnutls-cli --tofu -p %p %h")
+      imap-ssl-program '("gnutls-cli --tofu -p %p %s")
+      smtpmail-stream-type 'starttls
+      starttls-extra-arguments '("--tofu"))
 #+END_SRC

@@ -1,0 +1,114 @@
+#+TITLE: Filetags Configuration
+#+TODO: ACTIVE | CANCELLED
+#+STARTUP: indent
+#+DATE: 2025-07-09
+
+* Purpose
+Configure filetags for unified tag management across Org files, integrated with org-roam and .filetags (symlink to ~/wspace/org/notes/.filetags). Uses roam-tags.el for mutual exclusivity and follows Karl Voit’s tag naming rules (e.g., plural forms like `tasks`). Designed to be:
+- **Future-proof**: Structured with comments and tables.
+- **Reliable**: Uses ht and f for tag parsing, reproducible via straight.el.
+- **Minimal**: Lightweight setup with essential keybindings.
+- **Portable**: Works on laptop, Termux, tablet.
+- **Synced**: Via GitHub (https://github.com/chaicurioquest/emacs-config) and Syncthing.
+
+* ACTIVE Filetags Setup
+Configure filetags for tag management with mutual exclusivity, used by org-roam (C-c r t) and standalone (C-c f t).
+| Package      | Purpose                     | Device  | Keybindings | Loading Trigger |
+|--------------|-----------------------------|---------|-------------|-----------------|
+| filetags     | Tag management with .filetags | All     | C-c f t     | C-c f t         |
+
+#+BEGIN_SRC emacs-lisp :tangle filetags.el 
+(when (getenv "MY_DEBUG_DEVICE")
+  (message "=== LOADING org/filetags.org ==="))
+
+;; Dependencies.
+(use-package ht
+  :ensure t
+  :straight t
+  :defer t)
+(use-package f
+  :ensure t
+  :straight t
+  :defer t)
+(use-package roam-tags
+  :ensure nil
+  :defer t
+  :config
+  (condition-case err
+      (load (expand-file-name "org/roam-tags.el" user-emacs-directory))
+    (error (message "Failed to load roam-tags: %s" err))))
+
+;; Filetags configuration.
+(defun my-org-read-filetags ()
+  "Read tags from org/.filetags, returning a hash table with tags and mutually exclusive groups. Parse space-separated tags and comments."
+  (let* ((file (expand-file-name "org/.filetags" user-emacs-directory))
+         (target-file (cond ((eq my-device 'laptop) "~/.filetags")
+                            ((eq my-device 'termux) "~/storage/shared/.filetags")
+                            ((eq my-device 'tablet) "~/path/to/tablet/.filetags")
+                            (t "~/.filetags")))
+         (tags (ht-create)))
+    (when (file-exists-p file)
+      (when (file-symlink-p file)
+        (setq file target-file))
+      (when (file-exists-p file)
+        (with-temp-buffer
+          (insert-file-contents file)
+          (goto-char (point-min))
+          (while (not (eobp))
+            (let ((line (string-trim (buffer-substring-no-properties (line-beginning-position)
+                                                                      (line-end-position)))))
+              (cond
+               ;; Lines like: tag1 tag2 tag3   # group-name
+               ((string-match "^\\s-*\\([^#]+\\)\\s-*#\\s-*\\(.*\\)$" line)
+                (let* ((tag-list (split-string (match-string 1 line) "\\s+" t))
+                       (group-name (match-string 2 line)))
+                  (dolist (tag tag-list)
+                    (unless (string= tag "")
+                      (ht-set! tags tag (list :group group-name))))))
+               ;; Lines like: tag1 tag2 tag3  (no # group comment)
+               ((string-match "^\\s-*\\([^#]+\\)\\s-*$" line)
+                (let ((tag-list (split-string (match-string 1 line) "\\s+" t)))
+                  (dolist (tag tag-list)
+                    (unless (string= tag "")
+                      (ht-set! tags tag
+                               (when (> (length tag-list) 1)
+                                 (list :group (concat "group-" (md5 tag))))))))))
+            (forward-line 1))))))
+    tags))
+
+
+(defun my-org-set-filetags ()
+  "Set filetags on current Org heading with completion, respecting mutual exclusivity."
+  (interactive)
+  (require 'org)
+  (require 'ht)
+  (require 'f)
+  (let* ((filetags (my-org-read-filetags))
+         (all-tags (ht-keys filetags))
+         (current-tags (org-get-tags nil t))
+         (completion-function (if (and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
+                                 'ivy-completing-read
+                               'completing-read))
+         (selected-tags (funcall completion-function
+                                 "Select tags: "
+                                 all-tags nil nil nil nil current-tags))
+         (selected-tags-list (split-string selected-tags ",\\s*" t)))
+    ;; Enforce mutual exclusivity
+    (let ((groups (ht-create)))
+      (dolist (tag selected-tags-list)
+        (let ((group (plist-get (ht-get filetags tag) :group)))
+          (when group
+            (ht-set! groups group tag))))
+      (dolist (tag all-tags)
+        (let ((group (plist-get (ht-get filetags tag) :group)))
+          (when (and group (not (equal (ht-get groups group) tag)))
+            (setq selected-tags-list (delete tag selected-tags-list)))))
+      (org-set-tags selected-tags-list)))
+
+(global-set-key (kbd "C-c f t") 'my-org-set-filetags)
+
+(when (getenv "MY_DEBUG_DEVICE")
+  (message "=== org/filetags.org LOADED ==="))
+
+(provide 'filetags)
+#+END_SRC

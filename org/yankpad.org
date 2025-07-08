@@ -1,0 +1,35 @@
+#+TITLE: Yankpad Snippets
+#+DATE: 2025-07-05
+
+* Category: General
+** Snippet: Hello World
+#+BEGIN_SRC text
+Hello, World!
+#+END_SRC
+
+** Snippet: Org Header
+#+BEGIN_SRC org
+#+TITLE: ${1:New Document}
+#+DATE: %(format-time-string "%Y-%m-%d")
+#+FILETAGS: :${2:Filetags|academics|personal|}:${3:Status|draft|final}:%^{Confidentiality|public|internal|confidential}:
+#+STARTUP: indent
+#+END_SRC
+
+* Category: Code
+** Snippet: Python Function
+#+BEGIN_SRC python
+def ${1:function_name}(${2:args}):
+    """${3:Docstring}"""
+    ${4:pass}
+#+END_SRC
+
+* Category: Notes
+** Snippet: Zettelkasten Note
+#+BEGIN_SRC org
+* ${1:Note Title} :NOTE:${2:Filetags|academics|research|personal|}:%^{Status|draft|final}:%^{Confidentiality|public|internal|confidential}:
+:PROPERTIES:
+:ID:       %(org-id-new)
+:CREATED:  [%(format-time-string "%Y-%m-%d %a %H:%M")]
+:END:
+${3:Note content}
+#+END_SRC
