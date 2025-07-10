@@ -44,8 +44,7 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
       (require 'org)
       (org-babel-tangle-file org-path el-path))
     (load el-path)))
-
-
+#+END_SRC
 
 #+BEGIN_SRC emacs-lisp
 ;; Debug startup (toggle with MY_DEBUG_DEVICE environment variable).
@@ -188,9 +187,12 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
 (defvar my-config-el-start-time (current-time) "Time when config.el was started")
 (setq my-config-el-start-time-iso (format-time-string "%Y-%m-%dT%T%:z"))
 
-;; Theme and word wrap
-(load-theme 'tsdh-dark t)
-(global-visual-line-mode 1)
+;; UI Theme, word wrap and other settings.
+(load-theme 'tsdh-dark t)  ;;Dark theme for Emacs
+(global-visual-line-mode 1) ;;Wrap text in GUI Windows
+(set-fringe-mode 10) ;;Sets the width of the left and right fringes (the empty margin space at the edge of windows in Emacs) to 10 pixels.
+(setq-default cursor-type 'bar) ;;Changes the default cursor shape to a vertical bar (instead of the default box).
+
 (setq backup-directory-alist '((".*" . "~/.emacs.d/backups"))
       version-control t
       kept-new-versions 10
@@ -233,33 +235,9 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
 
 * ACTIVE Modular Configs
 #+BEGIN_SRC emacs-lisp
-;; Load workflow-specific settings from org/workflows.org (e.g., ivy, pdf-tools).
-(when (file-exists-p (expand-file-name "org/workflows.org" user-emacs-directory))
-  (org-babel-load-file (expand-file-name "org/workflows.org" user-emacs-directory)))
-
-;; Load org-roam settings from org/org-roam.org (tangles to org/org-roam.el).
-;;(when (file-exists-p (expand-file-name "org/org-roam.org" user-emacs-directory))
-;;  (org-babel-load-file (expand-file-name "org/org-roam.org" user-emacs-directory)))
-
-;; Load filetags settings from org/filetags.org.
-;;(when (file-exists-p (expand-file-name "org/filetags.org" user-emacs-directory))
-;;  (org-babel-load-file (expand-file-name "org/filetags.org" user-emacs-directory)))
-
-(let* ((org-file (expand-file-name "org/filetags.org" user-emacs-directory))
-       (el-file  (expand-file-name "org/filetags.el" user-emacs-directory)))
-  (when (or (not (file-exists-p el-file))
-            (file-newer-than-file-p org-file el-file))
-    (message "Tangling updated filetags.el from filetags.org")
-    (require 'org)
-    (org-babel-tangle-file org-file el-file))
-  (load el-file))
-
-#+END_SRC
-* ACTIVE Modular Configs
-#+BEGIN_SRC emacs-lisp
 ;; Modular config loading with tangle-if-needed
-(my/tangle-if-needed "org/workflows.org" "org/workflows.el")
-(my/tangle-if-needed "org/org-roam.org" "org/org-roam.el")
+;;(my/tangle-if-needed "org/workflows.org" "org/workflows.el")
+;;(my/tangle-if-needed "org/org-roam.org" "org/org-roam.el")
 (my/tangle-if-needed "org/yankpad.org" "org/yankpad.el")
 (my/tangle-if-needed "org/filetags.org" "org/filetags.el")
 #+END_SRC
@@ -278,15 +256,3 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
 ;;                (format-time-string "%z"))))
 #+END_SRC
 
-* Deprecated TLS Workaround
-:PROPERTIES:
-:tangle: no
-:END:
-#+BEGIN_SRC emacs-lisp
-(if (fboundp 'gnutls-available-p)
-    (fmakunbound 'gnutls-available-p))
-(setq tls-program '("gnutls-cli --tofu -p %p %h")
-      imap-ssl-program '("gnutls-cli --tofu -p %p %s")
-      smtpmail-stream-type 'starttls
-      starttls-extra-arguments '("--tofu"))
-#+END_SRC
