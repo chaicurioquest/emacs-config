@@ -1,8 +1,6 @@
 #+TITLE: Emacs Literate Config
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent
-#+PROPERTY: header-args:emacs-lisp :tangle config.el :results silent :exports none :comments no :mkdirp yes :eval never-export :noweb yes
-
 #+DATE: 2025-07-05
 
 * Purpose
@@ -34,6 +32,21 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 | Tag Org sections                    | filetags with .filetags                            | In org/filetags.org, tag completion with ivy/completing-read   | All      | C-c f t               |
 
 * ACTIVE Startup Optimizations
+;; modular org files tangle process.Tangling only happens when the .org file is newer than the .el file. Each .el file is loaded once after tangling.
+#+BEGIN_SRC emacs-lisp
+(defun my/tangle-if-needed (org-file el-file)
+  "Tangle ORG-FILE to EL-FILE if needed, and load EL-FILE."
+  (let ((org-path (expand-file-name org-file user-emacs-directory))
+        (el-path  (expand-file-name el-file  user-emacs-directory)))
+    (when (or (not (file-exists-p el-path))
+              (file-newer-than-file-p org-path el-path))
+      (message "🔄 Tangling %s → %s" org-path el-path)
+      (require 'org)
+      (org-babel-tangle-file org-path el-path))
+    (load el-path)))
+
+
+
 #+BEGIN_SRC emacs-lisp
 ;; Debug startup (toggle with MY_DEBUG_DEVICE environment variable).
 (when (getenv "MY_DEBUG_DEVICE")
@@ -225,15 +238,30 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
   (org-babel-load-file (expand-file-name "org/workflows.org" user-emacs-directory)))
 
 ;; Load org-roam settings from org/org-roam.org (tangles to org/org-roam.el).
-(when (file-exists-p (expand-file-name "org/org-roam.org" user-emacs-directory))
-  (org-babel-load-file (expand-file-name "org/org-roam.org" user-emacs-directory)))
-
-
-
+;;(when (file-exists-p (expand-file-name "org/org-roam.org" user-emacs-directory))
+;;  (org-babel-load-file (expand-file-name "org/org-roam.org" user-emacs-directory)))
 
 ;; Load filetags settings from org/filetags.org.
-(when (file-exists-p (expand-file-name "org/filetags.org" user-emacs-directory))
-  (org-babel-load-file (expand-file-name "org/filetags.org" user-emacs-directory)))
+;;(when (file-exists-p (expand-file-name "org/filetags.org" user-emacs-directory))
+;;  (org-babel-load-file (expand-file-name "org/filetags.org" user-emacs-directory)))
+
+(let* ((org-file (expand-file-name "org/filetags.org" user-emacs-directory))
+       (el-file  (expand-file-name "org/filetags.el" user-emacs-directory)))
+  (when (or (not (file-exists-p el-file))
+            (file-newer-than-file-p org-file el-file))
+    (message "Tangling updated filetags.el from filetags.org")
+    (require 'org)
+    (org-babel-tangle-file org-file el-file))
+  (load el-file))
+
+#+END_SRC
+* ACTIVE Modular Configs
+#+BEGIN_SRC emacs-lisp
+;; Modular config loading with tangle-if-needed
+(my/tangle-if-needed "org/workflows.org" "org/workflows.el")
+(my/tangle-if-needed "org/org-roam.org" "org/org-roam.el")
+(my/tangle-if-needed "org/yankpad.org" "org/yankpad.el")
+(my/tangle-if-needed "org/filetags.org" "org/filetags.el")
 #+END_SRC
 
 * ACTIVE Startup Confirmation

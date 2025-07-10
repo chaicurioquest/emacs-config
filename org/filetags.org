@@ -1,6 +1,7 @@
 #+TITLE: Filetags Configuration
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent
+#+PROPERTY: header-args:emacs-lisp :tangle no
 #+DATE: 2025-07-09
 
 * Purpose
@@ -87,8 +88,8 @@ Configure filetags for tag management with mutual exclusivity, used by org-roam 
          (all-tags (ht-keys filetags))
          (current-tags (org-get-tags nil t))
          (completion-function (if (and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
-                                 'ivy-completing-read
-                               'completing-read))
+                                  'ivy-completing-read
+                                'completing-read))
          (selected-tags (funcall completion-function
                                  "Select tags: "
                                  all-tags nil nil nil nil current-tags))
@@ -103,12 +104,11 @@ Configure filetags for tag management with mutual exclusivity, used by org-roam 
         (let ((group (plist-get (ht-get filetags tag) :group)))
           (when (and group (not (equal (ht-get groups group) tag)))
             (setq selected-tags-list (delete tag selected-tags-list)))))
-      (org-set-tags selected-tags-list)))
+      (org-set-tags selected-tags-list))))
+
 
 (global-set-key (kbd "C-c f t") 'my-org-set-filetags)
 
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== org/filetags.org LOADED ==="))
-
-(provide 'filetags)
 #+END_SRC

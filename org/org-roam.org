@@ -1,7 +1,7 @@
 #+TITLE: Org-Roam Zettelkasten Configuration
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent
-#+PROPERTY: header-args:emacs-lisp :tangle org/org-roam.el :mkdirp yes :comments no :results silent
+#+PROPERTY: header-args:emacs-lisp :tangle no
 #+DATE: 2025-07-08
 
 * Purpose
@@ -20,98 +20,102 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, file
 | org-roam-ui  | Graph visualization         | Laptop  | C-c r g             | C-c r g         |
 
 #+BEGIN_SRC emacs-lisp
-(when (getenv "MY_DEBUG_DEVICE")
-  (message "=== LOADING org/org-roam.org ==="))
+  (when (getenv "MY_DEBUG_DEVICE")
+    (message "=== LOADING org/org-roam.org ==="))
 
-;; Ensure built-in org is used (Emacs 28.1).
-(use-package org
-  :ensure nil
-  :straight (:type built-in)
-  :defer t
-  :config
-  (condition-case err
-      (require 'org)
-    (error (message "Failed to load org: %s" err))))
-
-;; Org-roam for Zettelkasten note-taking.
-(use-package org-roam
-  :ensure t
-  :straight (:no-build t)
-  :defer t
-  :bind (("C-c r n" . org-roam-capture)
-         ("C-c r f" . org-roam-node-find)
-         ("C-c r i" . org-roam-node-insert)
-         ("C-c r t" . my-org-roam-tag-add)
-         ("C-c r r" . org-roam-tag-remove))
-  :config
-  (condition-case err
-      (progn
-        (require 'org-roam)
-        (require 'ht)
-        (require 'f)
-        (require 'roam-tags)
-        (setq org-roam-v2-ack t)
-        (setq org-roam-directory
-              (cond ((eq my-device 'laptop) "~/wspace/org/notes/org-roam/")
-                    ((eq my-device 'termux) "~/storage/shared/notes/org-roam/")
-                    ((eq my-device 'tablet) "~/path/to/tablet/notes/org-roam/")
-                    (t "~/org-roam/")))
-        (setq org-roam-dailies-directory "daily/")
-        (setq org-roam-capture-templates
-              '(("d" "default" plain
-                 "* %^{Title} :NOTE:%^{Filetags|academics|research|personal|notes|projects|students|presentations|events|grants|labwork|concepts|ideas|references|reviews|}:%^{Status|draft|final}:%^{Confidentiality|confidential|internal|public}:\n:PROPERTIES:\n:ID:       %(org-id-new)\n:CREATED:  [%(format-time-string \"%Y-%m-%d %a %H:%M\")]\n:END:\n%?"
-                 :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE: ${title}\n")
-                 :unnarrowed t)))
-        (defun my-org-roam-tag-add ()
-          "Add a tag to the current org-roam node, using filtered .filetags with mutual exclusivity."
-          (interactive)
-          (let* ((filetags (my-org-read-filetags))
-                 (all-tags (seq-filter (lambda (tag) (member tag my-roam-tags)) (ht-keys filetags)))
-                 (current-tags (org-roam-tag-completions))
-                 (completion-function (if (and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
-                                         'ivy-completing-read
-                                       'completing-read))
-                 (selected-tag (funcall completion-function
-                                        "Select tag: "
-                                        all-tags nil t nil nil current-tags))
-                 (group (plist-get (ht-get filetags selected-tag) :group))
-                 (new-tags (if group
-                               (seq-remove (lambda (tag)
-                                             (equal (plist-get (ht-get filetags tag) :group) group))
-                                           current-tags)
-                             current-tags)))
-            (when selected-tag
-              (org-roam-tag-add (cons selected-tag new-tags)))))
-        (setq org-roam-tag-sources '(prop all-tags))
-        (setq org-roam-completion-everywhere t)
-        (org-roam-db-autosync-mode 1))
-    (error (message "Failed to load org-roam: %s" err))))
-
-;; Org-roam-ui for graph visualization (laptop only).
-(when (eq my-device 'laptop)
-  (use-package org-roam-ui
-    :ensure t
-    :straight (:host github :repo "org-roam/org-roam-ui" :branch "main")
+  ;; Ensure built-in org is used (Emacs 28.1).
+  (use-package org
+    :ensure nil
+    :straight (:type built-in)
     :defer t
-    :bind ("C-c r g" . org-roam-ui-open)
+    :config
+    (condition-case err
+        (require 'org)
+      (error (message "Failed to load org: %s" err))))
+
+      ;; Verify roam-tags.el exists.
+  (unless (file-exists-p (expand-file-name "org/roam-tags.el" user-emacs-directory))
+    (error "roam-tags.el not found at %s" (expand-file-name "org/roam-tags.el" user-emacs-directory)))
+
+  ;; Org-roam for Zettelkasten note-taking.
+  (use-package org-roam
+    :ensure t
+    :straight t
+    :defer t
+    :bind (("C-c r n" . org-roam-capture)
+           ("C-c r f" . org-roam-node-find)
+           ("C-c r i" . org-roam-node-insert)
+           ("C-c r t" . my-org-roam-tag-add)
+           ("C-c r r" . org-roam-tag-remove))
     :config
     (condition-case err
         (progn
-          (require 'org-roam-ui)
-          (setq org-roam-ui-sync-theme t
-                org-roam-ui-follow t
-                org-roam-ui-update-on-save t
-                org-roam-ui-open-on-start nil
-                org-roam-ui-custom-theme
-                '((tags . ((category . "blue") (status . "green") (confidentiality . "red") (Zettelkasten concepts . "purple"))))))
-      (error (message "Failed to load org-roam-ui: %s" err))))
+          (require 'org-roam)
+          (require 'ht)
+          (require 'f)
+          (require 'roam-tags)
+          (setq org-roam-v2-ack t)
+          (setq org-roam-directory
+                (cond ((eq my-device 'laptop) "~/wspace/org/notes/org-roam/")
+                      ((eq my-device 'termux) "~/storage/shared/notes/org-roam/")
+                      ((eq my-device 'tablet) "~/path/to/tablet/notes/org-roam/")
+                      (t "~/org-roam/")))
+          (setq org-roam-dailies-directory "daily/")
+          (setq org-roam-capture-templates
+                '(("d" "default" plain
+                   "* %^{Title} :NOTE:%^{Filetags|academics|research|personal|notes|projects|students|presentations|events|grants|labwork|concepts|ideas|references|reviews|}:%^{Status|draft|final}:%^{Confidentiality|confidential|internal|public}:\n:PROPERTIES:\n:ID:       %(org-id-new)\n:CREATED:  [%(format-time-string \"%Y-%m-%d %a %H:%M\")]\n:END:\n%?"
+                   :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE: ${title}\n")
+                   :unnarrowed t)))
+          (defun my-org-roam-tag-add ()
+            "Add a tag to the current org-roam node, using filtered .filetags with mutual exclusivity."
+            (interactive)
+            (let* ((filetags (my-org-read-filetags))
+                   (all-tags (seq-filter (lambda (tag) (member tag my-roam-tags)) (ht-keys filetags)))
+                   (current-tags (org-roam-tag-completions))
+                   (completion-function (if (and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
+                                           'ivy-completing-read
+                                         'completing-read))
+                   (selected-tag (funcall completion-function
+                                          "Select tag: "
+                                          all-tags nil t nil nil current-tags))
+                   (group (plist-get (ht-get filetags selected-tag) :group))
+                   (new-tags (if group
+                                 (seq-remove (lambda (tag)
+                                               (equal (plist-get (ht-get filetags tag) :group) group))
+                                             current-tags)
+                               current-tags)))
+              (when selected-tag
+                (org-roam-tag-add (cons selected-tag new-tags)))))
+          (setq org-roam-tag-sources '(prop all-tags))
+          (setq org-roam-completion-everywhere t)
+          (org-roam-db-autosync-mode 1))
+      (error (message "Failed to load org-roam: %s" err))))
 
-;; Add org-roam files to agenda for tag-based filtering.
-(setq org-agenda-files
-      (append org-agenda-files
-              (list org-roam-directory
-                    (expand-file-name org-roam-dailies-directory org-roam-directory))))
+  ;; Org-roam-ui for graph visualization (laptop only).
+  (when (eq my-device 'laptop)
+    (use-package org-roam-ui
+      :ensure t
+      :straight (:host github :repo "org-roam/org-roam-ui" :branch "main")
+      :defer t
+      :bind ("C-c r g" . org-roam-ui-open)
+      :config
+      (condition-case err
+          (progn
+            (require 'org-roam-ui)
+            (setq org-roam-ui-sync-theme t
+                  org-roam-ui-follow t
+                  org-roam-ui-update-on-save t
+                  org-roam-ui-open-on-start nil
+                  org-roam-ui-custom-theme
+                  '((tags . ((category . "blue") (status . "green") (confidentiality . "red") (Zettelkasten concepts . "purple"))))))
+        (error (message "Failed to load org-roam-ui: %s" err))))
+
+  ;; Add org-roam files to agenda for tag-based filtering.
+  (setq org-agenda-files
+        (append org-agenda-files
+                (list org-roam-directory
+                      (expand-file-name org-roam-dailies-directory org-roam-directory))))
 
 (when (getenv "MY_DEBUG_DEVICE")
-  (message "=== org/org-roam.org LOADED ==="))
+    (message "=== org/org-roam.org LOADED ==="))
 #+END_SRC
