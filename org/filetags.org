@@ -106,8 +106,9 @@ Configure filetags for tag management with mutual exclusivity, used by org-roam 
             (setq selected-tags-list (delete tag selected-tags-list)))))
       (org-set-tags selected-tags-list))))
 
-
 (global-set-key (kbd "C-c f t") 'my-org-set-filetags)
+
+(provide 'filetags);; Emacs won’t re-evaluate the file if it’s already provided. (require 'feature-name) will load the file only once and only when needed.
 
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== org/filetags.org LOADED ==="))

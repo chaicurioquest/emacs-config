@@ -12,3 +12,5 @@
   (or (gethash system-name my-device-configs)
       (if (string-match "termux" system-configuration) 'termux 'generic))
   "Current device type.")
+  (provide 'device) ;; Emacs won’t re-evaluate the file if it’s already provided. (require 'feature-name) will load the file only once and only when needed.
+

@@ -35,15 +35,20 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 ;; modular org files tangle process.Tangling only happens when the .org file is newer than the .el file. Each .el file is loaded once after tangling.
 #+BEGIN_SRC emacs-lisp
 (defun my/tangle-if-needed (org-file el-file)
-  "Tangle ORG-FILE to EL-FILE if needed, and load EL-FILE."
-  (let ((org-path (expand-file-name org-file user-emacs-directory))
-        (el-path  (expand-file-name el-file  user-emacs-directory)))
+  "Tangle ORG-FILE to EL-FILE if needed, and load EL-FILE.Deletes EL-FILE before tangling to ensure it matches current org blocks.Handles gracefully when nothing is tangled."
+  (let* ((org-path (expand-file-name org-file user-emacs-directory))
+         (el-path  (expand-file-name el-file user-emacs-directory)))
     (when (or (not (file-exists-p el-path))
               (file-newer-than-file-p org-path el-path))
       (message "🔄 Tangling %s → %s" org-path el-path)
       (require 'org)
+      (when (file-exists-p el-path)
+        (delete-file el-path))
       (org-babel-tangle-file org-path el-path))
-    (load el-path)))
+    ;; Only load if the target .el file now exists
+    (if (file-exists-p el-path)
+        (load el-path)
+      (message "⚠️ No tangled output: %s not found (possibly all blocks :tangle no)" el-path))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -59,7 +64,10 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 (setq inhibit-startup-screen t)
 
 ;; Load device detection.
-(load (expand-file-name "device.el" user-emacs-directory))
+(condition-case err
+    (load (expand-file-name "device.el" user-emacs-directory))
+  (error (message "❌ Failed to load device.el: %s" (error-message-string err))))
+
 
 ;; Set default directory per device.
 (setq default-directory
@@ -235,11 +243,25 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
 
 * ACTIVE Modular Configs
 #+BEGIN_SRC emacs-lisp
+;; Load the roam-tags.el directly from file for org-roam linked notes tags
+(let ((roam-tags-file (expand-file-name "org/roam-tags.el" user-emacs-directory)))
+  (unless (file-exists-p roam-tags-file)
+    (error "❌ roam-tags.el not found at %s" roam-tags-file))
+  (load roam-tags-file))
+
+;;(let ((roam-tags-file (expand-file-name "org/roam-tags.el" user-emacs-directory)))
+;; (unless (file-exists-p roam-tags-file)
+;;    (error "❌ roam-tags.el not found at %s" roam-tags-file))
+;;  (load roam-tags-file))
+
+
 ;; Modular config loading with tangle-if-needed
-;;(my/tangle-if-needed "org/workflows.org" "org/workflows.el")
-;;(my/tangle-if-needed "org/org-roam.org" "org/org-roam.el")
-(my/tangle-if-needed "org/yankpad.org" "org/yankpad.el")
 (my/tangle-if-needed "org/filetags.org" "org/filetags.el")
+(my/tangle-if-needed "org/yankpad.org" "org/yankpad.el")
+;;(my/tangle-if-needed "org/org-roam.org" "org/org-roam.el")
+;;(my/tangle-if-needed "org/workflows.org" "org/workflows.el")
+
+
 #+END_SRC
 
 * ACTIVE Startup Confirmation

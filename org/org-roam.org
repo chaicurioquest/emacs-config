@@ -115,7 +115,7 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, file
         (append org-agenda-files
                 (list org-roam-directory
                       (expand-file-name org-roam-dailies-directory org-roam-directory))))
-
+(provide 'org-roam-config) ;;Emacs won’t re-evaluate the file if it’s already provided. (require 'feature-name) will load the file only once and only when needed.
 (when (getenv "MY_DEBUG_DEVICE")
     (message "=== org/org-roam.org LOADED ==="))
 #+END_SRC
