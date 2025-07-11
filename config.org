@@ -35,7 +35,9 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 ;; modular org files tangle process.Tangling only happens when the .org file is newer than the .el file. Each .el file is loaded once after tangling.
 #+BEGIN_SRC emacs-lisp
 (defun my/tangle-if-needed (org-file el-file)
-  "Tangle ORG-FILE to EL-FILE if needed, and load EL-FILE.Deletes EL-FILE before tangling to ensure it matches current org blocks.Handles gracefully when nothing is tangled."
+  "Tangle ORG-FILE to EL-FILE if needed, and load EL-FILE.
+Deletes EL-FILE before tangling to ensure sync.
+Skips load if no blocks tangled."
   (let* ((org-path (expand-file-name org-file user-emacs-directory))
          (el-path  (expand-file-name el-file user-emacs-directory)))
     (when (or (not (file-exists-p el-path))
@@ -45,10 +47,11 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
       (when (file-exists-p el-path)
         (delete-file el-path))
       (org-babel-tangle-file org-path el-path))
-    ;; Only load if the target .el file now exists
+      ;; Only load if the target .el file now exists
     (if (file-exists-p el-path)
         (load el-path)
       (message "⚠️ No tangled output: %s not found (possibly all blocks :tangle no)" el-path))))
+
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -152,25 +155,6 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
         (setq org-crypt-use-before-save nil))  ;; Disable automatic encryption
     (error (message "Failed to load org-crypt: %s" err))))
 
-;; Yasnippet for snippet framework (loaded on C-c TAB).
-(use-package yasnippet
-  :ensure t
-  :straight t
-  :defer t
-  :bind ("C-c TAB" . yas-expand)
-  :config
-  (yas-global-mode 1))
-
-;; Yankpad for snippet management (loaded on C-c y).
-(use-package yankpad
-  :ensure t
-  :straight t
-  :defer t
-  :bind ("C-c y" . yankpad-expand)
-  :config
-  (setq yankpad-file (expand-file-name "org/yankpad.org" user-emacs-directory))
-  (add-hook 'org-mode-hook 'yankpad-local-category-to-org-mode))
-
 ;; Flyspell for spell checking (loaded on M-$).
 (use-package flyspell
   :ensure t
@@ -180,6 +164,47 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
   :config
   (when (executable-find "aspell")
     (setq ispell-program-name "aspell")))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+;; 🧠 Dynamic tag generator for Yankpad snippets
+(defun my-yankpad-dynamic-tags ()
+  "Return pipe-separated tags from `my-roam-tags` (defined in roam-tags.el)."
+  (require 'roam-tags)
+  (condition-case err
+      (string-join my-roam-tags "|")
+    (error (message "Failed to load my-roam-tags: %s" err) "")))
+
+;; 📎 Yasnippet setup (tab completion for snippet fields)
+(use-package yasnippet
+  :ensure t
+  :straight t
+  :bind ("C-c TAB" . yas-expand)
+  :config
+  (yas-global-mode 1)
+  (setq yas-indent-line 'fixed))  ;; It preserves the indentation of snippet exactly as written in the template.
+
+;; 📘 Yankpad: Org-mode snippet library on top of Yasnippet
+(use-package yankpad
+  :ensure t
+  :straight t
+  :bind (("C-c Y" . yankpad-expand)  ;; Expand by trigger (e.g., `task`)
+         ("C-c y" . yankpad-insert)) ;; Interactive menu
+  :init
+  ;; yankpad-reload is added to the org-mode-hook only after Yankpad is loaded.
+  (with-eval-after-load 'yankpad
+    (add-hook 'org-mode-hook #'yankpad-reload))
+  :config
+  ;; Define yankpad.org location based on device
+  (setq yankpad-file
+      (cond
+       ((eq my-device 'laptop)
+        (expand-file-name "org/yankpad.org" user-emacs-directory))
+       ((eq my-device 'termux)
+        (expand-file-name "storage/shared/notes/yankpad.org"))
+       ((eq my-device 'tablet)
+        (expand-file-name "path/to/tablet/notes/yankpad.org"))
+       (t expand-file-name "org/yankpad.org" user-emacs-directory))))  ;; fallback
 #+END_SRC
 
 * ACTIVE UI Tweaks
@@ -257,7 +282,7 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
 
 ;; Modular config loading with tangle-if-needed
 (my/tangle-if-needed "org/filetags.org" "org/filetags.el")
-(my/tangle-if-needed "org/yankpad.org" "org/yankpad.el")
+;;(my/tangle-if-needed "org/yankpad.org" "org/yankpad.el")
 ;;(my/tangle-if-needed "org/org-roam.org" "org/org-roam.el")
 ;;(my/tangle-if-needed "org/workflows.org" "org/workflows.el")
 

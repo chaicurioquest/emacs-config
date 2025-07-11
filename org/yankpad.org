@@ -1,121 +1,95 @@
-#+TITLE: Yankpad Configuration
-#+TODO: ACTIVE | CANCELLED
-#+STARTUP: indent
-#+PROPERTY: header-args:emacs-lisp :tangle no 
+#+TITLE: Yankpad Snippets
 #+DATE: 2025-07-10
 
-* Purpose
-Yankpad integration with yasnippet and org-roam for snippet management, using dynamic tags.
-
-* ACTIVE Yankpad Setup
-#+BEGIN_SRC emacs-lisp
-(when (getenv "MY_DEBUG_DEVICE")
-  (message "=== LOADING org/yankpad.org ==="))
-
-(defun my-yankpad-dynamic-tags ()
-  "Return a pipe-separated string of tags from `my-roam-tags`."
-  (require 'roam-tags)
-  (condition-case err
-      (string-join my-roam-tags "|")
-    (error (message "Failed to load my-roam-tags: %s" err) "")))
-
-(use-package yasnippet
-  :ensure t
-  :straight t
-  :defer t
-  :bind ("C-c TAB" . yas-expand)
-  :config
-  (yas-global-mode 1))
-
-(use-package yankpad
-  :ensure t
-  :straight t
-  :defer t
-  :bind (("C-c y" . yankpad-expand)
-         ("C-c Y" . yankpad-insert))
-  :config
-  (setq yankpad-file
-        (cond ((eq my-device 'laptop) "~/wspace/org/notes/yankpad.org")
-              ((eq my-device 'termux) "~/storage/shared/notes/yankpad.org")
-              ((eq my-device 'tablet) "~/path/to/tablet/notes/yankpad.org")
-              (t "~/org/yankpad.org")))
-  (unless (file-exists-p yankpad-file)
-    (make-directory (file-name-directory yankpad-file) t)
-    (write-region "#+TITLE: Yankpad Snippets\n#+DATE: %(format-time-string \"%Y-%m-%d\")\n\n* Snippets\n" nil yankpad-file))
-  (yankpad-local-dir-to-category))
-
-(provide 'yankpad);; Emacs won’t re-evaluate the file if it’s already provided. (require 'feature-name) will load the file only once and only when needed.
-
-(when (getenv "MY_DEBUG_DEVICE")
-  (message "=== org/yankpad.org LOADED ==="))
-#+END_SRC
-
-* ACTIVE Example Snippets
+* Snippets
 
 ** General
-*** Org Header
-#+BEGIN_SRC org :tangle no
-#+TITLE: ${1:New Document}
-#+DATE: %(format-time-string "%Y-%m-%d")
-#+FILETAGS: :${2:Filetags|`(my-yankpad-dynamic-tags)`}:
-#+STARTUP: indent
+*** Greeting
+:PROPERTIES:
+:yankpad-trigger: hello
+:END:
+#+BEGIN_SRC text
+  Hello, ${1:Name}! Welcome to Yankpad!
 #+END_SRC
 
-*** Hello World
-#+BEGIN_SRC text :tangle yes
-Hello, World!
+*** Org Header
+:PROPERTIES:
+:yankpad-trigger: header
+:END:
+#+BEGIN_SRC org
+  #+TITLE: ${1:Document Title}
+  #+DATE: %(format-time-string "%Y-%m-%d")
+  #+FILETAGS: :${2:Tags|`(my-yankpad-dynamic-tags)`}:
+  #+STARTUP: indent
 #+END_SRC
 
 ** Meetings
 *** Meeting Note
-#+BEGIN_SRC org :tangle no
-* Meeting %<%Y-%m-%d> :meeting:${1:Filetags|`(my-yankpad-dynamic-tags)`}:
 :PROPERTIES:
-:ID:       %(org-id-new)
-:CREATED:  [%<%Y-%m-%d %a %H:%M>]
+:yankpad-trigger: meet
 :END:
-** Attendees
-${2:Attendees}
-** Agenda
-${3:Agenda}
-** Notes
-${4:Notes}
-#+END_SRC
+#+BEGIN_SRC org
+  * Meeting %<%Y-%m-%d> :meeting:${1:Tags|`(my-yankpad-dynamic-tags)`}:
+  :PROPERTIES:
+  :ID:       %(org-id-new)
+  :CREATED:  [%<%Y-%m-%d %a %H:%M>]
+  :END:
+  ** Attendees
+  ${2:Attendees}
 
-** Code
-*** Python Function
-#+BEGIN_SRC python :tangle no
-def ${1:func_name}(${2:args}):
-    """${3:Docstring}"""
-    ${4:pass}
-#+END_SRC
+  ** Agenda
+  ${3:Agenda}
 
-*** Emacs Lisp Function
-#+BEGIN_SRC emacs-lisp :tangle no
-(defun ${1:name} (${2:args})
-  "${3:Docstring}"
-  ${4:body})
+  ** Notes
+  ${4:Discussion Points}
 #+END_SRC
 
 ** Notes
 *** Zettelkasten Note
-#+BEGIN_SRC org :tangle no
-* ${1:Note Title} :NOTE:${2:Filetags|`(my-yankpad-dynamic-tags)`}:
 :PROPERTIES:
-:ID:       %(org-id-new)
-:CREATED:  [%(format-time-string "%Y-%m-%d %a %H:%M")]
+:yankpad-trigger: note
 :END:
-${3:Note content}
+#+BEGIN_SRC org
+  * ${1:Note Title} :NOTE:${2:Tags|`(my-yankpad-dynamic-tags)`}:
+  :PROPERTIES:
+  :ID:       %(org-id-new)
+  :CREATED:  [%(format-time-string "%Y-%m-%d %a %H:%M")]
+  :END:
+  ${3:Note content}
 #+END_SRC
 
+** Tasks
 *** Task Template
-#+BEGIN_SRC org :tangle no
-* TODO ${1:Task Title} :task:${2:Filetags|`(my-yankpad-dynamic-tags)`}:
 :PROPERTIES:
-:ID:       %(org-id-new)
-:CREATED:  [%(format-time-string "%Y-%m-%d %a %H:%M")]
+:yankpad-trigger: task
 :END:
-DEADLINE: <%<%Y-%m-%d>>
-${3:Task details}
+#+BEGIN_SRC org
+  * TODO ${1:Task Title} :task:${2:Tags|`(my-yankpad-dynamic-tags)`}:
+  :PROPERTIES:
+  :ID:       %(org-id-new)
+  :CREATED:  [%(format-time-string "%Y-%m-%d %a %H:%M")]
+  :END:
+  DEADLINE: <%<%Y-%m-%d>>
+  ${3:Task details}
 #+END_SRC
 
+** Code
+*** Python Function
+:PROPERTIES:
+:yankpad-trigger: pyfunc
+:END:
+#+BEGIN_SRC python
+  def ${1:func_name}(${2:args}):
+      """${3:Docstring}"""
+      ${4:pass}
+#+END_SRC
+
+*** Emacs Lisp Function
+:PROPERTIES:
+:yankpad-trigger: elfunc
+:END:
+#+BEGIN_SRC emacs-lisp
+  (defun ${1:name} (${2:args})
+    "${3:Docstring}"
+    ${4:body})
+#+END_SRC
