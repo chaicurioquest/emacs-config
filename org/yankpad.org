@@ -23,6 +23,30 @@
   #+STARTUP: indent
 #+END_SRC
 
+** Notes
+*** Zettelkasten Note
+:PROPERTIES:
+:yankpad-trigger: note
+:END:
+#+BEGIN_SRC org
+  * ${1:Note Title} :notes:${2:Tags|`(my-yankpad-dynamic-tags)`}:
+  :PROPERTIES:
+  :ID:       %(org-id-new)
+  :CREATED:  [%(format-time-string "%Y-%m-%d %a %H:%M")]
+  :END:
+  ${3:Note content}
+#+END_SRC
+
+*** Emacs Lisp Function
+:PROPERTIES:
+:yankpad-trigger: elfunc
+:END:
+#+BEGIN_SRC emacs-lisp
+  (defun ${1:name} (${2:args})
+    "${3:Docstring}"
+    ${4:body})
+#+END_SRC
+
 ** Meetings
 *** Meeting Note
 :PROPERTIES:
@@ -44,19 +68,6 @@
   ${4:Discussion Points}
 #+END_SRC
 
-** Notes
-*** Zettelkasten Note
-:PROPERTIES:
-:yankpad-trigger: note
-:END:
-#+BEGIN_SRC org
-  * ${1:Note Title} :NOTE:${2:Tags|`(my-yankpad-dynamic-tags)`}:
-  :PROPERTIES:
-  :ID:       %(org-id-new)
-  :CREATED:  [%(format-time-string "%Y-%m-%d %a %H:%M")]
-  :END:
-  ${3:Note content}
-#+END_SRC
 
 ** Tasks
 *** Task Template
@@ -84,12 +95,4 @@
       ${4:pass}
 #+END_SRC
 
-*** Emacs Lisp Function
-:PROPERTIES:
-:yankpad-trigger: elfunc
-:END:
-#+BEGIN_SRC emacs-lisp
-  (defun ${1:name} (${2:args})
-    "${3:Docstring}"
-    ${4:body})
-#+END_SRC
+
