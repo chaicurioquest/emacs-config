@@ -219,18 +219,39 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
 ;; Profiling
 (defvar my-config-el-start-time (current-time) "Time when config.el was started")
 (setq my-config-el-start-time-iso (format-time-string "%Y-%m-%dT%T%:z"))
-
 ;; UI Theme, word wrap and other settings.
 (load-theme 'tsdh-dark t)  ;;Dark theme for Emacs
 (global-visual-line-mode 1) ;;Wrap text in GUI Windows
 (set-fringe-mode 10) ;;Sets the width of the left and right fringes (the empty margin space at the edge of windows in Emacs) to 10 pixels.
 (setq-default cursor-type 'bar) ;;Changes the default cursor shape to a vertical bar (instead of the default box).
 
+;; Device-specific backup directory under default-directory
+(defvar my-backup-dir (expand-file-name ".backups/" default-directory)
+  "Directory to store Emacs backup (~) files.")
+
+;; Create backup directory if it doesn't exist
+(unless (file-exists-p my-backup-dir)
+  (make-directory my-backup-dir t))
+
+;; Redirect backup files to device specific default directory
 (setq backup-directory-alist '((".*" . "~/.emacs.d/backups"))
-      version-control t
-      kept-new-versions 10
-      kept-old-versions 5
-      delete-old-versions t)
+      version-control nil           ;; Don't use numbered backups
+      delete-old-versions t          ;; Optional, safe cleanup
+      make-backup-files t            ;; Still create simple backup ~ files
+      backup-by-copying t)           ;; Avoid file renaming issues
+
+;; Device-specific autosave directory under default-directory
+(defvar my-autosave-dir (expand-file-name ".autosaves/" default-directory)
+  "Directory to store Emacs auto-save files.")
+
+;; Create autosave directory if missing
+(unless (file-exists-p my-autosave-dir)
+  (make-directory my-autosave-dir t))
+
+;; Redirect auto-save files to device-specific location
+(setq auto-save-file-name-transforms
+      `((".*" ,my-autosave-dir t))
+      auto-save-default t)
 
 ;; Calendar: Monday as start of week
 (setq-default calendar-week-start-day 1)
