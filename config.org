@@ -337,7 +337,7 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
 
 * ACTIVE Modular Configs
 #+BEGIN_SRC emacs-lisp
-;;(my/tangle-if-needed "org/org-roam.org" "org/org-roam.el")
+(my/tangle-if-needed "org/org-roam.org" "org/org-roam.el")
 (my/tangle-if-needed "org/workflows.org" "org/workflows.el")
 #+END_SRC
 
