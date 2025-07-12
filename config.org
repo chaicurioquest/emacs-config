@@ -1,22 +1,22 @@
 #+TITLE: Emacs Literate Config
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent
-#+DATE: 2025-07-05
+#+DATE: 2025-07-12
 
 * Purpose
 This Org-mode configuration is the single source for my Emacs 28.1 setup, designed to be:
 - **Future-proof**: Structured with comments, tables, CANCELLED blocks.
 - **Reliable**: Reproducible packages via straight.el, lazy loading.
-- **Minimal**: Single config.org, minimal hooks/keybindings, early-init.el for GUI.
+- **Minimal**: Single config.org, minimal hooks/keybindings, early-init.el for GUI, unified tag management.
 - **Portable**: Device-specific settings (laptop, Termux, tablet) via device.el.
 - **Synced**: Via GitHub (https://github.com/chaicurioquest/emacs-config) and Syncthing.
-- **Modular**: Uses org/ for snippets (yankpad.org), workflows (workflows.org), note-taking (org-roam.org), and filetags (filetags.org).
+- **Modular**: Uses org/ for snippets (yankpad.org), workflows (workflows.org), and note-taking (org-roam.org).
 Tangle with `C-c t` or `M-x my-tangle-config-org`.
 
 * My Digital Workflow
 | *Workflow*                          | *Solution*                                         | *Notes*                                                        | *Device* | *Keybindings*         |
 |-------------------------------------+----------------------------------------------------+----------------------------------------------------------------|----------|-----------------------|
-| Installing packages                 | use-package with straight.el                       | Lazy loading in config.org, org/workflows.org, org/filetags.org | All      | None                  |
+| Installing packages                 | use-package with straight.el                       | Lazy loading in config.org, org/workflows.org                  | All      | None                  |
 | Filter Org files                    | sparse trees                                       | C-c / for sparse tree                                          | All      | C-c /                 |
 | Focus on Org sub-hierarchy          | org-tree-to-indirect-buffer                        |                                                                | All      | C-c C-x b             |
 | Enhanced search/selection           | ivy, swiper, counsel (laptop only)                  | In org/workflows.org                                           | Laptop   | C-c C-r, C-c s, C-c c |
@@ -24,12 +24,12 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 | Inserting date/time-stamps          | my-insert-timestamp(), my-insert-datestamp()       |                                                                | All      | C-c i t, C-c i d      |
 | Org to PDF export                   | Org mode export via LaTeX                          | Requires pdf-tools in org/workflows.org                        | Laptop   | C-c C-e l p           |
 | Passwords                           | org-crypt                                          |                                                                | All      | None                  |
-| Snippet management                  | yankpad with yasnippet                             | Org-style snippets in org/yankpad.org, tab-completion          | All      | C-c y, C-c TAB        |
+| Snippet management                  | yankpad with yasnippet                             | Org-style snippets in yankpad.org, tab-completion             | All      | C-c y, C-c Y, C-c TAB |
 | Spell checking                      | flyspell with aspell                               | Requires aspell installation                                   | All      | M-$                   |
 | PDF reading/annotating              | pdf-tools                                          | In org/workflows.org, laptop only                              | Laptop   | None                  |
 | Record screencasts                  | gif-screencast                                     | In org/workflows.org, laptop only                              | Laptop   | C-c g                 |
 | Zettelkasten note-taking            | org-roam                                           | In org/org-roam.org, graph UI on laptop                        | All      | C-c r n, C-c r f, C-c r g |
-| Tag Org sections                    | filetags with .filetags                            | In org/filetags.org, tag completion with ivy/completing-read   | All      | C-c f t               |
+| Tag Org sections                    | .filetags                                          | In config.org, tag completion with ivy/completing-read         | All      | C-c f t               |
 
 * ACTIVE Startup Optimizations
 ;; modular org files tangle process.Tangling only happens when the .org file is newer than the .el file. Each .el file is loaded once after tangling.
@@ -39,7 +39,7 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 Deletes EL-FILE before tangling to ensure sync.
 Skips load if no blocks tangled."
   (let* ((org-path (expand-file-name org-file user-emacs-directory))
-         (el-path  (expand-file-name el-file user-emacs-directory)))
+         (el-path (expand-file-name el-file user-emacs-directory)))
     (when (or (not (file-exists-p el-path))
               (file-newer-than-file-p org-path el-path))
       (message "🔄 Tangling %s → %s" org-path el-path)
@@ -47,14 +47,10 @@ Skips load if no blocks tangled."
       (when (file-exists-p el-path)
         (delete-file el-path))
       (org-babel-tangle-file org-path el-path))
-      ;; Only load if the target .el file now exists
     (if (file-exists-p el-path)
         (load el-path)
       (message "⚠️ No tangled output: %s not found (possibly all blocks :tangle no)" el-path))))
 
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 ;; Debug startup (toggle with MY_DEBUG_DEVICE environment variable).
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== STARTING CONFIG ==="))
@@ -84,6 +80,72 @@ Skips load if no blocks tangled."
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== STARTUP OPTIMIZATIONS COMPLETE ==="))
 #+END_SRC
+
+* ACTIVE Tag Management
+#+BEGIN_SRC emacs-lisp
+(defun my-org--filetags-path ()
+  "Return actual .filetags path depending on the device."
+  (let ((link (expand-file-name "org/.filetags" user-emacs-directory)))
+    (cond
+     ((file-symlink-p link) (file-truename link))
+     ((file-exists-p link) link)
+     ((eq my-device 'laptop) "~/.filetags")
+     ((eq my-device 'termux) "~/storage/shared/.filetags")
+     ((eq my-device 'tablet) "~/path/to/tablet/.filetags")
+     (t "~/.filetags"))))
+
+(defun my-org-read-filetags ()
+  "Read tags from .filetags file as a flat list, skipping comments and empty lines."
+  (let ((file (my-org--filetags-path))
+        (tags '()))
+    (when (file-exists-p file)
+      (with-temp-buffer
+        (insert-file-contents file)
+        (goto-char (point-min))
+        (while (not (eobp))
+          (let* ((line (buffer-substring-no-properties (line-beginning-position)
+                                                       (line-end-position)))
+                 ;; Strip comments after `#`
+                 (clean (car (split-string line "#")))
+                 (words (split-string (string-trim clean) "\\s-+" t)))
+            (dolist (tag words)
+              (push tag tags)))
+          (forward-line 1))))
+    (delete-dups (nreverse tags))))
+
+(defun my-org-dynamic-tags ()
+  "Return pipe-separated tag string from .filetags for Yankpad/Yasnippet use."
+  (let ((tags (my-org-read-filetags)))
+    (if tags
+        (string-join tags "|")
+      "")))
+
+(defun my-org-set-filetags ()
+  "Set multiple filetags on current Org heading with completion."
+  (interactive)
+  (require 'org)
+  (let* ((all-tags (my-org-read-filetags))
+         (current-tags (org-get-tags nil t))
+         (completion-function
+          (cond
+           ((and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
+            (lambda (prompt choices)
+              (ivy-read prompt choices
+                        :require-match t
+                        :initial-input ""
+                        :preselect (car current-tags)
+                        :multi-action t)))
+           ((fboundp 'completing-read-multiple)
+            (lambda (prompt choices)
+              (completing-read-multiple prompt choices nil t)))
+           (t (lambda (prompt choices)
+                (list (completing-read prompt choices nil t))))))
+         (selected-tags (funcall completion-function "Select tags: " all-tags)))
+    (org-set-tags selected-tags)))
+
+(global-set-key (kbd "C-c f t") 'my-org-set-filetags)
+#+END_SRC
+
 
 * ACTIVE Package Management
 Configure package managers and lightweight, universal packages with lazy loading.
@@ -164,18 +226,7 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
   :config
   (when (executable-find "aspell")
     (setq ispell-program-name "aspell")))
-#+END_SRC
 
-#+BEGIN_SRC emacs-lisp
-;; 🧠 Dynamic tag generator for Yankpad snippets
-(defun my-yankpad-dynamic-tags ()
-  "Return pipe-separated tags from `my-roam-tags` (defined in roam-tags.el)."
-  (require 'roam-tags)
-  (condition-case err
-      (string-join my-roam-tags "|")
-    (error (message "Failed to load my-roam-tags: %s" err) "")))
-
-;; 📎 Yasnippet setup (tab completion for snippet fields)
 (use-package yasnippet
   :ensure t
   :straight t
@@ -188,8 +239,8 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
 (use-package yankpad
   :ensure t
   :straight t
-  :bind (("C-c Y" . yankpad-expand)  ;; Expand by trigger (e.g., `task`)
-         ("C-c y" . yankpad-insert)) ;; Interactive menu
+  :bind (("C-c Y" . yankpad-expand)
+         ("C-c y" . yankpad-insert))
   :init
   ;; yankpad-reload is added to the org-mode-hook only after Yankpad is loaded.
   (with-eval-after-load 'yankpad
@@ -232,15 +283,12 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
 ;; Create backup directory if it doesn't exist
 (unless (file-exists-p my-backup-dir)
   (make-directory my-backup-dir t))
+(setq backup-directory-alist `((".*" . ,my-backup-dir))
+      version-control nil
+      delete-old-versions t
+      make-backup-files t
+      backup-by-copying t)
 
-;; Redirect backup files to device specific default directory
-(setq backup-directory-alist '((".*" . "~/.emacs.d/backups"))
-      version-control nil           ;; Don't use numbered backups
-      delete-old-versions t          ;; Optional, safe cleanup
-      make-backup-files t            ;; Still create simple backup ~ files
-      backup-by-copying t)           ;; Avoid file renaming issues
-
-;; Device-specific autosave directory under default-directory
 (defvar my-autosave-dir (expand-file-name ".autosaves/" default-directory)
   "Directory to store Emacs auto-save files.")
 
@@ -289,25 +337,8 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
 
 * ACTIVE Modular Configs
 #+BEGIN_SRC emacs-lisp
-;; Load the roam-tags.el directly from file for org-roam linked notes tags
-(let ((roam-tags-file (expand-file-name "org/roam-tags.el" user-emacs-directory)))
-  (unless (file-exists-p roam-tags-file)
-    (error "❌ roam-tags.el not found at %s" roam-tags-file))
-  (load roam-tags-file))
-
-;;(let ((roam-tags-file (expand-file-name "org/roam-tags.el" user-emacs-directory)))
-;; (unless (file-exists-p roam-tags-file)
-;;    (error "❌ roam-tags.el not found at %s" roam-tags-file))
-;;  (load roam-tags-file))
-
-
-;; Modular config loading with tangle-if-needed
-(my/tangle-if-needed "org/filetags.org" "org/filetags.el")
-;;(my/tangle-if-needed "org/yankpad.org" "org/yankpad.el")
 ;;(my/tangle-if-needed "org/org-roam.org" "org/org-roam.el")
-;;(my/tangle-if-needed "org/workflows.org" "org/workflows.el")
-
-
+(my/tangle-if-needed "org/workflows.org" "org/workflows.el")
 #+END_SRC
 
 * ACTIVE Startup Confirmation
@@ -323,4 +354,3 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
 ;;               ((lambda (x) (concat (substring x 0 3) ":" (substring x 3 5)))
 ;;                (format-time-string "%z"))))
 #+END_SRC
-
