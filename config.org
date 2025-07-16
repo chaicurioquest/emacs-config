@@ -149,38 +149,29 @@ Skips load if no blocks tangled."
 
 * ACTIVE Package Management
 Configure package managers and lightweight, universal packages with lazy loading.
-Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-roam.org; filetags in org/filetags.org.
-| Package      | Purpose                     | Device  | Keybindings         | Loading Trigger |
-|--------------|-----------------------------|---------|---------------------|-----------------|
-| f            | File/directory manipulation | All     | None                | On demand       |
-| ht           | Hash table utilities        | All     | None                | On demand       |
-| ibuffer      | Buffer management           | All     | C-x C-b             | C-x C-b         |
-| org-crypt    | Password encryption         | All     | None                | org-mode hook   |
-| yasnippet    | Snippet framework           | All     | C-c TAB             | C-c TAB         |
-| yankpad      | Snippet management          | All     | C-c y               | C-c y           |
-| flyspell     | Spell checking              | All     | M-$                 | M-$             |
+Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliographic tools in org/org-roam.org; filetags in org/filetags.org.
+
+| Package         | Purpose                              | Device     | Keybindings            | Loading Trigger    |
+|------------------+----------------------------------------+-------------+--------------------------+---------------------|
+| org              | Core Org-mode                         | All         | Org-mode keys           | Built-in            |
+| org-roam         | Zettelkasten note-taking              | All         | C-c r n, r f, r i, r g   | Startup             |
+| org-roam-bibtex  | Zotero/BibTeX citation capture        | All         |                         | org-roam-mode hook  |
+| citar            | Bibliography interface                | All         | C-c r c                  | On demand           |
+| org-roam-ui      | Graphical note graph (web UI)         | Laptop only | C-c r g                  | M-x or keybinding   |
+| f                | File/directory manipulation           | All         | None                     | On demand           |
+| ht               | Hash table utilities                  | All         | None                     | On demand           |
+| ibuffer          | Buffer management                     | All         | C-x C-b                  | C-x C-b             |
+| org-crypt        | Password encryption                   | All         | None                     | org-mode hook       |
+| yasnippet        | Snippet framework                     | All         | C-c TAB                  | C-c TAB             |
+| yankpad          | Org-style snippet library             | All         | C-c y, C-c Y             | C-c y               |
+| flyspell         | Spell checking                        | All         | M-$                      | M-$                 |
+
+;; (use-package org
+;;  :ensure t
+;;  :straight nil)  ;; ✅ Don't let straight.el manage org
+
 
 #+BEGIN_SRC emacs-lisp
-;; Configure package.el as a fallback for straight.el.
-(require 'package)
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
-                         ("gnu" . "https://elpa.gnu.org/packages/")))
-(setq package-user-dir (expand-file-name "elpa" user-emacs-directory))
-
-;; Bootstrap straight.el for reproducible package management.
-(defvar bootstrap-version)
-(let ((bootstrap-file
-       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-      (bootstrap-version 6))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
-(straight-use-package 'use-package)
 
 ;; Ensure use-package is available.
 (eval-when-compile
@@ -205,17 +196,13 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
   :defer t
   :bind ("C-x C-b" . ibuffer))
 
-;; Org-crypt for password encryption (built-in, loaded on demand).
 (use-package org-crypt
-  :ensure nil
-  :straight (:type built-in)
-  :defer t
+  :ensure nil                        ;; Do not install from ELPA
+  :straight nil                      ;; Do not use straight.el
+  :defer t                           ;; Load when needed (on demand)
   :config
-  (condition-case err
-      (progn
-        (require 'org-crypt)
-        (setq org-crypt-use-before-save nil))  ;; Disable automatic encryption
-    (error (message "Failed to load org-crypt: %s" err))))
+  (setq org-crypt-use-before-save nil) ;; Optional: prevent auto-encryption on save
+  (require 'org-crypt))
 
 ;; Flyspell for spell checking (loaded on M-$).
 (use-package flyspell
@@ -246,7 +233,7 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
   (with-eval-after-load 'yankpad
     (add-hook 'org-mode-hook #'yankpad-reload))
   :config
-  ;; Define yankpad.org location based on device
+;; Define yankpad.org location based on device
   (setq yankpad-file
       (cond
        ((eq my-device 'laptop)
@@ -256,6 +243,14 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
        ((eq my-device 'tablet)
         (expand-file-name "path/to/tablet/notes/yankpad.org"))
        (t expand-file-name "org/yankpad.org" user-emacs-directory))))  ;; fallback
+
+;; Install the MELPA sqlite3 package
+(use-package emacsql-sqlite3
+  :ensure t
+  :straight t
+  :defer t)
+
+
 #+END_SRC
 
 * ACTIVE UI Tweaks
@@ -320,6 +315,9 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
 (defun my-insert-datestamp ()
   (interactive)
   (insert (format-time-string "%Y-%m-%d")))
+
+;; Added 2025-07-15: Allow alphabetical list continuation (1.a, 1.b, 1.c., ...)
+(setq org-list-allow-alphabetical t)
 #+END_SRC
 
 * ACTIVE Keybindings
@@ -333,13 +331,21 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam in org/org-
 ;; Timestamp keybindings
 (global-set-key (kbd "C-c i t") 'my-insert-timestamp)
 (global-set-key (kbd "C-c i d") 'my-insert-datestamp)
+
+;; Added 2025-07-15: Org-mode specific keybinding for toggling items
+(define-key org-mode-map (kbd "C-c i i") 'org-toggle-item)
+
 #+END_SRC
 
 * ACTIVE Modular Configs
 #+BEGIN_SRC emacs-lisp
 (my/tangle-if-needed "org/org-roam.org" "org/org-roam.el")
-(my/tangle-if-needed "org/workflows.org" "org/workflows.el")
+(load (expand-file-name "org/org-roam.el" user-emacs-directory) nil 'nomessage)
+
+;;(my/tangle-if-needed "org/workflows.org" "org/workflows.el")
+;;(load (expand-file-name "org/workflows.el" user-emacs-directory) nil 'nomessage)
 #+END_SRC
+
 
 * ACTIVE Startup Confirmation
 #+BEGIN_SRC emacs-lisp
