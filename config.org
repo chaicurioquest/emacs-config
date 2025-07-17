@@ -4,7 +4,7 @@
 #+DATE: 2025-07-12
 
 * Purpose
-This Org-mode configuration is the single source for my Emacs 28.1 setup, designed to be:
+This Org-mode configuration is the single source for my Emacs 30 setup, designed to be:
 - **Future-proof**: Structured with comments, tables, CANCELLED blocks.
 - **Reliable**: Reproducible packages via straight.el, lazy loading.
 - **Minimal**: Single config.org, minimal hooks/keybindings, early-init.el for GUI, unified tag management.
@@ -89,11 +89,10 @@ Skips load if no blocks tangled."
     (cond
      ((file-symlink-p link) (file-truename link))
      ((file-exists-p link) link)
-     ((eq my-device 'laptop) "~/.filetags")
-     ((eq my-device 'termux) "~/storage/shared/.filetags")
-     ((eq my-device 'tablet) "~/path/to/tablet/.filetags")
-     (t "~/.filetags"))))
-
+     ((eq my-device 'laptop) (expand-file-name "~/.filetags"))
+     ((eq my-device 'termux) (expand-file-name "~/storage/shared/.filetags"))
+     ((eq my-device 'tablet) (expand-file-name "~/path/to/tablet/.filetags"))
+     (t (expand-file-name "~/.filetags")))))
 (defun my-org-read-filetags ()
   "Read tags from .filetags file as a flat list, skipping comments and empty lines."
   (let ((file (my-org--filetags-path))
