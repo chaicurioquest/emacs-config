@@ -18,9 +18,11 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, and 
 #+BEGIN_SRC emacs-lisp
 (use-package org-roam
   :ensure t
-  :straight (:host github :repo "org-roam/org-roam" :files (:defaults "extensions/*"))
+  :straight t
+;; if you install org-roam from  GitHub, use the the following instead of :straight t
+;;:straight (:host github :repo "org-roam/org-roam" :files (:defaults "extensions/*"))
   :init
-  (setq org-roam-directory (expand-file-name "org-roam-notes" default-directory))
+  (setq org-roam-directory (expand-file-name "roam" default-directory))
   ;; Ensure the directory exists (create if not present)
   (unless (file-exists-p org-roam-directory)
     (make-directory org-roam-directory t))  ; `t` ensures parent directories are created if needed
