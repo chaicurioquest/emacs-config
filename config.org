@@ -30,7 +30,6 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 | Record screencasts                  | gif-screencast                                     | In org/workflows.org, laptop only                              | Laptop   | C-c g                 |
 | Zettelkasten note-taking            | org-roam                                           | In org/org-roam.org, graph UI on laptop                        | All      | C-c r n, C-c r f, C-c r g |
 | Tag Org sections                    | .filetags                                          | In config.org, tag completion with ivy/completing-read         | All      | C-c f t               |
-
 * ACTIVE Startup Optimizations
 ;; modular org files tangle process.Tangling only happens when the .org file is newer than the .el file. Each .el file is loaded once after tangling.
 #+BEGIN_SRC emacs-lisp
@@ -46,7 +45,7 @@ Skips load if no blocks tangled."
       (require 'org)
       (when (file-exists-p el-path)
         (delete-file el-path))
-      (org-babel-tangle-file org-path el-path))
+      (org-babel-tangle-file org-path el-path)) 
     (if (file-exists-p el-path)
         (load el-path)
       (message "⚠️ No tangled output: %s not found (possibly all blocks :tangle no)" el-path))))
@@ -80,71 +79,6 @@ Skips load if no blocks tangled."
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== STARTUP OPTIMIZATIONS COMPLETE ==="))
 #+END_SRC
-
-* ACTIVE Tag Management
-#+BEGIN_SRC emacs-lisp
-(defun my-org--filetags-path ()
-  "Return actual .filetags path depending on the device."
-  (let ((link (expand-file-name "org/.filetags" user-emacs-directory)))
-    (cond
-     ((file-symlink-p link) (file-truename link))
-     ((file-exists-p link) link)
-     ((eq my-device 'laptop) (expand-file-name "~/.filetags"))
-     ((eq my-device 'termux) (expand-file-name "~/storage/shared/.filetags"))
-     ((eq my-device 'tablet) (expand-file-name "~/path/to/tablet/.filetags"))
-     (t (expand-file-name "~/.filetags")))))
-(defun my-org-read-filetags ()
-  "Read tags from .filetags file as a flat list, skipping comments and empty lines."
-  (let ((file (my-org--filetags-path))
-        (tags '()))
-    (when (file-exists-p file)
-      (with-temp-buffer
-        (insert-file-contents file)
-        (goto-char (point-min))
-        (while (not (eobp))
-          (let* ((line (buffer-substring-no-properties (line-beginning-position)
-                                                       (line-end-position)))
-                 ;; Strip comments after `#`
-                 (clean (car (split-string line "#")))
-                 (words (split-string (string-trim clean) "\\s-+" t)))
-            (dolist (tag words)
-              (push tag tags)))
-          (forward-line 1))))
-    (delete-dups (nreverse tags))))
-
-(defun my-org-dynamic-tags ()
-  "Return pipe-separated tag string from .filetags for Yankpad/Yasnippet use."
-  (let ((tags (my-org-read-filetags)))
-    (if tags
-        (string-join tags "|")
-      "")))
-
-(defun my-org-set-filetags ()
-  "Set multiple filetags on current Org heading with completion."
-  (interactive)
-  (require 'org)
-  (let* ((all-tags (my-org-read-filetags))
-         (current-tags (org-get-tags nil t))
-         (completion-function
-          (cond
-           ((and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
-            (lambda (prompt choices)
-              (ivy-read prompt choices
-                        :require-match t
-                        :initial-input ""
-                        :preselect (car current-tags)
-                        :multi-action t)))
-           ((fboundp 'completing-read-multiple)
-            (lambda (prompt choices)
-              (completing-read-multiple prompt choices nil t)))
-           (t (lambda (prompt choices)
-                (list (completing-read prompt choices nil t))))))
-         (selected-tags (funcall completion-function "Select tags: " all-tags)))
-    (org-set-tags selected-tags)))
-
-(global-set-key (kbd "C-c f t") 'my-org-set-filetags)
-#+END_SRC
-
 
 * ACTIVE Package Management
 Configure package managers and lightweight, universal packages with lazy loading.
@@ -249,7 +183,6 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :straight t
   :defer t)
 
-
 #+END_SRC
 
 * ACTIVE UI Tweaks
@@ -336,15 +269,18 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 
 #+END_SRC
 
+
 * ACTIVE Modular Configs
 #+BEGIN_SRC emacs-lisp
+;; (my/tangle-if-needed "org/filetags.org" "org/filetags.el")
+;; (load (expand-file-name "org/filetags.el" user-emacs-directory) nil 'nomessage)
+
 (my/tangle-if-needed "org/org-roam.org" "org/org-roam.el")
 (load (expand-file-name "org/org-roam.el" user-emacs-directory) nil 'nomessage)
 
 ;;(my/tangle-if-needed "org/workflows.org" "org/workflows.el")
 ;;(load (expand-file-name "org/workflows.el" user-emacs-directory) nil 'nomessage)
 #+END_SRC
-
 
 * ACTIVE Startup Confirmation
 #+BEGIN_SRC emacs-lisp

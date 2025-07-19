@@ -19,7 +19,7 @@
 #+BEGIN_SRC org
   #+TITLE: ${1:Document Title}
   #+DATE: %(format-time-string "%Y-%m-%d")
-  #+FILETAGS: :${2:Tags|`(my-org-dynamic-tags)`}:
+  #+FILETAGS: :${2:Tags}:
   #+STARTUP: indent
 #+END_SRC
 
@@ -29,7 +29,7 @@
 :yankpad-trigger: note
 :END:
 #+BEGIN_SRC org
-  * ${1:Note Title} :notes:${2:Tags|`(my-org-dynamic-tags)`}:
+  * ${1:Note Title} :notes:${2:Tags}:
   :PROPERTIES:
   :ID:       %(org-id-new)
   :CREATED:  [%(format-time-string "%Y-%m-%d %a %H:%M")]
@@ -53,7 +53,7 @@
 :yankpad-trigger: meet
 :END:
 #+BEGIN_SRC org
-  * Meeting %<%Y-%m-%d> :meeting:${1:Tags|`(my-org-dynamic-tags)`}:
+  * Meeting %<%Y-%m-%d> :meeting:${1:Tags}:
   :PROPERTIES:
   :ID:       %(org-id-new)
   :CREATED:  [%<%Y-%m-%d %a %H:%M>]
@@ -74,7 +74,7 @@
 :yankpad-trigger: task
 :END:
 #+BEGIN_SRC org
-  * TODO ${1:Task Title} :task:${2:Tags|`(my-org-dynamic-tags)`}:
+  * TODO ${1:Task Title} :task:${2:Tags}:
   :PROPERTIES:
   :ID:       %(org-id-new)
   :CREATED:  [%(format-time-string "%Y-%m-%d %a %H:%M")]
