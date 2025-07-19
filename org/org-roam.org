@@ -22,10 +22,13 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, and 
 ;; if you install org-roam from  GitHub, use the the following instead of :straight t
 ;;:straight (:host github :repo "org-roam/org-roam" :files (:defaults "extensions/*"))
   :init
-  (setq org-roam-directory (expand-file-name "roam" default-directory))
-  ;; Ensure the directory exists (create if not present)
-  (unless (file-exists-p org-roam-directory)
-    (make-directory org-roam-directory t))  ; `t` ensures parent directories are created if needed
+  (setq org-roam-directory default-directory)
+  ;; Make sure org/notes/roam directory exist before capturing roam templates such as default, journal, permanent and etc..
+  (let ((roam-subdir (expand-file-name "roam" org-roam-directory)))
+  (unless (file-exists-p roam-subdir)
+    (make-directory roam-subdir t)))
+
+  ;; Ensure the directory exists (org/notes should already exist, but this is safe)
   (setq org-roam-dailies-directory "dailies/")
   :bind (("C-c r n" . org-roam-capture)
          ("C-c r f" . org-roam-node-find)
