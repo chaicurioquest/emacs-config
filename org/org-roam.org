@@ -40,22 +40,21 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, and 
 (eval
  `(setq org-roam-capture-templates
       `(("d" "default" plain
-         (file ,(expand-file-name "roam/templates/default.org" org-roam-directory))
+         (file ,(expand-file-name "template/roam-default.org" user-emacs-directory))
          :if-new (file+head "roam/%<%Y%m%d%H%M%S>-${slug}.org" "")
          :unnarrowed t)
         ("f" "fleeting" plain
-         (file ,(expand-file-name "roam/templates/fleeting.org" org-roam-directory))
+         (file ,(expand-file-name "template/roam-fleeting.org" user-emacs-directory))
          :if-new (file+head "roam/%<%Y%m%d%H%M%S>-${slug}.org" "")
          :unnarrowed t)
         ("p" "permanent" plain
-         (file ,(expand-file-name "roam/templates/permanent.org" org-roam-directory))
+         (file ,(expand-file-name "template/roam-permanent.org" user-emacs-directory))
          :if-new (file+head "roam/%<%Y%m%d%H%M%S>-${slug}.org" "")
          :unnarrowed t)
         ("j" "journal" plain
-         (file ,(expand-file-name "roam/templates/journal.org" org-roam-directory))
+         (file ,(expand-file-name "template/roam-journal.org" user-emacs-directory))
          :if-new (file+head "roam/%<%Y%m%d%H%M%S>-${slug}.org" "")
          :unnarrowed t))))
-
 #+END_SRC
 
 * Zotero/Bibliography Integration

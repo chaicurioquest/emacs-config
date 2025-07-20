@@ -11,6 +11,10 @@
 !org/yankpad.org 
 !org/workflows.org 
 !org/org-roam.org
-!org/roam-tags.el
 !org/filetags.org 
 !org/.filetags
+!template/
+!template/roam-default.org
+!template/roam-fleeting.org
+!template/roam-journal.org
+!template/roam-permanent.org

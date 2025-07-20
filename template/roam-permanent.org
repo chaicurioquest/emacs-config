@@ -1,0 +1,18 @@
+#+TITLE: ${title}
+#+FILETAGS: 
+#+CREATED: %<%Y-%m-%d>
+#+LAST_MODIFIED: %<%Y-%m-%d>
+#+ROAM_ALIAS: 
+#+ROAM_REFS: 
+
+* %?
+:PROPERTIES:
+:ID: %(org-id-new)
+:CREATED: [%<%Y-%m-%d %a %H:%M>]
+:END:
+
+** Summary
+
+
+** Notes
+

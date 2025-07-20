@@ -1,0 +1,15 @@
+#+TITLE: ${title}
+#+CREATED: [%<%Y-%m-%d %a %H:%M>]
+#+FILETAGS: :fleeting:
+
+* %?
+:PROPERTIES:
+:ID: %(org-id-new)
+:CREATED: [%<%Y-%m-%d %a %H:%M>]
+:END:
+
+- Source: 
+- Reference: 
+- Related:
+
+

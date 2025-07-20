@@ -1,0 +1,11 @@
+#+TITLE: ${title}
+#+CREATED: [%<%Y-%m-%d %a %H:%M>]
+#+FILETAGS: ::
+
+* %?
+:PROPERTIES:
+:ID: %(org-id-new)
+:CREATED: [%<%Y-%m-%d %a %H:%M>]
+:END:
+
+
