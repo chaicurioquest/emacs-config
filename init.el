@@ -1,20 +1,20 @@
 ;;; init.el --- Bootstrap Emacs config.org
-;; Minimal bootstrapper for Emacs 28.1 configuration.
+;; Minimal bootstrapper for Emacs 30 configuration.
 ;; Loads config.el (tangled from config.org) or tangles config.org if needed.
 ;; Sets early optimizations (GC, package.el) for faster startup.
 ;; Synced via https://github.com/chaicurioquest/emacs-config.
 
-;; Minimal bootstrapper for Emacs 28.1 configuration.
+;; Minimal bootstrapper for Emacs 30 configuration.
 
 ;; Speed up startup by increasing garbage collection threshold.
 (setq gc-cons-threshold (* 50 1000 1000))
 (setq package-enable-at-startup nil)
 
 ;; Configure package.el as a fallback for straight.el.
-(require 'package)
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
-                         ("gnu" . "https://elpa.gnu.org/packages/")))
-(setq package-user-dir (expand-file-name "elpa" user-emacs-directory))
+;;(require 'package)
+;;(setq package-archives '(("melpa" . "https://melpa.org/packages/")
+;;                         ("gnu" . "https://elpa.gnu.org/packages/")))
+;;(setq package-user-dir (expand-file-name "elpa" user-emacs-directory))
 
 ;; Bootstrap straight.el for reproducible package management.
 (defvar bootstrap-version)
@@ -30,9 +30,12 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
-;; 👉 Now use straight to install org before requiring it
+;; Install use-package via straight.el
 (straight-use-package 'use-package)
-(straight-use-package 'org)
+
+;; Straight to treat Org as a built-in package, preventing cloning and building
+(straight-override-recipe '(org :type built-in))
+
 
 ;; Ensure org is loaded for tangling
 (require 'org)
@@ -41,6 +44,10 @@
 (defvar my-config-org (expand-file-name "config.org" user-emacs-directory))
 (defvar my-config-el (expand-file-name "config.el" user-emacs-directory))
 
+
+;; Variable to track configuration status
+(defvar config-load-status "not started")
+
 ;; Tangle config.org if needed
 (condition-case err
     (when (or (not (file-exists-p my-config-el))
@@ -48,12 +55,18 @@
       (message "Tangling %s to %s..." my-config-org my-config-el)
       (org-babel-tangle-file my-config-org my-config-el)
       (message "Tangled successfully."))
-  (error (message "Error tangling config.org: %s" err)))
+  (error (message "Error tangling config.org: %s" err)
+         (setq config-load-status "failed to tangle")))
 
 ;; Load config.el
 (condition-case err
     (when (file-exists-p my-config-el)
-      (load my-config-el))
-  (error (message "Error loading config.el: %s" err)))
+      (load my-config-el)
+      (setq config-load-status "success"))
+  (error (message "Error loading config.el: %s" err)
+         (setq config-load-status "failed to load")))
 
-(message "✅ init.el completed")
+;; Final status message
+(if (string= config-load-status "success")
+    (message "✅ init.el completed successfully")
+  (message "⚠️ init.el completed with errors: %s" config-load-status))

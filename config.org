@@ -1,6 +1,7 @@
 #+TITLE: Emacs Literate Config
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent
+#+PROPERTY: header-args:emacs-lisp :tangle yes
 #+DATE: 2025-07-12
 
 * Purpose
@@ -28,10 +29,11 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 | Spell checking                      | flyspell with aspell                               | Requires aspell installation                                   | All      | M-$                   |
 | PDF reading/annotating              | pdf-tools                                          | In org/workflows.org, laptop only                              | Laptop   | None                  |
 | Record screencasts                  | gif-screencast                                     | In org/workflows.org, laptop only                              | Laptop   | C-c g                 |
-| Zettelkasten note-taking            | org-roam                                           | In org/org-roam.org, graph UI on laptop                        | All      | C-c r n, C-c r f, C-c r g |
+| Zettelkasten note-taking            | org-roam                                           | In org/roam.org, graph UI on laptop                        | All      | C-c r n, C-c r f, C-c r g |
 | Tag Org sections                    | .filetags                                          | In config.org, tag completion with ivy/completing-read         | All      | C-c f t               |
 * ACTIVE Startup Optimizations
 ;; modular org files tangle process.Tangling only happens when the .org file is newer than the .el file. Each .el file is loaded once after tangling.
+
 #+BEGIN_SRC emacs-lisp
 (defun my/tangle-if-needed (org-file el-file)
   "Tangle ORG-FILE to EL-FILE if needed, and load EL-FILE.
@@ -82,7 +84,7 @@ Skips load if no blocks tangled."
 
 * ACTIVE Package Management
 Configure package managers and lightweight, universal packages with lazy loading.
-Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliographic tools in org/org-roam.org; filetags in org/filetags.org.
+Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliographic tools in org/roam.org; filetags in org/filetags.org.
 
 | Package         | Purpose                              | Device     | Keybindings            | Loading Trigger    |
 |------------------+----------------------------------------+-------------+--------------------------+---------------------|
@@ -99,11 +101,17 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 | yankpad          | Org-style snippet library             | All         | C-c y, C-c Y             | C-c y               |
 | flyspell         | Spell checking                        | All         | M-$                      | M-$                 |
 
-;; (use-package org
-;;;;  :straight nil)  ;; ✅ Don't let straight.el manage org
 
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp 
+
+(use-package org
+  ;; Since Org-mode is already built into Emacs
+  :straight (:type built-in) 
+  :ensure nil
+  :config
+  (setq org-startup-indented t
+        org-hide-emphasis-markers t))
 
 ;; Ensure use-package is available.
 (eval-when-compile
@@ -175,19 +183,18 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :straight t
   :defer t)
 
-* Completion and Minibuffer Enhancements.
 ;; Work well with org-roam (and Emacs in general) much faster, more flexible, and user-friendly. 
 ;; Vertico: vertical completion UI
 (use-package vertico
   :straight t
-  :defer t)
+  :defer t
   :init
   (vertico-mode))
 
 ;; Orderless: smart fuzzy matching for completion
 (use-package orderless
   :straight t
-  :defer t)
+  :defer t
   :custom
   (completion-styles '(orderless))
   (completion-category-defaults nil)
@@ -201,11 +208,6 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 ;;   ("C-c h" . consult-org-heading)
 ;;   ("C-c k" . consult-ripgrep)
 ;;   ("C-c b" . consult-buffer)))
-
-
-
-
-
 
 #+END_SRC
 
@@ -299,8 +301,8 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 (my/tangle-if-needed "org/filetags.org" "org/filetags.el")
 (load (expand-file-name "org/filetags.el" user-emacs-directory) nil 'nomessage)
 
-(my/tangle-if-needed "org/org-roam.org" "org/org-roam.el")
-(load (expand-file-name "org/org-roam.el" user-emacs-directory) nil 'nomessage)
+(my/tangle-if-needed "org/roam.org" "org/roam.el")
+(load (expand-file-name "org/roam.el" user-emacs-directory) nil 'nomessage)
 
 ;;(my/tangle-if-needed "org/workflows.org" "org/workflows.el")
 ;;(load (expand-file-name "org/workflows.el" user-emacs-directory) nil 'nomessage)

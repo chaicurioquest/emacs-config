@@ -6,13 +6,13 @@
 
 * Purpose
 
-Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, and dynamic tags from .filetags via my-org-dynamic-tags in config.org. Designed to be:
+Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, and dynamic tags from .filetags via my-org-read-filetags in org/filetags.org. Designed to be:
 - **Future-proof**: Structured with comments and tables.
 - **Reliable**: Reproducible via straight.el with error handling.
 - **Minimal**: Lightweight setup with essential keybindings, no external dependencies beyond org-roam.
 - **Portable**: Works on laptop (system-name: ram), Termux, tablet.
-- **Synced**: Via GitHub (https://github.com/chaicurioquest/emacs-config) and Syncthing.
-- **Integrated**: Uses my-org-dynamic-tags for tag completion, shared with yankpad snippets and Integrates with Zotero via `org-roam-bibtex`.
+- **Synced**: Via GitHub[](https://github.com/chaicurioquest/emacs-config) and Syncthing.
+- **Integrated**: Uses my-org-read-filetags for tag completion, shared with yankpad snippets and Integrates with Zotero via `org-roam-bibtex`.
 
 * ACTIVE Org-roam Setup
 #+BEGIN_SRC emacs-lisp
@@ -77,7 +77,7 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, and 
   (require 'org-roam-bibtex)
   (setq orb-preformat-keywords
         '("title" "url" "author-or-editor" "keywords"))
-  (setq orb-process-file-keyword t
+  (setq orb-process-file-keywords t
         orb-attached-file-extensions '("pdf")))
 #+END_SRC
 
@@ -101,9 +101,10 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, and 
   "Add a tag to the current org-roam node with completion."
   (interactive)
   (let* ((all-tags (my-org-read-filetags))
-         (completion-function (if (and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
-                                  'ivy-completing-read
-                                'completing-read))
+         (completion-function
+          (if (and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
+              (lambda (prompt coll) (ivy-completing-read prompt coll nil t))
+            'completing-read))
          (selected-tag (funcall completion-function "Select tag: " all-tags)))
     (when selected-tag
       (org-roam-tag-add (list selected-tag)))))
@@ -114,11 +115,11 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, and 
   "Remove a tag from the current org-roam node with completion."
   (interactive)
   (let* ((current-tags (org-roam-node-tags (org-roam-node-at-point)))
-         (completion-function (if (and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
-                                  'ivy-completing-read
-                                'completing-read))
+         (completion-function
+          (if (and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
+              (lambda (prompt coll) (ivy-completing-read prompt coll nil t))
+            'completing-read))
          (selected-tag (funcall completion-function "Remove tag: " current-tags)))
     (when selected-tag
       (org-roam-tag-remove (list selected-tag)))))
 #+END_SRC
-

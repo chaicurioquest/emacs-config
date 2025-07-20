@@ -20,13 +20,13 @@ This configuration sets up two layers of tag files:
 - **Reliable**: Uses `ht` and `f.el` for parsing
 - **Minimal**: Lightweight, no UI assumptions
 - **Portable**: Works across laptop, Termux, tablet
-- **Synced**: Via GitHub (https://github.com/chaicurioquest/emacs-config) and Syncthing.
+- **Synced**: Via GitHub[](https://github.com/chaicurioquest/emacs-config) and Syncthing.
 
 * ACTIVE Filetags Setup
 Configure filetags for tag management with mutual exclusivity, used by org-roam (C-c r t) and standalone (C-c f t).
-| Package      | Purpose                     | Device  | Keybindings | Loading Trigger |
-|--------------|-----------------------------|---------|-------------|-----------------|
-| filetags     | Tag management with .filetags | All     | C-c f t     | C-c f t         |
+| Component                   | Purpose                     | Device  | Keybindings | Loading Trigger |
+|-----------------------------|-----------------------------|---------|-------------|-----------------|
+| Custom .filetags management | Tag completion from .filetags files | All     | C-c f t     | C-c f t         |
 
 #+BEGIN_SRC emacs-lisp 
 (when (getenv "MY_DEBUG_DEVICE")
@@ -43,12 +43,6 @@ Configure filetags for tag management with mutual exclusivity, used by org-roam 
 This section manages global and Org-specific tags using `.filetags` and `.filetags-org`.
 
 #+BEGIN_SRC emacs-lisp
-;; Define global and extra .filetags files
-(setq filetags-tag-file "~/.emacs.d/.filetags"
-      filetags-extra-tag-files '("~/.emacs.d/.filetags-org"))
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 (defun my-org--filetags-path ()
   "Return the path to the active global .filetags file."
   (let ((link (expand-file-name ".filetags" user-emacs-directory)))
@@ -63,7 +57,9 @@ This section manages global and Org-specific tags using `.filetags` and `.fileta
 
 #+BEGIN_SRC emacs-lisp
 (defun my-org-read-filetags ()
-  "Read and return a list of tags from both global and extra .filetags files."
+  "Read and return a list of tags from both global and extra .filetags files.
+Note: Per Karl Voit's guidelines, multiple tags per line are mutual exclusive,
+but this parser treats them as individual for flat completion."
   (let ((files (cons (my-org--filetags-path) filetags-extra-tag-files))
         (tags '()))
     (dolist (file files)
@@ -90,20 +86,11 @@ This section manages global and Org-specific tags using `.filetags` and `.fileta
   (let* ((all-tags (my-org-read-filetags))
          (current-tags (org-get-tags nil t))
          (completion-function
-          (cond
-           ((and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
-            (lambda (prompt choices)
-              (ivy-read prompt choices
-                        :require-match t
-                        :initial-input ""
-                        :preselect (car current-tags)
-                        :multi-action t)))
-           ((fboundp 'completing-read-multiple)
-            (lambda (prompt choices)
-              (completing-read-multiple prompt choices nil t)))
-           (t (lambda (prompt choices)
-                (list (completing-read prompt choices nil t))))))
-         (selected-tags (funcall completion-function "Select tags: " all-tags)))
+          (if (and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
+              (lambda (prompt choices)
+                (completing-read-multiple prompt choices nil t (mapconcat 'identity current-tags ",")))
+            'completing-read-multiple))
+         (selected-tags (funcall completion-function "Select tags (comma-separated): " all-tags)))
     (org-set-tags selected-tags)))
 #+END_SRC
 
