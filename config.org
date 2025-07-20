@@ -100,8 +100,7 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 | flyspell         | Spell checking                        | All         | M-$                      | M-$                 |
 
 ;; (use-package org
-;;  :ensure t
-;;  :straight nil)  ;; ✅ Don't let straight.el manage org
+;;;;  :straight nil)  ;; ✅ Don't let straight.el manage org
 
 
 #+BEGIN_SRC emacs-lisp
@@ -112,19 +111,16 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 
 ;; File manipulation library (loaded on demand).
 (use-package f
-  :ensure t
   :straight t
   :defer t)
 
 ;; Hash table utilities (loaded on demand).
 (use-package ht
-  :ensure t
   :straight t
   :defer t)
 
 ;; Ibuffer for buffer management (loaded on C-x C-b).
 (use-package ibuffer
-  :ensure t
   :straight t
   :defer t
   :bind ("C-x C-b" . ibuffer))
@@ -139,7 +135,6 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 
 ;; Flyspell for spell checking (loaded on M-$).
 (use-package flyspell
-  :ensure t
   :straight t
   :defer t
   :bind ("M-$" . flyspell-correct-word-before-point)
@@ -148,7 +143,6 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
     (setq ispell-program-name "aspell")))
 
 (use-package yasnippet
-  :ensure t
   :straight t
   :bind ("C-c TAB" . yas-expand)
   :config
@@ -157,7 +151,6 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 
 ;; 📘 Yankpad: Org-mode snippet library on top of Yasnippet
 (use-package yankpad
-  :ensure t
   :straight t
   :bind (("C-c Y" . yankpad-expand)
          ("C-c y" . yankpad-insert))
@@ -179,9 +172,40 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 
 ;; Install the MELPA sqlite3 package
 (use-package emacsql-sqlite3
-  :ensure t
   :straight t
   :defer t)
+
+* Completion and Minibuffer Enhancements.
+;; Work well with org-roam (and Emacs in general) much faster, more flexible, and user-friendly. 
+;; Vertico: vertical completion UI
+(use-package vertico
+  :straight t
+  :defer t)
+  :init
+  (vertico-mode))
+
+;; Orderless: smart fuzzy matching for completion
+(use-package orderless
+  :straight t
+  :defer t)
+  :custom
+  (completion-styles '(orderless))
+  (completion-category-defaults nil)
+  (completion-category-overrides '((file (styles partial-completion)))))
+
+;; Consult: enhanced commands (search, buffer switch, etc.).Powerful, fast, and flexible search/navigation UI for working with Org-roam and Emacs in general.It can be enabled later for future optimization.
+;;(use-package consult
+;;;;  :straight t
+;;  :bind
+;;  (("C-s" . consult-line)
+;;   ("C-c h" . consult-org-heading)
+;;   ("C-c k" . consult-ripgrep)
+;;   ("C-c b" . consult-buffer)))
+
+
+
+
+
 
 #+END_SRC
 
@@ -272,8 +296,8 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 
 * ACTIVE Modular Configs
 #+BEGIN_SRC emacs-lisp
-;; (my/tangle-if-needed "org/filetags.org" "org/filetags.el")
-;; (load (expand-file-name "org/filetags.el" user-emacs-directory) nil 'nomessage)
+(my/tangle-if-needed "org/filetags.org" "org/filetags.el")
+(load (expand-file-name "org/filetags.el" user-emacs-directory) nil 'nomessage)
 
 (my/tangle-if-needed "org/org-roam.org" "org/org-roam.el")
 (load (expand-file-name "org/org-roam.el" user-emacs-directory) nil 'nomessage)

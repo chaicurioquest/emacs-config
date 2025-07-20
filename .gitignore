@@ -13,6 +13,7 @@
 !org/org-roam.org
 !org/filetags.org 
 !org/.filetags
+!org/.filetags-org
 !template/
 !template/roam-default.org
 !template/roam-fleeting.org

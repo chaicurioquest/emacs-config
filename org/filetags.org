@@ -4,12 +4,22 @@
 #+PROPERTY: header-args:emacs-lisp :tangle filetags.el :mkdirp yes :comments no :results silent
 #+DATE: 2025-07-09
 
-* Purpose
-Configure filetags for unified tag management across Org files, integrated with org-roam and .filetags (symlink to ~/wspace/org/notes/.filetags). Uses roam-tags.el for mutual exclusivity and follows Karl Voit’s tag naming rules (e.g., plural forms like `tasks`). Designed to be:
-- **Future-proof**: Structured with comments and tables.
-- **Reliable**: Uses ht and f for tag parsing, reproducible via straight.el.
-- **Minimal**: Lightweight setup with essential keybindings.
-- **Portable**: Works on laptop, Termux, tablet.
+* Filetags Configuration for Emacs
+
+This configuration sets up two layers of tag files:
+1. `~/.emacs.d/.filetags` – General-purpose tags for PIM and file management (used globally).
+2. `~/.emacs.d/.filetags-org` – Specific to Org-mode and Org-Roam files under `~/wspace/org/notes/`.
+
+
+ Based on Karl Voit’s tag guidelines:
+- Lowercase, plural, minimal, non-overlapping, general
+- Avoids redundancy
+
+- Features:
+- **Future-proof**: Tidy structure and extensible
+- **Reliable**: Uses `ht` and `f.el` for parsing
+- **Minimal**: Lightweight, no UI assumptions
+- **Portable**: Works across laptop, Termux, tablet
 - **Synced**: Via GitHub (https://github.com/chaicurioquest/emacs-config) and Syncthing.
 
 * ACTIVE Filetags Setup
@@ -21,13 +31,27 @@ Configure filetags for tag management with mutual exclusivity, used by org-roam 
 #+BEGIN_SRC emacs-lisp 
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== LOADING org/filetags.org ==="))
+#+END_SRC
+
+* Global Tag Files for Filetags Completion
+#+BEGIN_SRC emacs-lisp 
+(setq filetags-tag-file "~/.emacs.d/.filetags"
+      filetags-extra-tag-files '("~/.emacs.d/.filetags-org"))
+#+END_SRC
 
 * ACTIVE Tag Management
+This section manages global and Org-specific tags using `.filetags` and `.filetags-org`.
+
 #+BEGIN_SRC emacs-lisp
-:tangle yes
+;; Define global and extra .filetags files
+(setq filetags-tag-file "~/.emacs.d/.filetags"
+      filetags-extra-tag-files '("~/.emacs.d/.filetags-org"))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
 (defun my-org--filetags-path ()
-  "Return actual .filetags path depending on the device."
-  (let ((link (expand-file-name "org/.filetags" user-emacs-directory)))
+  "Return the path to the active global .filetags file."
+  (let ((link (expand-file-name ".filetags" user-emacs-directory)))
     (cond
      ((file-symlink-p link) (file-truename link))
      ((file-exists-p link) link)
@@ -35,34 +59,32 @@ Configure filetags for tag management with mutual exclusivity, used by org-roam 
      ((eq my-device 'termux) (expand-file-name "~/storage/shared/.filetags"))
      ((eq my-device 'tablet) (expand-file-name "~/path/to/tablet/.filetags"))
      (t (expand-file-name "~/.filetags")))))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
 (defun my-org-read-filetags ()
-  "Read tags from .filetags file as a flat list, skipping comments and empty lines."
-  (let ((file (my-org--filetags-path))
+  "Read and return a list of tags from both global and extra .filetags files."
+  (let ((files (cons (my-org--filetags-path) filetags-extra-tag-files))
         (tags '()))
-    (when (file-exists-p file)
-      (with-temp-buffer
-        (insert-file-contents file)
-        (goto-char (point-min))
-        (while (not (eobp))
-          (let* ((line (buffer-substring-no-properties (line-beginning-position)
-                                                       (line-end-position)))
-                 ;; Strip comments after `#`
-                 (clean (car (split-string line "#")))
-                 (words (split-string (string-trim clean) "\\s-+" t)))
-            (dolist (tag words)
-              (push tag tags)))
-          (forward-line 1))))
+    (dolist (file files)
+      (when (file-exists-p file)
+        (with-temp-buffer
+          (insert-file-contents file)
+          (goto-char (point-min))
+          (while (not (eobp))
+            (let* ((line (buffer-substring-no-properties
+                          (line-beginning-position) (line-end-position)))
+                   (clean (car (split-string line "#")))
+                   (words (split-string (string-trim clean) "\\s-+" t)))
+              (dolist (tag words)
+                (push tag tags)))
+            (forward-line 1)))))
     (delete-dups (nreverse tags))))
+#+END_SRC
 
-;;(defun my-org-dynamic-tags ()
-;;  "Return pipe-separated tag string from .filetags for Yankpad/Yasnippet use."
-;;  (let ((tags (my-org-read-filetags)))
-;;    (if tags
-;;        (string-join tags "|")
-;;     "")))
-
+#+BEGIN_SRC emacs-lisp
 (defun my-org-set-filetags ()
-  "Set multiple filetags on current Org heading with completion."
+  "Interactively assign multiple tags from .filetags to the current Org heading."
   (interactive)
   (require 'org)
   (let* ((all-tags (my-org-read-filetags))
@@ -83,10 +105,13 @@ Configure filetags for tag management with mutual exclusivity, used by org-roam 
                 (list (completing-read prompt choices nil t))))))
          (selected-tags (funcall completion-function "Select tags: " all-tags)))
     (org-set-tags selected-tags)))
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-c f t") 'my-org-set-filetags)
 #+END_SRC
 
+#+BEGIN_SRC emacs-lisp
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== org/filetags.org LOADED ==="))
 #+END_SRC
