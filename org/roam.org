@@ -1,7 +1,7 @@
 #+TITLE: Org-Roam Zettelkasten Configuration
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent
-#+PROPERTY: header-args:emacs-lisp :tangle org-roam.el :mkdirp yes :comments no :results silent
+#+PROPERTY: header-args:emacs-lisp :tangle yes
 #+DATE: 2025-07-12
 
 * Purpose

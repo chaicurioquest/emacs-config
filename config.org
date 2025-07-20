@@ -10,8 +10,8 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 - **Reliable**: Reproducible packages via straight.el, lazy loading.
 - **Minimal**: Single config.org, minimal hooks/keybindings, early-init.el for GUI, unified tag management.
 - **Portable**: Device-specific settings (laptop, Termux, tablet) via device.el.
-- **Synced**: Via GitHub (https://github.com/chaicurioquest/emacs-config) and Syncthing.
-- **Modular**: Uses org/ for snippets (yankpad.org), workflows (workflows.org), and note-taking (org-roam.org).
+- **Synced**: Via GitHub[](https://github.com/chaicurioquest/emacs-config) and Syncthing.
+- **Modular**: Uses org/ for snippets (yankpad.org), workflows (workflows.org), and note-taking (**roam.org**).  **<-- Updated reference for consistency with file rename**
 Tangle with `C-c t` or `M-x my-tangle-config-org`.
 
 * My Digital Workflow
@@ -29,8 +29,10 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 | Spell checking                      | flyspell with aspell                               | Requires aspell installation                                   | All      | M-$                   |
 | PDF reading/annotating              | pdf-tools                                          | In org/workflows.org, laptop only                              | Laptop   | None                  |
 | Record screencasts                  | gif-screencast                                     | In org/workflows.org, laptop only                              | Laptop   | C-c g                 |
-| Zettelkasten note-taking            | org-roam                                           | In org/roam.org, graph UI on laptop                        | All      | C-c r n, C-c r f, C-c r g |
-| Tag Org sections                    | .filetags                                          | In config.org, tag completion with ivy/completing-read         | All      | C-c f t               |
+| Zettelkasten note-taking            | org-roam                                           | **In org/roam.org**, graph UI on laptop                        **<-- Updated file reference**
+| All      | C-c r n, C-c r f, C-c r g |
+| Tag Org sections                    | .filetags                                          | **In org/filetags.org, tag completion with completing-read-multiple (Ivy on laptop)**  **<-- Updated location and details for accuracy**
+| All      | C-c f t               |
 * ACTIVE Startup Optimizations
 ;; modular org files tangle process.Tangling only happens when the .org file is newer than the .el file. Each .el file is loaded once after tangling.
 
