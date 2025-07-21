@@ -66,6 +66,16 @@
   (error (message "Error loading config.el: %s" err)
          (setq config-load-status "failed to load")))
 
+
+;; Start the Emacs with Full Screen and Font Size for readablity
+;; Maximize the initial frame on startup
+ (add-to-list 'initial-frame-alist '(fullscreen . maximized))
+
+
+;; Set default font size (adjust the :height value as needed; 100 is default, 120-140 is larger/readable)
+(set-face-attribute 'default nil :height 160)
+
+
 ;; Final status message
 (if (string= config-load-status "success")
     (message "✅ init.el completed successfully")

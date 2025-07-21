@@ -16,12 +16,9 @@
 :PROPERTIES:
 :yankpad-trigger: header
 :END:
-#+BEGIN_SRC org
-  #+TITLE: ${1:Document Title}
-  #+DATE: %(format-time-string "%Y-%m-%d")
-  #+FILETAGS: :${2:Tags}:
-  #+STARTUP: indent
-#+END_SRC
+#+TITLE: ${1:Document Title}
+#+DATE: %(format-time-string "%Y-%m-%d")
+#+FILETAGS: ${2:}
 
 ** Notes
 *** Zettelkasten Note

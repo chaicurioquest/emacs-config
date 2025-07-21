@@ -12,5 +12,7 @@
 !template/
 !template/*
 !snippets/
-!snippets/*
+!snippets/org-mode/
+!snippets/org-mode/*
+
 

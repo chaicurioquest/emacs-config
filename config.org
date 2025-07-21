@@ -100,10 +100,9 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 | ibuffer          | Buffer management                     | All         | C-x C-b                  | C-x C-b             |
 | org-crypt        | Password encryption                   | All         | None                     | org-mode hook       |
 | cdlatex          | Math/equation input                   | All         | TAB (contextual)        | TAB                 |
-| yasnippet        | Snippet framework                     | All         | C-c s                   | C-c s               |
+| yasnippet        | Snippet framework                     | All         | TAB (inline yas-expand), C-c s (yas-insert-snippet) | TAB, C-c s          |
 | yankpad          | Org-style snippet library             | All         | C-c y, C-c Y             | C-c y               |
 | flyspell         | Spell checking                        | All         | M-$                      | M-$                 |
-
 
 #+BEGIN_SRC emacs-lisp 
 
@@ -157,21 +156,34 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :straight t 
   :defer t
   :hook (org-mode . org-cdlatex-mode))
+  
+   
+;; AUCTeX is an extensible package for writing and formatting TeX files in Emacs and XEmacs
+(use-package auctex
+  :straight t
+  :defer t  ;; Load on demand
+  :hook (LaTeX-mode . (lambda () (turn-on-reftex) (flyspell-mode)))  ;; Optional: RefTeX for refs, spell-check
+  :config
+  (setq TeX-auto-save t
+        TeX-parse-self t))
 
-;; Smart TAB: CDLaTeX (if in math) → Org-cycle
+;; Smart TAB: Yasnippet (inline) → CDLaTeX (math) → Org-cycle
 (defun my/org-smart-tab ()
-  "Smart TAB for CDLaTeX math expansion and Org cycling."
+  "Smart TAB: Inline Yasnippet expand if match, then CDLaTeX math if in LaTeX, then Org-cycle."
   (interactive)
   (cond
    ((org-at-heading-p) (org-cycle))  ;; Cycle headings
    ((org-in-src-block-p) (org-cycle))  ;; Cycle in source blocks
+   ((and (bound-and-true-p yas-minor-mode)
+         (yas-maybe-expand)) t)  ;; Inline expand snippet if trigger matches
    ((and (bound-and-true-p cdlatex-mode)
          (org-inside-LaTeX-fragment-p))  ;; Expand math if in LaTeX
     (cdlatex-tab))
-   (t (org-cycle))))  ;; Fallback to Org-cycle   
+   (t (org-cycle))))  ;; Fallback to Org-cycle
 
 ;; Bind TAB to smart function in Org-mode
 (define-key org-mode-map (kbd "TAB") #'my/org-smart-tab)
+
 
 (use-package yasnippet
   :straight t
@@ -321,7 +333,6 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 (define-key org-mode-map (kbd "C-c i i") 'org-toggle-item)
 
 #+END_SRC
-
 
 * ACTIVE Modular Configs
 #+BEGIN_SRC emacs-lisp
