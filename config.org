@@ -99,10 +99,10 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 | ht               | Hash table utilities                  | All         | None                     | On demand           |
 | ibuffer          | Buffer management                     | All         | C-x C-b                  | C-x C-b             |
 | org-crypt        | Password encryption                   | All         | None                     | org-mode hook       |
-| yasnippet        | Snippet framework                     | All         | C-c TAB                  | C-c TAB             |
+| cdlatex          | Math/equation input                   | All         | TAB (contextual)        | TAB                 |
+| yasnippet        | Snippet framework                     | All         | C-c s                   | C-c s               |
 | yankpad          | Org-style snippet library             | All         | C-c y, C-c Y             | C-c y               |
 | flyspell         | Spell checking                        | All         | M-$                      | M-$                 |
-
 
 
 #+BEGIN_SRC emacs-lisp 
@@ -152,12 +152,37 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   (when (executable-find "aspell")
     (setq ispell-program-name "aspell")))
 
+;; CD Latex package for latex equations
+ (use-package cdlatex 
+  :straight t 
+  :defer t
+  :hook (org-mode . org-cdlatex-mode))
+
+;; Smart TAB: CDLaTeX (if in math) → Org-cycle
+(defun my/org-smart-tab ()
+  "Smart TAB for CDLaTeX math expansion and Org cycling."
+  (interactive)
+  (cond
+   ((org-at-heading-p) (org-cycle))  ;; Cycle headings
+   ((org-in-src-block-p) (org-cycle))  ;; Cycle in source blocks
+   ((and (bound-and-true-p cdlatex-mode)
+         (org-inside-LaTeX-fragment-p))  ;; Expand math if in LaTeX
+    (cdlatex-tab))
+   (t (org-cycle))))  ;; Fallback to Org-cycle   
+
+;; Bind TAB to smart function in Org-mode
+(define-key org-mode-map (kbd "TAB") #'my/org-smart-tab)
+
 (use-package yasnippet
   :straight t
-  :bind ("C-c TAB" . yas-expand)
+  :bind ("C-c s" . yas-insert-snippet)  ;; Pop up selectable snippets (e.g., tbl, fig)
   :config
   (yas-global-mode 1)
-  (setq yas-indent-line 'fixed))  ;; It preserves the indentation of snippet exactly as written in the template.
+  (setq yas-indent-line 'fixed)  ;; Preserves indentation
+  (add-to-list 'yas-snippet-dirs "~/.emacs.d/snippets")
+  (yas-reload-all)
+  (add-hook 'org-mode-hook #'yas-minor-mode)
+  :diminish yas-minor-mode)
 
 ;; 📘 Yankpad: Org-mode snippet library on top of Yasnippet
 (use-package yankpad

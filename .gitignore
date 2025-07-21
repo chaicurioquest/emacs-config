@@ -1,4 +1,4 @@
-# Ignore everything
+# Ignore everything expect the following
 *
 
 !.gitignore 
@@ -8,14 +8,9 @@
 !device.el 
 !README.org 
 !org/ 
-!org/yankpad.org 
-!org/workflows.org 
-!org/roam.org
-!org/filetags.org 
-!org/.filetags
-!org/.filetags-org
+!org/*.org
 !template/
-!template/roam-default.org
-!template/roam-fleeting.org
-!template/roam-journal.org
-!template/roam-permanent.org
+!template/*
+!snippets/
+!snippets/*
+
