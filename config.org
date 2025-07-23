@@ -53,33 +53,42 @@ Skips load if no blocks tangled."
     (if (file-exists-p el-path)
         (load el-path)
       (message "⚠️ No tangled output: %s not found (possibly all blocks :tangle no)" el-path))))
-
-;; Debug startup (toggle with MY_DEBUG_DEVICE environment variable).
+#+END_SRC
+** Debug startup (toggle with MY_DEBUG_DEVICE environment variable).
+#+BEGIN_SRC emacs-lisp
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== STARTING CONFIG ==="))
-
-;; Reset garbage collection threshold to 2MB after startup.
+#+END_SRC
+** Reset garbage collection threshold to 2MB after startup.
+#+BEGIN_SRC emacs-lisp
 (add-hook 'emacs-startup-hook
           (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
+#+END_SRC
 
-;; Disable startup screen.
+** Disable startup screen.
+#+BEGIN_SRC emacs-lisp
 (setq inhibit-startup-screen t)
+#+END_SRC
 
-;; Load device detection.
+** Load device detection.
+#+BEGIN_SRC emacs-lisp
 (condition-case err
     (load (expand-file-name "device.el" user-emacs-directory))
   (error (message "❌ Failed to load device.el: %s" (error-message-string err))))
+#+END_SRC
 
-
-;; Set default directory per device.
+** Set default directory per device.
+#+BEGIN_SRC emacs-lisp
 (setq default-directory
       (cond ((eq my-device 'laptop) "~/wspace/org/notes/")
             ((eq my-device 'termux) "~/storage/shared/notes/")
             ((eq my-device 'tablet) "~/path/to/tablet/notes/")
             (t "~")))
 (message "📁 Default directory set to: %s" default-directory)
+#+END_SRC
+** Debug: Confirm startup.
 
-;; Debug: Confirm startup.
+#+BEGIN_SRC emacs-lisp
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== STARTUP OPTIMIZATIONS COMPLETE ==="))
 #+END_SRC
@@ -113,27 +122,38 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :config
   (setq org-startup-indented t
         org-hide-emphasis-markers t))
+#+END_SRC
 
-;; Ensure use-package is available.
+** Ensure use-package is available.
+#+BEGIN_SRC emacs-lisp
 (eval-when-compile
   (require 'use-package))
+#+END_SRC
 
-;; File manipulation library (loaded on demand).
+** File manipulation library (loaded on demand).
+#+BEGIN_SRC emacs-lisp
 (use-package f
   :straight t
   :defer t)
+#+END_SRC
 
-;; Hash table utilities (loaded on demand).
+** Hash table utilities (loaded on demand).
+#+BEGIN_SRC emacs-lisp
 (use-package ht
   :straight t
   :defer t)
+#+END_SRC
 
-;; Ibuffer for buffer management (loaded on C-x C-b).
+** Ibuffer for buffer management (loaded on C-x C-b).
+#+BEGIN_SRC emacs-lisp
 (use-package ibuffer
   :straight t
   :defer t
   :bind ("C-x C-b" . ibuffer))
+#+END_SRC
 
+** Encrypt org files
+#+BEGIN_SRC emacs-lisp
 (use-package org-crypt
   :ensure nil                        ;; Do not install from ELPA
   :straight nil                      ;; Do not use straight.el
@@ -141,8 +161,10 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :config
   (setq org-crypt-use-before-save nil) ;; Optional: prevent auto-encryption on save
   (require 'org-crypt))
+#+END_SRC
 
-;; Flyspell for spell checking (loaded on M-$).
+** Flyspell for spell checking (loaded on M-$).
+#+BEGIN_SRC emacs-lisp
 (use-package flyspell
   :straight t
   :defer t
@@ -150,15 +172,18 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :config
   (when (executable-find "aspell")
     (setq ispell-program-name "aspell")))
+#+END_SRC
 
-;; CD Latex package for latex equations
+** CD Latex package for latex equations
+#+BEGIN_SRC emacs-lisp
  (use-package cdlatex 
   :straight t 
   :defer t
   :hook (org-mode . org-cdlatex-mode))
-  
+#+END_SRC
    
-;; AUCTeX is an extensible package for writing and formatting TeX files in Emacs and XEmacs
+** AUCTeX is an extensible package for writing and formatting TeX files in Emacs and XEmacs
+#+BEGIN_SRC emacs-lisp
 (use-package auctex
   :straight t
   :defer t  ;; Load on demand
@@ -166,8 +191,9 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :config
   (setq TeX-auto-save t
         TeX-parse-self t))
-
-;; Smart TAB: Yasnippet (inline) → CDLaTeX (math) → Org-cycle
+#+END_SRC
+** Smart TAB: Yasnippet (inline) → CDLaTeX (math) → Org-cycle
+#+BEGIN_SRC emacs-lisp
 (defun my/org-smart-tab ()
   "Smart TAB: Inline Yasnippet expand if match, then CDLaTeX math if in LaTeX, then Org-cycle."
   (interactive)
@@ -183,7 +209,9 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 
 ;; Bind TAB to smart function in Org-mode
 (define-key org-mode-map (kbd "TAB") #'my/org-smart-tab)
-
+#+END_SRC
+#+BEGIN_SRC emacs-lisp
+** Yasnippet package for adding snippets in org files
 
 (use-package yasnippet
   :straight t
@@ -195,8 +223,11 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   (yas-reload-all)
   (add-hook 'org-mode-hook #'yas-minor-mode)
   :diminish yas-minor-mode)
+#+END_SRC
 
-;; 📘 Yankpad: Org-mode snippet library on top of Yasnippet
+
+** 📘 Yankpad: Org-mode snippet library on top of Yasnippet
+#+BEGIN_SRC emacs-lisp
 (use-package yankpad
   :straight t
   :bind (("C-c Y" . yankpad-expand)
@@ -216,21 +247,26 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
        ((eq my-device 'tablet)
         (expand-file-name "path/to/tablet/notes/yankpad.org"))
        (t expand-file-name "org/yankpad.org" user-emacs-directory))))  ;; fallback
+#+END_SRC
 
-;; Install the MELPA sqlite3 package
+** Install the MELPA sqlite3 package
+#+BEGIN_SRC emacs-lisp
 (use-package emacsql-sqlite3
   :straight t
   :defer t)
+#+END_SRC
 
-;; Work well with org-roam (and Emacs in general) much faster, more flexible, and user-friendly. 
-;; Vertico: vertical completion UI
+** Vertico: vertical completion UI Work well with org-roam (and Emacs in general) much faster, more flexible, and user-friendly. 
+#+BEGIN_SRC emacs-lisp
 (use-package vertico
   :straight t
   :defer t
   :init
   (vertico-mode))
+#+END_SRC
 
-;; Orderless: smart fuzzy matching for completion
+** Orderless: smart fuzzy matching for completion
+#+BEGIN_SRC emacs-lisp
 (use-package orderless
   :straight t
   :defer t
@@ -238,16 +274,42 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   (completion-styles '(orderless))
   (completion-category-defaults nil)
   (completion-category-overrides '((file (styles partial-completion)))))
+#+END_SRC
 
-;; Consult: enhanced commands (search, buffer switch, etc.).Powerful, fast, and flexible search/navigation UI for working with Org-roam and Emacs in general.It can be enabled later for future optimization.
-;;(use-package consult
-;;;;  :straight t
-;;  :bind
-;;  (("C-s" . consult-line)
-;;   ("C-c h" . consult-org-heading)
-;;   ("C-c k" . consult-ripgrep)
-;;   ("C-c b" . consult-buffer)))
+** Future enhancement Consult package: enhanced commands. :future:
 
+Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) for working with Org-roam and Emacs in general.It can be enabled later for future optimization.
+
+#+BEGIN_SRC emacs-lisp :tangle no
+(use-package consult
+  :straight t
+  :bind
+  (("C-s" . consult-line)
+  ("C-c h" . consult-org-heading)
+  ("C-c k" . consult-ripgrep)
+  ("C-c b" . consult-buffer)))
+#+END_SRC
+
+** Zotero/Bibliography Integration
+#+BEGIN_SRC emacs-lisp
+(use-package citar
+  :straight t
+  :custom
+  (citar-bibliography (list (expand-file-name "references.bib" default-directory)))  ;; Path to your BibTeX file
+  (citar-notes-paths (list default-directory))  ;; Where to save notes (e.g., Org files)
+  (citar-library-paths (list (expand-file-name "pdfs" default-directory)))  ;; Zotero PDF storage dir
+  (citar-open-note-function 'orb-citar-edit-note)  ;; Use org-roam-bibtex for notes
+  :bind ("C-c r c" . citar-open))  ;; Key to open Bib entry/PDF
+#+END_SRC
+
+** RefTeX for Advanced Citation/Ref Handling.
+If using AUCTeX for LaTeX exports, add reftex package.
+
+#+BEGIN_SRC emacs-lisp
+(use-package reftex
+  :straight t
+  :defer t
+  :diminish reftex-mode)
 #+END_SRC
 
 * ACTIVE UI Tweaks
@@ -258,21 +320,29 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 #+END_SRC
 
 * ACTIVE General Settings
+
+** Profiling
 #+BEGIN_SRC emacs-lisp
-;; Profiling
 (defvar my-config-el-start-time (current-time) "Time when config.el was started")
 (setq my-config-el-start-time-iso (format-time-string "%Y-%m-%dT%T%:z"))
-;; UI Theme, word wrap and other settings.
+#+END_SRC
+
+** UI Theme, word wrap and other settings.
+#+BEGIN_SRC emacs-lisp
 (load-theme 'tsdh-dark t)  ;;Dark theme for Emacs
 (global-visual-line-mode 1) ;;Wrap text in GUI Windows
 (set-fringe-mode 10) ;;Sets the width of the left and right fringes (the empty margin space at the edge of windows in Emacs) to 10 pixels.
 (setq-default cursor-type 'bar) ;;Changes the default cursor shape to a vertical bar (instead of the default box).
+#+END_SRC
 
-;; Device-specific backup directory under default-directory
+** Device-specific backup directory under default-directory
+#+BEGIN_SRC emacs-lisp
 (defvar my-backup-dir (expand-file-name ".backups/" default-directory)
   "Directory to store Emacs backup (~) files.")
+#+END_SRC
 
-;; Create backup directory if it doesn't exist
+** Create backup directory if it doesn't exist
+#+BEGIN_SRC emacs-lisp
 (unless (file-exists-p my-backup-dir)
   (make-directory my-backup-dir t))
 (setq backup-directory-alist `((".*" . ,my-backup-dir))
@@ -283,16 +353,23 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 
 (defvar my-autosave-dir (expand-file-name ".autosaves/" default-directory)
   "Directory to store Emacs auto-save files.")
+#+END_SRC
 
-;; Create autosave directory if missing
+** Create autosave directory if missing
+#+BEGIN_SRC emacs-lisp
 (unless (file-exists-p my-autosave-dir)
   (make-directory my-autosave-dir t))
+#+END_SRC
 
-;; Redirect auto-save files to device-specific location
+** Redirect auto-save files to device-specific location
+#+BEGIN_SRC emacs-lisp
 (setq auto-save-file-name-transforms
       `((".*" ,my-autosave-dir t))
       auto-save-default t)
+#+END_SRC
 
+** Other general settings
+#+BEGIN_SRC emacs-lisp
 ;; Calendar: Monday as start of week
 (setq-default calendar-week-start-day 1)
 
@@ -318,20 +395,24 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 #+END_SRC
 
 * ACTIVE Keybindings
+
+** Tangle shortcut
 #+BEGIN_SRC emacs-lisp
-;; Tangle shortcut
 (global-set-key (kbd "C-c t") (lambda ()
   (interactive)
   (org-babel-tangle-file (expand-file-name "config.org" user-emacs-directory))
   (message "✅ config.org tangled")))
+#+END_SRC
 
-;; Timestamp keybindings
+** Timestamp keybindings
+#+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-c i t") 'my-insert-timestamp)
 (global-set-key (kbd "C-c i d") 'my-insert-datestamp)
+#+END_SRC
 
-;; Added 2025-07-15: Org-mode specific keybinding for toggling items
+** Org-mode specific keybinding for toggling items :Added 2025-07-15
+#+BEGIN_SRC emacs-lisp
 (define-key org-mode-map (kbd "C-c i i") 'org-toggle-item)
-
 #+END_SRC
 
 * ACTIVE Modular Configs

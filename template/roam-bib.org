@@ -1,0 +1,6 @@
+#+TITLE: ${title}
+#+AUTHOR: ${author-or-editor}
+#+KEYWORDS: ${keywords}
+
+* Notes
+[[cite:&${citekey}]]

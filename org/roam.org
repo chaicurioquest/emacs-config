@@ -53,30 +53,21 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, and 
         ("j" "journal" plain
          (file ,(expand-file-name "template/roam-journal.org" user-emacs-directory))
          :if-new (file+head "roam/%<%Y%m%d%H%M%S>-${slug}.org" "")
+         :unnarrowed t)
+        ("b" "bibliography" plain
+          (file (expand-file-name "template/roam-bib.org" user-emacs-directory))
+          :if-new (file+head "roam/%<%Y%m%d%H%M%S>-${citekey}.org" "#+TITLE: ${title}\n#+AUTHOR: ${author-or-editor}\n#+KEYWORDS: ${keywords}\n#+FILETAGS: bibliography")
          :unnarrowed t))))
 #+END_SRC
 
-
-* Zotero/Bibliography Integration
 #+BEGIN_SRC emacs-lisp
-(use-package citar
-  :straight t
-  :custom
-  (citar-bibliography
-   (list (expand-file-name "references.bib" default-directory)))
-  (citar-notes-paths `(,default-directory))
-  (citar-library-paths `(,(expand-file-name "pdfs" default-directory)))
-  (citar-open-note-function 'orb-citar-edit-note)
-  :bind ("C-c r c" . citar-open))
-
 (use-package org-roam-bibtex
   :straight t
   :after org-roam
   :hook (org-roam-mode . org-roam-bibtex-mode)
   :config
   (require 'org-roam-bibtex)
-  (setq orb-preformat-keywords
-        '("title" "url" "author-or-editor" "keywords"))
+  (setq orb-preformat-keywords '("title" "url" "author-or-editor" "keywords"))
   (setq orb-process-file-keywords t
         orb-attached-file-extensions '("pdf")))
 #+END_SRC
