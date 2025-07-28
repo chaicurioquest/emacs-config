@@ -15,7 +15,6 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 Tangle with `C-c t` or `M-x my-tangle-config-org`.
 
 * My Digital Workflow
-* My Digital Workflow
 | *Workflow*                          | *Solution*                                         | *Notes*                                                        | *Device* | *Keybindings*         |
 |-------------------------------------+----------------------------------------------------+----------------------------------------------------------------|----------|-----------------------|
 | Installing packages                 | use-package with straight.el                       | Lazy loading in config.org; workflows.org optional (commented) | All      | None                  |
