@@ -277,7 +277,6 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 #+END_SRC
 
 ** Future enhancement Consult package: enhanced commands. :future:
-
 Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) for working with Org-roam and Emacs in general.It can be enabled later for future optimization.
 
 #+BEGIN_SRC emacs-lisp :tangle no
@@ -295,12 +294,21 @@ Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) f
 (use-package citar
   :straight t
   :custom
-  (citar-bibliography (list (expand-file-name "references.bib" default-directory)))  ;; Path to your BibTeX file
-  (citar-notes-paths (list default-directory))  ;; Where to save notes (e.g., Org files)
-  (citar-library-paths (list (expand-file-name "pdfs" default-directory)))  ;; Zotero PDF storage dir
-  (citar-open-note-function 'orb-citar-edit-note)  ;; Use org-roam-bibtex for notes
-  :bind ("C-c r c" . citar-open))  ;; Key to open Bib entry/PDF
+  ;; BibTeX file path relative to your Org note directory
+  (message "📁 Default directory set to: %s" default-directory)
+  (citar-bibliography (list (expand-file-name "references.bib" default-directory)))
+  ;; Path where Zotero stores PDFs
+  (citar-library-paths (list "~/wspace/src/zotero-kbase/storage"))
+  ;; Integrate with org-roam-bibtex
+  (citar-open-note-function #'orb-citar-edit-note)
+  :config
+  ;; Allow both roam and general notes
+  (setq citar-notes-paths
+  (list (expand-file-name org-roam-directory)))
+  :bind
+  ("C-c r c" . citar-open)) ;; Open citation note or resource
 #+END_SRC
+
 
 ** RefTeX for Advanced Citation/Ref Handling.
 If using AUCTeX for LaTeX exports, add reftex package.
@@ -310,6 +318,36 @@ If using AUCTeX for LaTeX exports, add reftex package.
   :straight t
   :defer t
   :diminish reftex-mode)
+#+END_SRC
+
+** pdf tools: Enable in-buffer PDF viewing in Emacs (rather than opening PDFs in external viewers)
+;; Use features like highlighting, annotations, or text selection. Work along with org-noter for taking notes synchronized with PDF pages
+
+#+BEGIN_SRC emacs-lisp
+(use-package pdf-tools
+  :straight t
+  :magic ("%PDF" . pdf-view-mode)
+  :config
+  (pdf-tools-install)
+  (setq-default pdf-view-display-size 'fit-page)
+  (setq pdf-annot-activate-created-annotations t))
+#+END_SRC
+
+** pdf annotation using org noter
+#+BEGIN_SRC emacs-lisp
+(use-package org-noter
+  :straight t
+  :after (:any org pdf-view)
+  :init
+  ;; Set notes search path using default-directory
+  (setq org-noter-notes-search-path
+        (list (expand-file-name "roam" default-directory)))
+  :config
+  (setq org-noter-separate-notes-from-heading t
+        org-noter-hide-other nil
+        org-noter-always-create-frame nil
+        org-noter-kill-frame-at-session-end nil))
+
 #+END_SRC
 
 * ACTIVE UI Tweaks

@@ -6,6 +6,7 @@
 #+roam_refs:
 
 :PROPERTIES:
+:ID: %(org-id-new)
 :CREATED: [%<%Y-%m-%d %a %H:%M>]
 :END:
 
@@ -14,11 +15,10 @@ Type: Daily Reflection
 Author: Self  
 Citation: none  
 Link: none  
-Summary:  
+Summary:
 
 * TODOs
 
 * Evening Reflection
 
 * %<%H:%M> %?
-

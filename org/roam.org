@@ -14,62 +14,110 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, and 
 - **Synced**: Via GitHub[](https://github.com/chaicurioquest/emacs-config) and Syncthing.
 - **Integrated**: Uses my-org-read-filetags for tag completion, shared with yankpad snippets and Integrates with Zotero via `org-roam-bibtex`.
 
+    #+BEGIN_SRC elisp
+    (setq rmy-variable "Hello ramu, Org!")
+    #+END_SRC
+
 * ACTIVE Org-roam Setup
 #+BEGIN_SRC emacs-lisp
 (use-package org-roam
   :straight t
   :init
-  (setq org-roam-directory default-directory)
-  (let ((roam-subdir (expand-file-name "roam" org-roam-directory)))
-    (unless (file-exists-p roam-subdir)
-      (make-directory roam-subdir t)))
-  (setq org-roam-dailies-directory "roam")
+  ;; Set org-roam-directory relative to the default-directory (user device-aware)
+  (setq org-roam-directory (expand-file-name "roam" default-directory))
+
+  ;; Ensure base roam directory exists
+  (unless (file-directory-p org-roam-directory)
+    (make-directory org-roam-directory t))
+
+  ;; Set org-roam dailies directory inside roam/
+  (setq org-roam-dailies-directory
+        (expand-file-name "daily" org-roam-directory))
+
+  ;; Ensure dailies directory exists
+  (unless (file-directory-p org-roam-dailies-directory)
+    (make-directory org-roam-dailies-directory t))
+
+  ;; Debugging paths
+  (message "✅ Org-roam dir: %s" org-roam-directory)
+  (message "📅 Dailies dir: %s" org-roam-dailies-directory)
+  (message "Default dir: %s" default-directory)
+
+  (setq org-roam-v2-ack t
+        org-roam-completion-everywhere t)
+
   :bind (("C-c r f" . org-roam-node-find)
          ("C-c r i" . org-roam-node-insert)
          ("C-c r n" . org-roam-capture)
+         ("C-c r d" . org-roam-dailies-capture-today)
+         ("C-c r T" . org-roam-dailies-goto-today)  ;; Goto today's daily
+         ("C-c r P" . org-roam-dailies-goto-previous-note)  ;; Previous daily
+         ("C-c r N" . org-roam-dailies-goto-next-note)  ;; Next daily
+         ("C-c r D" . org-roam-dailies-goto-date)  ;; Goto specific date (calendar prompt)
          ("C-c r t" . my-org-roam-tag-add)
          ("C-c r r" . org-roam-tag-remove))
-  :custom
-  (org-roam-v2-ack t)
-  (org-roam-completion-everywhere t)
   :config
   (org-roam-db-autosync-mode 1)
-  (message "✅ org-roam initialized."))
+  (message "✅ org-roam initialized and DB autosync enabled."))
 
+;; Used eval with progn to evaluate multiple setq forms and resolve stringp error by ensuring paths are strings
 (eval
- `(setq org-roam-capture-templates
+ `(progn
+    (setq org-roam-capture-templates
+          `(("d" "default" plain
+             (file ,(expand-file-name "template/roam-default.org" user-emacs-directory))
+             :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
+             :unnarrowed t)
+            ("f" "fleeting" plain
+             (file ,(expand-file-name "template/roam-fleeting.org" user-emacs-directory))
+             :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
+             :unnarrowed t)
+            ("p" "permanent" plain
+             (file ,(expand-file-name "template/roam-permanent.org" user-emacs-directory))
+             :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
+             :unnarrowed t)
+            ("j" "journal" plain
+             (file ,(expand-file-name "template/roam-journal.org" user-emacs-directory))
+             :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
+             :unnarrowed t)
+            ("b" "bibliography" plain
+             (file ,(expand-file-name "template/roam-bib.org" user-emacs-directory))
+             :if-new (file+head "%<%Y%m%d%H%M%S>-${citekey}.org" "")
+             :unnarrowed t)))
+
+(setq org-roam-dailies-capture-templates
       `(("d" "default" plain
-         (file ,(expand-file-name "template/roam-default.org" user-emacs-directory))
-         :if-new (file+head "roam/%<%Y%m%d%H%M%S>-${slug}.org" "")
-         :unnarrowed t)
-        ("f" "fleeting" plain
-         (file ,(expand-file-name "template/roam-fleeting.org" user-emacs-directory))
-         :if-new (file+head "roam/%<%Y%m%d%H%M%S>-${slug}.org" "")
-         :unnarrowed t)
-        ("p" "permanent" plain
-         (file ,(expand-file-name "template/roam-permanent.org" user-emacs-directory))
-         :if-new (file+head "roam/%<%Y%m%d%H%M%S>-${slug}.org" "")
-         :unnarrowed t)
-        ("j" "journal" plain
-         (file ,(expand-file-name "template/roam-journal.org" user-emacs-directory))
-         :if-new (file+head "roam/%<%Y%m%d%H%M%S>-${slug}.org" "")
-         :unnarrowed t)
-        ("b" "bibliography" plain
-          (file (expand-file-name "template/roam-bib.org" user-emacs-directory))
-          :if-new (file+head "roam/%<%Y%m%d%H%M%S>-${citekey}.org" "#+TITLE: ${title}\n#+AUTHOR: ${author-or-editor}\n#+KEYWORDS: ${keywords}\n#+FILETAGS: bibliography")
-         :unnarrowed t))))
+         (file ,(expand-file-name "template/roam-dailies.org" user-emacs-directory))
+         :if-new (file+head "%<%Y-%m-%d>.org" "")
+         :empty-lines 1
+         :prepend t
+         :unnarrowed t)))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
 (use-package org-roam-bibtex
   :straight t
-  :after org-roam
-  :hook (org-roam-mode . org-roam-bibtex-mode)
+  :after (org-roam citar)
+  :init
+  (setq org-roam-bibtex-template-key "b")
   :config
   (require 'org-roam-bibtex)
-  (setq orb-preformat-keywords '("title" "url" "author-or-editor" "keywords"))
-  (setq orb-process-file-keywords t
-        orb-attached-file-extensions '("pdf")))
+  (add-hook 'org-mode-hook #'org-roam-bibtex-mode)
+
+  (setq orb-preformat-keywords
+        '("title" "url" "author-or-editor" "keywords" "year" "doi" "journal")
+        orb-process-file-keywords t
+        orb-attached-file-extensions '("pdf"))
+
+  (setq orb-templates
+        `(("b" "bibliography" plain
+           (file ,(expand-file-name "template/roam-bib.org" user-emacs-directory))
+           :if-new (file+head ,(expand-file-name
+                                "%<%Y%m%d%H%M%S>-${citekey}.org"
+                                org-roam-directory)
+                              "")
+           :unnarrowed t))))
+
 #+END_SRC
 
 * Org-roam UI (Graph)
