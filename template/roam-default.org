@@ -1,15 +1,11 @@
-#+title: ${title}
-#+filetags: :default:
-#+created: %<%Y-%m-%d>
-#+last_modified: %<%Y-%m-%d>
-#+roam_alias:
-#+roam_refs:
-
-:PROPERTIES:
-:CREATED: [%<%Y-%m-%d %a %H:%M>]
-:END:
+#+TITLE: ${title}
+#+FILETAGS: :default:
+#+ROAM_ALIASES: 
+#+ROAM_REFS: 
+#+CREATED: %U  ;; Creation timestamp
 
 * Overview
+%?
 
 * Details
 

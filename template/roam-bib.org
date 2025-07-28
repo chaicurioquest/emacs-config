@@ -1,24 +1,13 @@
-#+title: ${title}
-#+filetags: :reference:
-#+created: %<%Y-%m-%d>
-#+last_modified: %<%Y-%m-%d>
-#+roam_alias:
-#+roam_refs: [cite:@${citekey}]
-#+bibliography: ~/wspace/org/notes/references.bib
+#+TITLE: ${citekey}
+#+FILETAGS: :bib:
+#+ROAM_ALIASES: @${citekey}
+#+ROAM_REFS: 
+#+CREATED: %U  ;; Creation timestamp
 
-:PROPERTIES:
-:ROAM_REFS: @${citekey}
-:CREATED: [%<%Y-%m-%d %a %H:%M>]
-:END:
+* Overview
+%?
 
-* Summary
+* Details
+[cite:@${citekey}]
 
-* Key Ideas
-
-* Quotations
-
-* Critique
-
-* Connections
-
-* TODOs
+* References

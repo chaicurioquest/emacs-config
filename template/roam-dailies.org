@@ -1,14 +1,8 @@
-#+title: %<%Y-%m-%d>
-#+filetags: :daily:journal:
-#+created: %<%Y-%m-%d>
-#+last_modified: %<%Y-%m-%d>
-#+roam_alias:
-#+roam_refs:
-
-:PROPERTIES:
-:ID: %(org-id-new)
-:CREATED: [%<%Y-%m-%d %a %H:%M>]
-:END:
+#+TITLE: %<%Y-%m-%d>
+#+FILETAGS: :daily:journal:
+#+ROAM_ALIASES: 
+#+ROAM_REFS: 
+#+CREATED: %U  ;; Creation timestamp
 
 * Morning Review
 Type: Daily Reflection  
