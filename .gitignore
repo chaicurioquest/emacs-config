@@ -14,5 +14,10 @@
 !snippets/
 !snippets/org-mode/
 !snippets/org-mode/*
+!setup/
+!setup/*
+!src/
+!src/*
+
 
 

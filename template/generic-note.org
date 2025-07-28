@@ -1,0 +1,17 @@
+#+SETUPFILE: setup-latex.org
+#+TITLE: %^{Title}
+#+AUTHOR: Ram
+#+DATE: \today
+#+LANGUAGE: en
+#+OPTIONS: toc:nil num:nil
+#+PROPERTY: header-args :eval never-export
+#+ROAM_ALIASES: 
+#+ROAM_REFS: 
+#+CREATED: %U  ;; Creation timestamp
+#+LAST_MODIFIED: %U  ;; Last modified (updated on save)
+
+* %?
+
+
+
+

@@ -3,20 +3,36 @@
 #+STARTUP: indent
 #+PROPERTY: header-args:emacs-lisp :tangle yes
 #+DATE: 2025-07-12
+#+CREATED: %U
+#+LAST_MODIFIED: %U
 
-* Purpose
-
-Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, and dynamic tags from .filetags via my-org-read-filetags in org/filetags.org. Designed to be:
-- **Future-proof**: Structured with comments and tables.
-- **Reliable**: Reproducible via straight.el with error handling.
+** Purpose
+Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, dailies, and dynamic tags from .filetags via my-org-read-filetags in org/filetags.org. Designed to be:
+- **Future-proof**: Structured with comments and tables for easy updates.
+- **Reliable**: Reproducible via straight.el with error handling and db autosync.
 - **Minimal**: Lightweight setup with essential keybindings, no external dependencies beyond org-roam.
-- **Portable**: Works on laptop (system-name: ram), Termux, tablet.
-- **Synced**: Via GitHub[](https://github.com/chaicurioquest/emacs-config) and Syncthing.
-- **Integrated**: Uses my-org-read-filetags for tag completion, shared with yankpad snippets and Integrates with Zotero via `org-roam-bibtex`.
+- **Portable**: Works on laptop (system-name: ram), Termux, tablet via device-aware paths.
+- **Synced**: ~/.emacs.d/ and notes synced via GitHub[](https://github.com/chaicurioquest/emacs-config) and Syncthing.
+- **Integrated**: Uses my-org-read-filetags for tag completion (shared with yankpad snippets), integrates with Zotero via org-roam-bibtex/Citar for bib notes, and Org-noter for PDF annotations.
 
-    #+BEGIN_SRC elisp
-    (setq rmy-variable "Hello ramu, Org!")
-    #+END_SRC
+Tangle with `C-c t` or `M-x my-tangle-config-org`.
+
+* My Org-Roam Workflow
+| *Workflow*                          | *Solution*                                         | *Notes*                                                        | *Device* | *Keybindings*         |
+|-------------------------------------+----------------------------------------------------+----------------------------------------------------------------|----------|-----------------------|
+| Find existing note                  | org-roam-node-find                                 | Search notes by title/ID/tags; Vertico completion              | All      | C-c r f               |
+| Insert link to note                 | org-roam-node-insert                               | Link to another note (backlinks auto-created)                  | All      | C-c r i               |
+| Capture new note                    | org-roam-capture                                   | Create notes with templates (default, fleeting, permanent, journal, bib) | All      | C-c r n               |
+| Dailies capture                     | org-roam-dailies-capture-today                     | Daily notes with templates; auto-timestamped                   | All      | C-c r d               |
+| Navigate dailies                    | org-roam-dailies-goto-*                            | Jump to today/previous/next/specific date                      | All      | C-c r T (today), P (previous), N (next), D (date) |
+| Bibliography notes                  | org-roam-bibtex (with Citar)                       | Create notes from Zotero refs; integrates with Org-noter for annotations | All      | C-c r c (via Citar open/create) |
+| Tag notes                           | my-org-roam-tag-add/remove                         | Dynamic tags from filetags.org; Vertico completion             | All      | C-c r t (add), r (remove) |
+| View graph                          | org-roam-ui                                        | Interactive graph UI (on laptop)                               | Laptop   | C-c r g               |
+
+
+#+BEGIN_SRC elisp
+  (setq rmy-variable "Hello ramu, Org!")
+#+END_SRC
 
 * ACTIVE Org-roam Setup
 #+BEGIN_SRC emacs-lisp
