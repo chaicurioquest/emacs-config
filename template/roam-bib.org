@@ -1,24 +1,24 @@
-#+title: %<%Y-%m-%d>
-#+filetags: :daily:journal:
+#+title: ${title}
+#+filetags: :reference:
 #+created: %<%Y-%m-%d>
 #+last_modified: %<%Y-%m-%d>
 #+roam_alias:
-#+roam_refs:
+#+roam_refs: [cite:@${citekey}]
+#+bibliography: ~/wspace/org/notes/references.bib
 
 :PROPERTIES:
+:ROAM_REFS: @${citekey}
 :CREATED: [%<%Y-%m-%d %a %H:%M>]
 :END:
 
-* Morning Review
-Type: Daily Reflection  
-Author: Self  
-Citation: none  
-Link: none  
-Summary:  
+* Summary
+
+* Key Ideas
+
+* Quotations
+
+* Critique
+
+* Connections
 
 * TODOs
-
-* Evening Reflection
-
-* %<%H:%M> %?
-
