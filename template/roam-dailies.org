@@ -5,14 +5,9 @@
 #+CREATED: %U  ;; Creation timestamp
 
 * Morning Review
-Type: Daily Reflection  
-Author: Self  
-Citation: none  
-Link: none  
-Summary:
-
+ ** %<%H:%M> %?
 * TODOs
 
 * Evening Reflection
 
-* %<%H:%M> %?
+

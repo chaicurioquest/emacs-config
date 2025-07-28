@@ -5,7 +5,7 @@
 #+CREATED: %U  ;; Creation timestamp
 
 * Idea Summary
-
+%?
 * Connections
 
 * References
