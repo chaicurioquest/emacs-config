@@ -2,6 +2,8 @@
 *
 
 !.gitignore 
+!.filetags
+!.filetags-org
 !config.org 
 !early-init.el 
 !init.el 

@@ -1,0 +1,27 @@
+# Note types
+fleeting 
+permanent 
+idea 
+zettel
+# Knowledge domains
+vlsi 
+fpga 
+quantum 
+latex 
+emacs
+# Academic references
+reference 
+cite 
+phd 
+masters
+# Output types
+writing 
+publish 
+blog
+# Teaching/learning
+talk 
+workshop 
+fdp
+# Meta (only used in org-roam)
+untagged 
+archived
