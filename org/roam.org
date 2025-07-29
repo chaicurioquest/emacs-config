@@ -118,6 +118,8 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
   (setq org-roam-bibtex-template-key "b")
   :config
   (require 'org-roam-bibtex)
+  (setq orb-bibliography (list (expand-file-name "include/references.bib" default-directory))))
+
   (add-hook 'org-mode-hook #'org-roam-bibtex-mode)
 
   (setq orb-preformat-keywords

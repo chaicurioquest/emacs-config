@@ -1,5 +1,8 @@
 #+TITLE: ${citekey}
 #+FILETAGS: :bib:
+#+LATEX_HEADER: \usepackage[backend=biber,style=authoryear]{biblatex}
+#+LATEX_HEADER: \addbibresource{~/wspace/org/notes/include/references.bib}
+#+CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES: @${citekey}
 #+ROAM_REFS: 
 #+CREATED: %U  ;; Creation timestamp
@@ -11,3 +14,4 @@
 [cite:@${citekey}]
 
 * References
+ #+PRINT_BIBLIOGRAPHY:

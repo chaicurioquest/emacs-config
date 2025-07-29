@@ -23,8 +23,9 @@
 #+DATE: \today
 #+LANGUAGE: en
 # OPTIONS: toc:t num:nil
-#+OPTIONS: toc:nil num:nil
+#+OPTIONS: toc:nil num:2
 #+PROPERTY: header-args :eval never-export
+#+BIBLIOGRAPHY: ~/wspace/org/notes/roam/references.bib
 #+ROAM_ALIASES: 
 #+ROAM_REFS: 
 #+CREATED: 

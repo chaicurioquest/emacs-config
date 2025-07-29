@@ -1,5 +1,8 @@
 #+TITLE: %<%Y-%m-%d>
 #+FILETAGS: :daily:journal:
+#+LATEX_HEADER: \usepackage[backend=biber,style=authoryear]{biblatex}
+#+LATEX_HEADER: \addbibresource{~/wspace/org/notes/include/references.bib}
+#+CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES: 
 #+ROAM_REFS: 
 #+CREATED: %U  ;; Creation timestamp
