@@ -121,6 +121,10 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :config
   (require 'oc)  ;; Load org-cite
   (require 'oc-biblatex)  ;; Load biblatex processor
+  ;; Default to biblatex with authoryear for LaTeX exports
+  (setq org-cite-export-processors '((latex biblatex "backend=biber,style=authoryear"))) 
+  ;; Global bib file (list for multiple if needed) 
+  (setq org-cite-global-bibliography '("~/wspace/org/notes/include/references.bib"))  
   (setq org-startup-indented t
         org-hide-emphasis-markers t))
 #+END_SRC
