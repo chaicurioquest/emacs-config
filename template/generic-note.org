@@ -3,6 +3,7 @@
 #+AUTHOR: Ram
 #+DATE: \today
 #+LANGUAGE: en
+# OPTIONS: toc:t num:nil
 #+OPTIONS: toc:nil num:nil
 #+PROPERTY: header-args :eval never-export
 #+ROAM_ALIASES: 

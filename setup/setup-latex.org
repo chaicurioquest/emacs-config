@@ -5,12 +5,10 @@
 #+LATEX_HEADER: \usepackage{graphicx}  % Image support
 #+LATEX_HEADER: \usepackage{hyperref}  % Hyperlink support
 #+LATEX_HEADER: \usepackage[acronym]{glossaries}  % Glossaries for acronyms
-#+LATEX_HEADER: \hypersetup{colorlinks=true, linkcolor=blue}
+# LATEX_HEADER: \hypersetup{colorlinks=true, linkcolor=blue}
 #+LATEX_HEADER: \makeglossaries  % Initialize glossaries
 #+LATEX_HEADER: \usepackage{booktabs}  % Better tables for technical diagrams
 #+LATEX_HEADER: \usepackage{siunitx}  % Units for engineering (e.g., \si{\volt})
 
-#+OPTIONS: toc:2 num:t  % TOC to level 2, numbered headings
-#+LATEX: \printglossaries  % Auto-print acronyms at end
+#+LATEX_HEADER: \input{include/acronyms.tex}  % Include the acronym definitions
 
-#+INCLUDE: "../src/acronyms.org"  % Updated path (relative to setup/)

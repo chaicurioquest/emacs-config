@@ -12,13 +12,22 @@
   Hello, ${1:Name}! Welcome to Yankpad!
 #+END_SRC
 
-*** Org Header
+*** Org Export Header
 :PROPERTIES:
-:yankpad-trigger: header
+:yankpad-trigger: ohead
+:src:
 :END:
+#+SETUPFILE: ~/.emacs.d/setup/setup-latex.org
 #+TITLE: ${1:Document Title}
-#+DATE: %(format-time-string "%Y-%m-%d")
-#+FILETAGS: ${2:}
+#+AUTHOR: Ram
+#+DATE: \today
+#+LANGUAGE: en
+# OPTIONS: toc:t num:nil
+#+OPTIONS: toc:nil num:nil
+#+PROPERTY: header-args :eval never-export
+#+ROAM_ALIASES: 
+#+ROAM_REFS: 
+#+CREATED: 
 
 ** Notes
 *** Zettelkasten Note

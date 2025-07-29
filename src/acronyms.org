@@ -1,9 +1,0 @@
-#+LATEX_HEADER: \usepackage{glossaries}
-#+LATEX_HEADER: \makeglossaries
-
-#+BEGIN_EXPORT latex
-\newacronym{bjt}{BJT}{Bipolar Junction Transistor}
-\newacronym{jfet}{JFET}{Junction Field Effect Transistor}
-\newacronym{mos}{MOS}{Metal Oxide Semiconductor}
-\newacronym{ic}{IC}{Integrated Circuit}
-#+END_EXPORT
