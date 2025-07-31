@@ -1,15 +1,16 @@
-#+LATEX_CLASS_OPTIONS: [a4paper,12pt,fleqn]
-#+LATEX_HEADER: \usepackage[T1]{fontenc}  % Optional for better font encoding
-#+LATEX_HEADER: \usepackage{amsmath}   % Equations support
-#+LATEX_HEADER: \usepackage{graphicx}  % Image support
-#+LATEX_HEADER: \usepackage{hyperref}  % Hyperlink support
-#+LATEX_HEADER: \usepackage[nomain,acronym]{glossaries}  % Glossaries for acronyms
-#+LATEX_HEADER: \usepackage[backend=biber,style=authoryear]{biblatex}
-#+LATEX_HEADER: \addbibresource{~/wspace/org/notes/include/references.bib}
-#+CITE_EXPORT: biblatex authoryear
-# LATEX_HEADER: \hypersetup{colorlinks=true, linkcolor=blue}
-#+LATEX_HEADER: \makeglossaries  % Initialize glossaries
-#+LATEX_HEADER: \usepackage{booktabs}  % Better tables for technical diagrams
-#+LATEX_HEADER: \usepackage{siunitx}  % Units for engineering (e.g., \si{\volt})
-#+LATEX_HEADER: \input{include/acronyms.tex}  % Include the acronym definitions
+# Common LaTeX packages for Org-mode exports
+# Included via #+SETUPFILE: ~/.emacs.d/setup/setup-latex.org in templates
+# Excludes citation settings (handled by org-cite globals or #+CITE_EXPORT)
 
+#+LATEX_HEADER: \usepackage[T1]{fontenc}  % Better font encoding for Latin scripts
+#+LATEX_HEADER: \usepackage{lmodern}      % Modern Latin fonts
+#+LATEX_HEADER: \usepackage[nomain]{glossaries}  % Glossaries/acronyms, no main glossary
+#+LATEX_HEADER: \makeglossaries          % Enable glossary processing
+#+LATEX_HEADER: \usepackage{amsmath}     % Math equations
+#+LATEX_HEADER: \usepackage{amssymb}     % Math symbols
+#+LATEX_HEADER: \usepackage{booktabs}    % Professional table formatting
+#+LATEX_HEADER: \usepackage{hyperref}    % Hyperlinks for TOC/references
+#+LATEX_HEADER: \hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}  % Hyperref styling
+
+# Optional: Custom LaTeX macros (add as needed)
+#+LATEX_HEADER: \newcommand{\myfig}[2]{\begin{figure}[h]\centering\includegraphics[width=0.8\textwidth]{#1}\caption{#2}\end{figure}}

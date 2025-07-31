@@ -55,18 +55,19 @@
 (condition-case err
     (when (or (not (file-exists-p my-config-el))
               (file-newer-than-file-p my-config-org my-config-el))
-      (message "Tangling %s to %s..." my-config-org my-config-el)
+      (message "[%s] Tangling %s to %s..." (format-time-string "%T") my-config-org my-config-el)
       (org-babel-tangle-file my-config-org my-config-el)
-      (message "Tangled successfully."))
-  (error (message "Error tangling config.org: %s" err)
+      (message "[%s] Tangled successfully." (format-time-string "%T")))
+  (error (message "[%s] Error tangling config.org: %s" (format-time-string "%T") err)
          (setq config-load-status "failed to tangle")))
 
 ;; Load config.el
 (condition-case err
     (when (file-exists-p my-config-el)
       (load my-config-el)
+      (message "[%s] Loaded config.el successfully." (format-time-string "%T"))
       (setq config-load-status "success"))
-  (error (message "Error loading config.el: %s" err)
+  (error (message "[%s] Error loading config.el: %s" (format-time-string "%T") err)
          (setq config-load-status "failed to load")))
 
 

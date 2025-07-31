@@ -1,4 +1,4 @@
-#+SETUPFILE: setup-latex.org
+#+SETUPFILE: ${setupfile}
 #+TITLE: %^{Title}
 #+AUTHOR: Ram
 #+DATE: \today
@@ -6,13 +6,11 @@
 # OPTIONS: toc:t num:nil
 #+OPTIONS: toc:nil num:2
 #+PROPERTY: header-args :eval never-export
-#+LATEX_HEADER: \usepackage[backend=biber,style=authoryear]{biblatex}
-#+LATEX_HEADER: \addbibresource{~/wspace/org/notes/include/references.bib}
+#+BIBLIOGRAPHY: include/references.bib
 #+CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES: 
 #+ROAM_REFS: 
-#+CREATED: %U  ;; Creation timestamp
-#+LAST_MODIFIED: %U  ;; Last modified (updated on save)
+#+CREATED: %U
 
 * %?
 

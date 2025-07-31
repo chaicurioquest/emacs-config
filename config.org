@@ -38,21 +38,22 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 #+BEGIN_SRC emacs-lisp
 (defun my/tangle-if-needed (org-file el-file)
   "Tangle ORG-FILE to EL-FILE if needed, and load EL-FILE.
-Deletes EL-FILE before tangling to ensure sync.
-Skips load if no blocks tangled."
+Skips if no changes; handles errors gracefully without deleting files."
   (let* ((org-path (expand-file-name org-file user-emacs-directory))
          (el-path (expand-file-name el-file user-emacs-directory)))
-    (when (or (not (file-exists-p el-path))
-              (file-newer-than-file-p org-path el-path))
-      (message "🔄 Tangling %s → %s" org-path el-path)
-      (require 'org)
-      (when (file-exists-p el-path)
-        (delete-file el-path))
-      (org-babel-tangle-file org-path el-path)) 
-    (if (file-exists-p el-path)
-        (load el-path)
-      (message "⚠️ No tangled output: %s not found (possibly all blocks :tangle no)" el-path))))
+    (condition-case err
+        (when (or (not (file-exists-p el-path))
+                  (file-newer-than-file-p org-path el-path))
+          (message "[%s] Tangling %s → %s" (format-time-string "%T") org-path el-path)
+          (require 'org)
+          (org-babel-tangle-file org-path el-path)
+          (message "[%s] Tangled %s" (format-time-string "%T") el-path))
+      (error (message "[%s] Tangling failed for %s: %s" (format-time-string "%T") org-path (error-message-string err))))
+    (when (file-exists-p el-path)
+      (load el-path nil 'nomessage)
+      (message "[%s] Loaded %s" (format-time-string "%T") el-path))))
 #+END_SRC
+
 ** Debug startup (toggle with MY_DEBUG_DEVICE environment variable).
 #+BEGIN_SRC emacs-lisp
 (when (getenv "MY_DEBUG_DEVICE")
@@ -79,10 +80,10 @@ Skips load if no blocks tangled."
 ** Set default directory per device.
 #+BEGIN_SRC emacs-lisp
 (setq default-directory
-      (cond ((eq my-device 'laptop) "~/wspace/org/notes/")
-            ((eq my-device 'termux) "~/storage/shared/notes/")
-            ((eq my-device 'tablet) "~/path/to/tablet/notes/")
-            (t "~")))
+      (cond ((eq my-device 'laptop) (expand-file-name "wspace/org/notes/" (getenv "HOME")))
+            ((eq my-device 'termux) (expand-file-name "storage/shared/notes/" (getenv "HOME")))
+            ((eq my-device 'tablet) (expand-file-name "path/to/tablet/notes/" (getenv "HOME")))
+            (t (getenv "HOME"))))
 (message "📁 Default directory set to: %s" default-directory)
 #+END_SRC
 ** Debug: Confirm startup.
@@ -115,18 +116,32 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 #+BEGIN_SRC emacs-lisp 
 
 (use-package org
-  ;; Since Org-mode is already built into Emacs
-  :straight (:type built-in) 
+  :straight (:type built-in)
   :ensure nil
   :config
   (require 'oc)  ;; Load org-cite
   (require 'oc-biblatex)  ;; Load biblatex processor
-  ;; Default to biblatex with authoryear for LaTeX exports
-  (setq org-cite-export-processors '((latex biblatex "backend=biber,style=authoryear"))) 
-  ;; Global bib file (list for multiple if needed) 
-  (setq org-cite-global-bibliography '("~/wspace/org/notes/include/references.bib"))  
+  ;; Default to biblatex with authoryear for LaTeX exports (fallback if no #+CITE_EXPORT)
+  (setq org-cite-export-processors '((latex biblatex "backend=biber,style=authoryear")))
+  ;; Global bib file with error checking (relative to default-directory)
+  (setq org-cite-global-bibliography
+        (let ((bib-path (expand-file-name "include/references.bib" default-directory)))
+          (if (file-exists-p bib-path)
+              (list bib-path)
+            (message "⚠️ Bibliography file %s not found" bib-path)
+            nil)))
+  ;; LaTeX export process with latexmk
+  (setq org-latex-pdf-process '("latexmk -lualatex -output-directory %o %f"))
+  ;; Org-mode display settings
   (setq org-startup-indented t
-        org-hide-emphasis-markers t))
+        org-hide-emphasis-markers t)
+  ;; Enable citar completion-at-point
+  (with-eval-after-load 'citar
+    (citar-capf-setup))
+  ;; Check setup-latex.org existence (relative to user-emacs-directory)
+  (let ((setup-file (expand-file-name "setup/setup-latex.org" user-emacs-directory)))
+    (unless (file-exists-p setup-file)
+      (message "⚠️ Setup file %s not found" setup-file))))
 #+END_SRC
 
 ** Ensure use-package is available.
@@ -225,7 +240,7 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :config
   (yas-global-mode 1)
   (setq yas-indent-line 'fixed)  ;; Preserves indentation
-  (add-to-list 'yas-snippet-dirs "~/.emacs.d/snippets")
+  (add-to-list 'yas-snippet-dirs (expand-file-name "snippets" user-emacs-directory))
   (yas-reload-all)
   (add-hook 'org-mode-hook #'yas-minor-mode)
   :diminish yas-minor-mode)
@@ -247,14 +262,11 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   (message "Yankpad file: %s" yankpad-file)
   (setq yankpad-file
         (cond
-         ((eq my-device 'laptop)
-          (expand-file-name "org/yankpad.org" user-emacs-directory))
-         ((eq my-device 'termux)
-          (expand-file-name "storage/shared/notes/yankpad.org"))
-         ((eq my-device 'tablet)
-          (expand-file-name "path/to/tablet/notes/yankpad.org"))
+         ((eq my-device 'laptop) (expand-file-name "org/yankpad.org" user-emacs-directory))
+         ((eq my-device 'termux) (expand-file-name "org/yankpad.org" default-directory))
+         ((eq my-device 'tablet) (expand-file-name "yankpad.org" default-directory))
          (t (expand-file-name "org/yankpad.org" user-emacs-directory))))
-  (yankpad-reload))  ;; Reload snippets immediately after config
+  (yankpad-reload))
 #+END_SRC
 
 ** Install the MELPA sqlite3 package
@@ -287,14 +299,15 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 ** Future enhancement Consult package: enhanced commands. :future:
 Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) for working with Org-roam and Emacs in general.It can be enabled later for future optimization.
 
-#+BEGIN_SRC emacs-lisp :tangle no
+#+BEGIN_SRC emacs-lisp 
 (use-package consult
   :straight t
   :bind
   (("C-s" . consult-line)
   ("C-c h" . consult-org-heading)
   ("C-c k" . consult-ripgrep)
-  ("C-c b" . consult-buffer)))
+  ("C-c b" . consult-buffer)
+  ("C-c p" . consult-find)))
 #+END_SRC
 
 ** Zotero/Bibliography Integration
@@ -303,7 +316,9 @@ Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) f
   :straight t
   :custom
   ;; BibTeX file path relative to your Org note directory
-  (citar-bibliography (list (expand-file-name "include/references.bib" default-directory)))
+  (citar-bibliography (condition-case nil
+                          (list (expand-file-name "include/references.bib" default-directory))
+                        (error nil)))  ;; Error handling if path missing
   ;; Path where Zotero stores PDFs
   (citar-library-paths (list "~/wspace/src/zotero-kbase/storage"))
   ;; Integrate with org-roam-bibtex
@@ -316,6 +331,7 @@ Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) f
   ;; Allow both roam and general notes
   (setq citar-notes-paths
   (list (expand-file-name org-roam-directory)))
+  (citar-capf-setup)  ;; Completion-at-point for citations
   :bind
   ("C-c r c" . citar-open)) ;; Open citation note or resource
 #+END_SRC
@@ -329,7 +345,17 @@ If using AUCTeX for LaTeX exports, add reftex package.
   :straight t
   :defer t
   :diminish reftex-mode)
+;; Integrate RefTeX with AUCTeX
+(use-package auctex
+  :straight t
+  :defer t
+  :hook (LaTeX-mode . (lambda () (turn-on-reftex) (flyspell-mode)))
+  :config
+  (setq TeX-auto-save t
+        TeX-parse-self t
+        reftex-plug-into-AUCTeX t))  
 #+END_SRC
+
 
 ** pdf tools: Enable in-buffer PDF viewing in Emacs (rather than opening PDFs in external viewers)
 ;; Use features like highlighting, annotations, or text selection. Work along with org-noter for taking notes synchronized with PDF pages
@@ -337,6 +363,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
 #+BEGIN_SRC emacs-lisp
 (use-package pdf-tools
   :straight t
+  :defer t  
   :magic ("%PDF" . pdf-view-mode)
   :config
   (pdf-tools-install)
@@ -447,6 +474,32 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 ;; Added 2025-07-15: Allow alphabetical list continuation (1.a, 1.b, 1.c., ...)
 (setq org-list-allow-alphabetical t)
+
+;; Configure navigation between windows and automatic vertical preview for PDF.
+;; Enable smart window navigation
+(windmove-default-keybindings) ;; Shift + Arrow
+(winner-mode 1)                ;; C-c <left/right> undo/redo window layout
+#+END_SRC
+
+** Force PDFs to open on the right-side window
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'display-buffer-alist
+             '("\\.pdf\\'"
+               (display-buffer-in-side-window)
+               (side . right)
+               (window-width . 0.45)
+               (slot . 1)))
+#+END_SRC
+** Smart Org + PDF vertical preview
+#+BEGIN_SRC emacs-lisp
+(defun my/org-pdf-vertical-view ()
+  "Open corresponding PDF in vertical split right of current org buffer."
+  (interactive)
+  (let ((pdf-file (concat (file-name-sans-extension (buffer-file-name)) ".pdf")))
+    (when (file-exists-p pdf-file)
+      (select-window (split-window-right))
+      (find-file pdf-file))))
+(global-set-key (kbd "C-c v") #'my/org-pdf-vertical-view)
 #+END_SRC
 
 ** Org Hooks for file handling
@@ -454,34 +507,45 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 #+BEGIN_SRC emacs-lisp
 (add-hook 'before-save-hook
-          (lambda ()
-            (when (derived-mode-p 'org-mode)
-              (save-excursion
-                (goto-char (point-min))
-                ;; Remove existing LAST_MODIFIED lines
-                (while (re-search-forward "^#\\+LAST_MODIFIED:.*$" nil t)
-                  (replace-match ""))
-                ;; Insert LAST_MODIFIED with current timestamp
-                (goto-char (point-min))
-                (if (re-search-forward "^$" nil t)
-                    (insert (format "#+LAST_MODIFIED: [%s]\n"
-                                    (format-time-string "%Y-%m-%d %a %H:%M")))
-                  (goto-char (point-max))
-                  (insert (format "\n#+LAST_MODIFIED: [%s]\n"
-                                  (format-time-string "%Y-%m-%d %a %H:%M"))))))))
+  (lambda ()
+    (when (derived-mode-p 'org-mode)
+      (save-excursion
+        ;; Remove existing LAST_MODIFIED line
+        (goto-char (point-min))
+        (while (re-search-forward "^#\\+LAST_MODIFIED:.*$" nil t)
+          (beginning-of-line)
+          (kill-line 1))
+
+        ;; Find end of metadata block
+        (goto-char (point-min))
+        (let ((metadata-end (point)))
+          (while (looking-at "^\\(#\\|[ \t]*$\\)")
+            (setq metadata-end (line-end-position))
+            (forward-line 1))
+          (goto-char metadata-end)
+          ;; Insert a newline only if not already there
+          (unless (looking-back "\n" nil)
+            (insert "\n"))
+          ;; Insert LAST_MODIFIED with correct timestamp
+          (insert (format "#+LAST_MODIFIED: [%s]\n"
+                          (format-time-string "%Y-%m-%d %a %H:%M"))))))))
+
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-(eval
-`(setq org-capture-templates
-      '(("n" "Generic Note" plain
-         ;; Prompt for file name in notes dir (default-directory is device-aware)
-         (file (lambda () (read-file-name "New Note File: " default-directory nil nil ".org")))
-         ;; Load template as a resolved string
-         (file, (expand-file-name "template/generic-note.org" user-emacs-directory))
-         :empty-lines 1  ;; Spacing
-         :prepend t  ;; Add at top if file exists
-         :create t))))  ;; Create file if not exists
+(defvar my/generic-note-template
+  (with-temp-buffer
+    (insert-file-contents (expand-file-name "template/generic-note.org" user-emacs-directory))
+    (goto-char (point-min))
+    (while (search-forward "${setupfile}" nil t)
+      (replace-match (expand-file-name "setup/setup-latex.org" user-emacs-directory) t t))
+    (buffer-string)))
+;; Added 2025-07-28: capture template, loading content from generic-note.org.
+(setq org-capture-templates
+  `(("n" "Generic Note" plain
+     (file (lambda () (read-file-name "New Note File: " default-directory nil nil ".org")))
+     ,my/generic-note-template
+     :empty-lines 1 :prepend t)))
 #+END_SRC
 
 ** Glossaries and citation export during latex pdf
@@ -507,6 +571,17 @@ If using AUCTeX for LaTeX exports, add reftex package.
   (message "✅ config.org tangled")))
 #+END_SRC
 
+
+#+BEGIN_SRC emacs-lisp
+(defun my-tangle-all ()
+  "Tangle all modular Org files."
+  (interactive)
+  (my/tangle-if-needed "org/filetags.org" "org/filetags.el")
+  (my/tangle-if-needed "org/roam.org" "org/roam.el")
+  ;; Add more modular files here (e.g., workflows.org when uncommented)
+  (message "[%s] All modular files tangled" (format-time-string "%T")))
+(global-set-key (kbd "C-c T") 'my-tangle-all)
+#+END_SRC
 
 ** Timestamp keybindings
 #+BEGIN_SRC emacs-lisp
@@ -535,8 +610,12 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 #+END_SRC
 
-** Org Capture Templates
-;; Added 2025-07-28: capture template, loading content from generic-note.org.
+** Switching windows 
+;; Ace Window for fast jumping (M-o)
+#+BEGIN_SRC emacs-lisp
+(use-package ace-window
+  :bind (("M-o" . ace-window)))
+#+END_SRC
 
 * ACTIVE Modular Configs
 #+BEGIN_SRC emacs-lisp

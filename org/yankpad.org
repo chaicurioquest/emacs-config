@@ -17,15 +17,15 @@
 :yankpad-trigger: ohead
 :src:
 :END:
-#+SETUPFILE: ~/.emacs.d/setup/setup-latex.org
+#+SETUPFILE: setup/setup-latex.org
 #+TITLE: ${1:Document Title}
 #+AUTHOR: Ram
 #+DATE: \today
 #+LANGUAGE: en
-# OPTIONS: toc:t num:nil
+#+OPTIONS: toc:t num:nil
 #+OPTIONS: toc:nil num:2
 #+PROPERTY: header-args :eval never-export
-#+BIBLIOGRAPHY: ~/wspace/org/notes/roam/references.bib
+#+CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES: 
 #+ROAM_REFS: 
 #+CREATED: 
