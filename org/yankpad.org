@@ -17,7 +17,7 @@
 :yankpad-trigger: ohead
 :src:
 :END:
-#+SETUPFILE: setup/setup-latex.org
+#+SETUPFILE: include/setup-latex.org
 #+TITLE: ${1:Document Title}
 #+AUTHOR: Ram
 #+DATE: \today

@@ -47,7 +47,7 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
           (insert-file-contents template-path)
           (goto-char (point-min))
           (while (search-forward "${setupfile}" nil t)
-            (replace-match (expand-file-name "setup/setup-latex.org" user-emacs-directory) t t))
+            (replace-match (expand-file-name "include/setup-latex.org" default-directory) t t))
           (buffer-string))
       (error "Template %s not found" template-path))))
 
