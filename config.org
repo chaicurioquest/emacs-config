@@ -559,6 +559,8 @@ If using AUCTeX for LaTeX exports, add reftex package.
         "makeglossaries %b"
         "lualatex -interaction nonstopmode -output-directory %o %f"
         "lualatex -interaction nonstopmode -output-directory %o %f"))
+;; Disable inputenc for LuaLaTeX (UTF-8 is native)
+(setq org-latex-inputenc-alist '(("utf8" . nil)))
 #+END_SRC
 
 * ACTIVE Keybindings
