@@ -113,36 +113,46 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 | yankpad          | Org-style snippet library             | All         | C-c y, C-c Y             | C-c y               |
 | flyspell         | Spell checking                        | All         | M-$                      | M-$                 |
 
-#+BEGIN_SRC emacs-lisp 
+** Org LaTeX Export Configuration with Build Directory and Glossaries
 
+#+BEGIN_SRC emacs-lisp
 (use-package org
   :straight (:type built-in)
   :ensure nil
   :config
-  (require 'oc)  ;; Load org-cite
-  (require 'oc-biblatex)  ;; Load biblatex processor
-  ;; Default to biblatex with authoryear for LaTeX exports (fallback if no #+CITE_EXPORT)
-  (setq org-cite-export-processors '((latex biblatex "backend=biber,style=authoryear")))
-  ;; Global bib file with error checking (relative to default-directory)
-  (setq org-cite-global-bibliography
-        (let ((bib-path (expand-file-name "include/references.bib" default-directory)))
-          (if (file-exists-p bib-path)
-              (list bib-path)
-            (message "⚠️ Bibliography file %s not found" bib-path)
-            nil)))
-  ;; LaTeX export process with latexmk
-  (setq org-latex-pdf-process '("latexmk -lualatex -output-directory %o %f"))
-  ;; Org-mode display settings
-  (setq org-startup-indented t
-        org-hide-emphasis-markers t)
-  ;; Enable citar completion-at-point
-  (with-eval-after-load 'citar
-    (citar-capf-setup))
-  ;; Check setup-latex.org existence (relative to default-directory)
-  (let ((setup-file (expand-file-name "include/setup-latex.org" default-directory)))
+  ;; Load Org Cite processors
+  (require 'oc)
+  (require 'oc-biblatex)
+
+  ;; Optional: fallback export processor
+  (setq org-cite-export-processors
+        '((latex biblatex "backend=biber,style=authoryear")))
+
+  ;; Use latexmk with lualatex, biber, and glossaries, inside build/
+(setq org-latex-pdf-process
+      '("mkdir -p build"  ;; Create org/notes/build/ if it doesn't exist
+        "mv %f build/"   ;; Move tex file to org/notes/build/
+        "latexmk -lualatex -r ../setup/.latexmkrc -outdir=build -f build/%b.tex >> build/latex.log 2>&1"  ;; Run latexmk from org/notes/, using .latexmkrc from org/setup/
+        ))
+
+;; Overall notes: This list defines the shell commands Org mode runs sequentially for LaTeX-to-PDF export.
+;; It handles directory management, compilation with lualatex, bibliography (biber), glossaries, and cleanup.
+;; Customize paths if your .bib or glossary files are elsewhere. If errors occur, check 'build/latex.log' for details.
+
+  ;; Avoid \usepackage[utf8]{inputenc} for LuaLaTeX
+  (setq org-latex-inputenc-alist '(("utf8" . nil)))
+
+  ;; Tell LaTeX to search for files in ../include
+  (setenv "TEXINPUTS" "../include:")
+
+  ;; Optional: warn if setup-latex.org is missing
+  (let ((setup-file (expand-file-name "../include/setup-latex.org" default-directory)))
     (unless (file-exists-p setup-file)
-      (message "⚠️ Setup file %s not found" setup-file))))
+      (message "⚠️ Org LaTeX setup file not found: %s" setup-file)))
+)
 #+END_SRC
+
+
 
 ** Ensure use-package is available.
 #+BEGIN_SRC emacs-lisp
@@ -546,21 +556,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
      (file (lambda () (read-file-name "New Note File: " default-directory nil nil ".org")))
      ,my/generic-note-template
      :empty-lines 1 :prepend t)))
-#+END_SRC
-
-** Glossaries and citation export during latex pdf
-#+BEGIN_SRC emacs-lisp
-;; 1. Runs lualatex once to generate aux files.2.biber for bibliography. 
-;; 3. Runs makeglossaries for glossaries and acronyms. 
-;; 4. Runs lualatex again (twice) to resolve all references and render everything.
-  (setq org-latex-pdf-process
-      '("lualatex -interaction nonstopmode -output-directory %o %f"
-        "biber %b"
-        "makeglossaries %b"
-        "lualatex -interaction nonstopmode -output-directory %o %f"
-        "lualatex -interaction nonstopmode -output-directory %o %f"))
-;; Disable inputenc for LuaLaTeX (UTF-8 is native)
-(setq org-latex-inputenc-alist '(("utf8" . nil)))
 #+END_SRC
 
 * ACTIVE Keybindings

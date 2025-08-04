@@ -1,4 +1,5 @@
 #+SETUPFILE: ${setupfile}
+# Enable glossaries only when needed
 #+TITLE: %^{Title}
 #+AUTHOR: Ram
 #+DATE: \today
@@ -6,14 +7,17 @@
 # OPTIONS: toc:t num:nil
 #+OPTIONS: toc:nil num:2
 #+PROPERTY: header-args :eval never-export
-#+BIBLIOGRAPHY: include/references.bib
-#+CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES: 
 #+ROAM_REFS: 
 #+CREATED: %U
 
 * %?
 
-#+PRINT_BIBLIOGRAPHY:
+
+# Enable if it needed
+* Acronyms
+# LATEX: \printglossaries
+* References
+# LATEX: \printbibliography
 
 
