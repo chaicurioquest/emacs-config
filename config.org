@@ -117,39 +117,35 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 
 #+BEGIN_SRC emacs-lisp
 (use-package org
-  :straight (:type built-in)
-  :ensure nil
+  :straight (:type built-in) ;; Use built-in Org mode, no external package install
+  :ensure nil ;; Prevent attempting to install Org
   :config
-  ;; Load Org Cite processors
+  ;; Load Org Cite processors for bibliography support
   (require 'oc)
   (require 'oc-biblatex)
-
-  ;; Optional: fallback export processor
-  (setq org-cite-export-processors
-        '((latex biblatex "backend=biber,style=authoryear")))
-
-  ;; Use latexmk with lualatex, biber, and glossaries, inside build/
-(setq org-latex-pdf-process
-      '("mkdir -p build"  ;; Create org/notes/build/ if it doesn't exist
-        "mv %f build/"   ;; Move tex file to org/notes/build/
-        "latexmk -lualatex -r ../setup/.latexmkrc -outdir=build -f build/%b.tex >> build/latex.log 2>&1"  ;; Run latexmk from org/notes/, using .latexmkrc from org/setup/
-        ))
-
-;; Overall notes: This list defines the shell commands Org mode runs sequentially for LaTeX-to-PDF export.
-;; It handles directory management, compilation with lualatex, bibliography (biber), glossaries, and cleanup.
-;; Customize paths if your .bib or glossary files are elsewhere. If errors occur, check 'build/latex.log' for details.
-
-  ;; Avoid \usepackage[utf8]{inputenc} for LuaLaTeX
+  ;; Configure citation export to use biblatex with biber backend and authoryear style
+  (setq org-cite-export-processors '((latex biblatex "backend=biber,style=authoryear")))
+  ;; Define shell commands for LaTeX-to-PDF export using latexmk
+  (setq org-latex-pdf-process
+        '("mkdir -p build" ;; Create build/ directory in org/notes/ if it doesn't exist
+          "mv %f build/" ;; Move generated .tex file to org/notes/build/
+          "rm -f build/latex.log" ;; Remove previous build/latex.log to start fresh
+          "latexmk -lualatex -r ../setup/.latexmkrc -outdir=build -f build/%b.tex > build/latex.log 2>&1" ;; Run latexmk with lualatex, using .latexmkrc from org/setup/, output to build/, and redirect logs
+          "mv build/%b.pdf ./" ;; Move generated PDF to org/notes/
+          ))
+  ;; Suppress only "Shell command succeeded with no output" messages during export
+  (advice-add 'message :around
+              (lambda (orig-fun format-string &rest args)
+                (unless (string-match-p "Shell command succeeded with no output" format-string)
+                  (apply orig-fun format-string args))))
+  ;; Prevent Org from adding \usepackage[utf8]{inputenc} (incompatible with lualatex)
   (setq org-latex-inputenc-alist '(("utf8" . nil)))
-
-  ;; Tell LaTeX to search for files in ../include
-  (setenv "TEXINPUTS" "../include:")
-
-  ;; Optional: warn if setup-latex.org is missing
-  (let ((setup-file (expand-file-name "../include/setup-latex.org" default-directory)))
+  ;; Set TEXINPUTS to include org/setup/ for LaTeX input files (e.g., references.bib, acronyms)
+  (setenv "TEXINPUTS" (concat "../setup:" (getenv "TEXINPUTS")))
+  ;; Warn if setup-latex.org is missing in org/setup/
+  (let ((setup-file (expand-file-name "../setup/setup-latex.org" default-directory)))
     (unless (file-exists-p setup-file)
-      (message "⚠️ Org LaTeX setup file not found: %s" setup-file)))
-)
+      (message "⚠️ Org LaTeX setup file not found: %s" setup-file))))
 #+END_SRC
 
 
@@ -327,7 +323,7 @@ Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) f
   :custom
   ;; BibTeX file path relative to your Org note directory
   (citar-bibliography (condition-case nil
-                          (list (expand-file-name "include/references.bib" default-directory))
+                          (list (expand-file-name "../setup/references.bib" default-directory))
                         (error nil)))  ;; Error handling if path missing
   ;; Path where Zotero stores PDFs
   (citar-library-paths (list "~/wspace/src/zotero-kbase/storage"))
@@ -373,12 +369,25 @@ If using AUCTeX for LaTeX exports, add reftex package.
 #+BEGIN_SRC emacs-lisp
 (use-package pdf-tools
   :straight t
-  :defer t  
-  :magic ("%PDF" . pdf-view-mode)
+  :defer t
   :config
+  ;; Install pdf-tools native components
   (pdf-tools-install)
+  ;; Set display size to fit page
   (setq-default pdf-view-display-size 'fit-page)
-  (setq pdf-annot-activate-created-annotations t))
+  ;; Activate annotations automatically
+  (setq pdf-annot-activate-created-annotations t)
+  ;; Set magic mode for PDFs explicitly
+  (add-to-list 'magic-mode-alist '("%PDF" . pdf-view-mode))
+  ;; Suppress pdf-view-mode errors for invalid arguments
+  (advice-add 'pdf-view-mode :around
+              (lambda (orig-fun &rest args)
+                (ignore-errors (apply orig-fun nil))))
+  ;; Clear pdf-tools metadata to avoid stale page references
+  (add-hook 'pdf-view-mode-hook
+            (lambda ()
+              (when (buffer-file-name)
+                (pdf-cache-clear-data (buffer-file-name))))))
 #+END_SRC
 
 ** pdf annotation using org noter
@@ -548,7 +557,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
     (insert-file-contents (expand-file-name "template/generic-note.org" user-emacs-directory))
     (goto-char (point-min))
     (while (search-forward "${setupfile}" nil t)
-      (replace-match (expand-file-name "include/setup-latex.org" default-directory) t t))
+      (replace-match (expand-file-name "../setup/setup-latex.org" default-directory) t t))
     (buffer-string)))
 ;; Added 2025-07-28: capture template, loading content from generic-note.org.
 (setq org-capture-templates
