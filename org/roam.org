@@ -153,7 +153,6 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 (use-package org-roam-ui
   :if (eq my-device 'laptop)
   :straight (:host github :repo "org-roam/org-roam-ui" :branch "main")
-  :defer t
   :bind (("C-c r g" . org-roam-ui-open))
   :config
   (setq org-roam-ui-sync-theme t
