@@ -123,26 +123,34 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   ;; Load Org Cite processors for bibliography support
   (require 'oc)
   (require 'oc-biblatex)
+
   ;; Configure citation export to use biblatex with biber backend and authoryear style
   (setq org-cite-export-processors '((latex biblatex "backend=biber,style=authoryear")))
+
   ;; Define shell commands for LaTeX-to-PDF export using latexmk
-  (setq org-latex-pdf-process
-        '("mkdir -p build" ;; Create build/ directory in org/notes/ if it doesn't exist
-          "mv %f build/" ;; Move generated .tex file to org/notes/build/
-          "rm -f build/latex.log" ;; Remove previous build/latex.log to start fresh
-          "latexmk -lualatex -r ../setup/.latexmkrc -outdir=build -f build/%b.tex > build/latex.log 2>&1" ;; Run latexmk with lualatex, using .latexmkrc from org/setup/, output to build/, and redirect logs
-          "mv build/%b.pdf ./" ;; Move generated PDF to org/notes/
-          ))
-  ;; Suppress "Shell command succeeded with no output" during compilation, while keeping "PDF file produced."
+(setq org-latex-pdf-process
+      `("mkdir -p build"
+        "mv %f build/"
+        ,(format "latexmk -lualatex -r %s -outdir=build -f build/%%b.tex"
+                 (expand-file-name "../setup/.latexmkrc" default-directory))
+        "[ -f build/%b.pdf ] && mv build/%b.pdf ./"
+        "[ -f build/%b.tex ] && mv build/%b.tex ./"
+        "rm -rf build"))
+
+
+  ;; Suppress "Shell command succeeded with no output" during compilation
   (advice-add 'org-compile-file :around
               (lambda (orig-fun &rest args)
                 (let ((inhibit-message t))
                   (apply orig-fun args))))
-  ;; Prevent Org from adding \usepackage[utf8]{inputenc} (incompatible with lualatex)
+
+  ;; Prevent Org from inserting \usepackage[utf8]{inputenc} with lualatex
   (setq org-latex-inputenc-alist '(("utf8" . nil)))
-  ;; Set TEXINPUTS to include org/setup/ for LaTeX input files (e.g., references.bib, acronyms)
+
+  ;; Set TEXINPUTS to include org/setup/ for LaTeX input files
   (setenv "TEXINPUTS" (concat "../setup:" (getenv "TEXINPUTS")))
-  ;; Warn if setup-latex.org is missing in org/setup/
+
+  ;; Warn if setup-latex.org is missing
   (let ((setup-file (expand-file-name "../setup/setup-latex.org" default-directory)))
     (unless (file-exists-p setup-file)
       (message "⚠️ Org LaTeX setup file not found: %s" setup-file))))
