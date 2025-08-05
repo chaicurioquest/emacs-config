@@ -537,26 +537,33 @@ If using AUCTeX for LaTeX exports, add reftex package.
   (lambda ()
     (when (derived-mode-p 'org-mode)
       (save-excursion
-        ;; Remove existing LAST_MODIFIED line
+        ;; Remove all existing #+LAST_MODIFIED lines
         (goto-char (point-min))
         (while (re-search-forward "^#\\+LAST_MODIFIED:.*$" nil t)
           (beginning-of-line)
           (kill-line 1))
 
-        ;; Find end of metadata block
+        ;; Find location of #+CREATED: line
         (goto-char (point-min))
-        (let ((metadata-end (point)))
-          (while (looking-at "^\\(#\\|[ \t]*$\\)")
-            (setq metadata-end (line-end-position))
-            (forward-line 1))
-          (goto-char metadata-end)
-          ;; Insert a newline only if not already there
-          (unless (looking-back "\n" nil)
-            (insert "\n"))
-          ;; Insert LAST_MODIFIED with correct timestamp
-          (insert (format "#+LAST_MODIFIED: [%s]\n"
-                          (format-time-string "%Y-%m-%d %a %H:%M"))))))))
+        (if (re-search-forward "^#\\+CREATED:.*$" nil t)
+            ;; If found, insert LAST_MODIFIED just after it
+            (let ((created-end (line-end-position)))
+              (goto-char created-end)
+              (insert (format "\n#+LAST_MODIFIED: [%s]"
+                              (format-time-string "%Y-%m-%d %a %H:%M"))))
 
+          ;; Fallback: insert after metadata block at top
+          (goto-char (point-min))
+          (let ((metadata-end (point)))
+            (while (looking-at "^\\(#\\|[ \t]*$\\)")
+              (setq metadata-end (line-end-position))
+              (forward-line 1))
+            (goto-char metadata-end)
+            ;; Insert newline if necessary
+            (unless (looking-back "\n" nil)
+              (insert "\n"))
+            (insert (format "#+LAST_MODIFIED: [%s]\n"
+                            (format-time-string "%Y-%m-%d %a %H:%M")))))))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
