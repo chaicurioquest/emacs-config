@@ -1,10 +1,6 @@
-;; ~/.emacs.d/device.el
-;; Device detection logic
-
 (defun my-termux-p ()
   "Return non-nil if running in Termux (Android)."
-  (or (getenv "PREFIX")
-      (string-match "linux-android" system-configuration)))
+  (getenv "PREFIX")) ;; reliable in Termux
 
 (defun my-android-prop (prop)
   "Get Android system property PROP using getprop."
@@ -26,15 +22,12 @@
 
 (defvar my-device
   (cond
-   ;; Laptop / desktop detection
-   ((memq system-type '(gnu/linux darwin windows-nt))
-    'laptop)
-   ;; Tablet detection
-   ((my-tablet-p)
-    'tablet)
-   ;; Phone detection
-   ((my-phone-p)
-    'phone)
+   ;; Termux tablet
+   ((my-tablet-p) 'tablet)
+   ;; Termux phone
+   ((my-phone-p) 'phone)
+   ;; Generic laptop/desktop
+   ((memq system-type '(gnu/linux darwin windows-nt)) 'laptop)
    ;; Fallback
    (t 'generic))
   "Current device type: 'laptop, 'tablet, 'phone, or 'generic.")
