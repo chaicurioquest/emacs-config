@@ -1,16 +1,42 @@
 ;; ~/.emacs.d/device.el
-;; Shared device detection logic used by early-init.el and config.org.
+;; Device detection logic
 
-(defvar my-device-configs
-  (let ((table (make-hash-table :test 'equal)))
-    (puthash "ram" 'laptop table)  ;; Replace with actual hostname
-    (puthash "termux" 'termux table)
-    table)
-  "Map system names to symbolic device types.")
+(defun my-termux-p ()
+  "Return non-nil if running in Termux (Android)."
+  (or (getenv "PREFIX")
+      (string-match "linux-android" system-configuration)))
+
+(defun my-android-prop (prop)
+  "Get Android system property PROP using getprop."
+  (when (my-termux-p)
+    (string-trim (shell-command-to-string (format "getprop %s" prop)))))
+
+(defun my-tablet-p ()
+  "Return non-nil if device appears to be an Android tablet."
+  (when (my-termux-p)
+    (let ((chars (my-android-prop "ro.build.characteristics"))
+          (model (my-android-prop "ro.product.model")))
+      (or (and chars (string-match "tablet" chars))
+          (and model (string-match "\\(Tab\\|Tablet\\)" model))))))
+
+(defun my-phone-p ()
+  "Return non-nil if device appears to be an Android phone."
+  (when (my-termux-p)
+    (not (my-tablet-p))))
 
 (defvar my-device
-  (or (gethash system-name my-device-configs)
-      (if (string-match "termux" system-configuration) 'termux 'generic))
-  "Current device type.")
-  (provide 'device) ;; Emacs won’t re-evaluate the file if it’s already provided. (require 'feature-name) will load the file only once and only when needed.
+  (cond
+   ;; Laptop / desktop detection
+   ((memq system-type '(gnu/linux darwin windows-nt))
+    'laptop)
+   ;; Tablet detection
+   ((my-tablet-p)
+    'tablet)
+   ;; Phone detection
+   ((my-phone-p)
+    'phone)
+   ;; Fallback
+   (t 'generic))
+  "Current device type: 'laptop, 'tablet, 'phone, or 'generic.")
 
+(provide 'device)
