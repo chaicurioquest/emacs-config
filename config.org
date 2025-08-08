@@ -81,7 +81,7 @@ Skips if no changes; handles errors gracefully without deleting files."
 #+BEGIN_SRC emacs-lisp
 (setq default-directory
       (cond ((eq my-device 'laptop) (expand-file-name "wspace/org/notes/" (getenv "HOME")))
-            ((eq my-device 'termux) (expand-file-name "storage/shared/notes/" (getenv "HOME")))
+            ((eq my-device 'termux) (expand-file-name "org/" (getenv "HOME")))
             ((eq my-device 'tablet) (expand-file-name "path/to/tablet/notes/" (getenv "HOME")))
             (t (getenv "HOME"))))
 (message "📁 Default directory set to: %s" default-directory)
