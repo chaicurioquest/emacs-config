@@ -272,7 +272,7 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   (with-eval-after-load 'yankpad
     (add-hook 'org-mode-hook #'yankpad-reload))
   :config
-  ;; Define yankpad.org location based on device (portable across laptop, Termux, tablet)
+  ;; Define yankpad.org location based on device (portable across devices)
   (message "Yankpad file: %s" yankpad-file)
    ;; Set yankpad.org in org/ relative to user-emacs-directory (portable across devices)
   (setq yankpad-file (expand-file-name "org/yankpad.org" user-emacs-directory))
