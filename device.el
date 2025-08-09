@@ -26,13 +26,13 @@
 (defvar my-device
   (cond
    ;; Termux tablet
-   ((my-tablet-p) 'termux-tablet)
+   ((my-tablet-p) 'tablet)
    ;; Termux phone
-   ((my-phone-p) 'termux-phone)
+   ((my-phone-p) 'phone)
    ;; Laptop / desktop
    ((memq system-type '(gnu/linux darwin windows-nt)) 'laptop)
    ;; Fallback
    (t 'generic))
-  "Current device type: 'laptop, 'termux-tablet, 'termux-phone, or 'generic.")
+  "Current device type: 'laptop, 'tablet, 'phone, or 'generic.")
 
 (provide 'device)
