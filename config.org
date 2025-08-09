@@ -274,12 +274,13 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :config
   ;; Define yankpad.org location based on device (portable across laptop, Termux, tablet)
   (message "Yankpad file: %s" yankpad-file)
-  (setq yankpad-file
-        (cond
-         ((eq my-device 'laptop) (expand-file-name "org/yankpad.org" user-emacs-directory))
-         ((eq my-device 'termux) (expand-file-name "org/yankpad.org" default-directory))
-         ((eq my-device 'tablet) (expand-file-name "yankpad.org" default-directory))
-         (t (expand-file-name "org/yankpad.org" user-emacs-directory))))
+   ;; Set yankpad.org in org/ relative to user-emacs-directory (portable across devices)
+  (setq yankpad-file (expand-file-name "org/yankpad.org" user-emacs-directory))
+  ;; Ensure the directory exists (optional, but good for portability)
+  (let ((yankpad-dir (file-name-directory yankpad-file)))
+    (unless (file-directory-p yankpad-dir)
+      (make-directory yankpad-dir t)))
+  ;; Reload yankpad with the new file path
   (yankpad-reload))
 #+END_SRC
 
