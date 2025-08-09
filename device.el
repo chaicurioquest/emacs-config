@@ -1,6 +1,9 @@
+;; ~/.emacs.d/device.el
+;; Robust device detection logic
+
 (defun my-termux-p ()
   "Return non-nil if running in Termux (Android)."
-  (getenv "PREFIX")) ;; reliable in Termux
+  (getenv "PREFIX")) ;; This env var is unique to Termux
 
 (defun my-android-prop (prop)
   "Get Android system property PROP using getprop."
@@ -23,13 +26,13 @@
 (defvar my-device
   (cond
    ;; Termux tablet
-   ((my-tablet-p) 'tablet)
+   ((my-tablet-p) 'termux-tablet)
    ;; Termux phone
-   ((my-phone-p) 'phone)
-   ;; Generic laptop/desktop
+   ((my-phone-p) 'termux-phone)
+   ;; Laptop / desktop
    ((memq system-type '(gnu/linux darwin windows-nt)) 'laptop)
    ;; Fallback
    (t 'generic))
-  "Current device type: 'laptop, 'tablet, 'phone, or 'generic.")
+  "Current device type: 'laptop, 'termux-tablet, 'termux-phone, or 'generic.")
 
 (provide 'device)
