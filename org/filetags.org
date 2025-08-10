@@ -5,36 +5,37 @@
 #+DATE: 2025-07-09
 
 * Filetags Configuration for Emacs
-
 This configuration sets up two layers of tag files:
 1. `~/.emacs.d/.filetags` – General-purpose tags for PIM and file management (used globally).
 2. `~/.emacs.d/.filetags-org` – Specific to Org-mode and Org-Roam files under `~/wspace/org/notes/`.
-
-
  Based on Karl Voit’s tag guidelines:
 - Lowercase, plural, minimal, non-overlapping, general
 - Avoids redundancy
-
 - Features:
 - **Future-proof**: Tidy structure and extensible
 - **Reliable**: Uses `ht` and `f.el` for parsing
 - **Minimal**: Lightweight, no UI assumptions
 - **Portable**: Works across laptop, Termux, tablet
-- **Synced**: Via GitHub[](https://github.com/chaicurioquest/emacs-config) and Syncthing.
+- **Synced**: Via GitHub and Syncthing.
 
 * ACTIVE Filetags Setup
 Configure filetags for tag management with mutual exclusivity, used by org-roam (C-c r t) and standalone (C-c f t).
-| Component                   | Purpose                     | Device  | Keybindings | Loading Trigger |
-|-----------------------------|-----------------------------|---------|-------------|-----------------|
-| Custom .filetags management | Tag completion from .filetags files | All     | C-c f t     | C-c f t         |
 
-#+BEGIN_SRC emacs-lisp 
+| Component              | Purpose                                      | Device | Keybindings | Loading Trigger |
+|------------------------|----------------------------------------------|--------|-------------|-----------------|
+| Global .filetags file  | General-purpose tags for PIM and files       | All    | None        | On demand       |
+| Org .filetags-org file | Org-mode specific tags                       | All    | None        | On demand       |
+| my-org--filetags-path  | Device-specific path to .filetags            | All    | None        | Called internally |
+| my-org-read-filetags   | Read/parse tags from .filetags files         | All    | None        | Called by set-filetags |
+| my-org-set-filetags    | Interactive multi-tag assignment with completion | All | C-c f t     | C-c f t         |
+
+#+BEGIN_SRC emacs-lisp
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== LOADING org/filetags.org ==="))
 #+END_SRC
 
 * Global Tag Files for Filetags Completion
-#+BEGIN_SRC emacs-lisp 
+#+BEGIN_SRC emacs-lisp
 (setq filetags-tag-file "~/.emacs.d/.filetags"
       filetags-extra-tag-files '("~/.emacs.d/.filetags-org"))
 #+END_SRC

@@ -15,23 +15,30 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 Tangle with `C-c t` or `M-x my-tangle-config-org`.
 
 * My Digital Workflow
-| *Workflow*                          | *Solution*                                         | *Notes*                                                        | *Device* | *Keybindings*         |
-|-------------------------------------+----------------------------------------------------+----------------------------------------------------------------|----------|-----------------------|
-| Installing packages                 | use-package with straight.el                       | Lazy loading in config.org; workflows.org optional (commented) | All      | None                  |
-| Filter Org files                    | sparse trees                                       | Built-in Org feature for filtering headings                    | All      | C-c /                 |
-| Focus on Org sub-hierarchy          | org-tree-to-indirect-buffer                        | Built-in Org for narrowing to subtree                          | All      | C-c C-x b             |
-| Enhanced search/selection           | vertico, orderless                                 | Vertical completion and fuzzy matching; Ivy optional in workflows.org (commented) | All      | None (uses Vertico for completion) |
-| Switching buffers                   | ibuffer                                            | Improved buffer list management                                | All      | C-x C-b               |
-| Inserting date/time-stamps          | my-insert-timestamp(), my-insert-datestamp()       | Custom functions for timestamps                                | All      | C-c i t, C-c i d      |
-| Org to PDF export                   | Org mode export via LaTeX (AUCTeX)                 | Uses auctex, reftex for refs; pdf-tools for viewing            | All/Laptop | C-c C-e l p           |
-| Passwords                           | org-crypt                                          | Encrypt Org sections                                           | All      | None                  |
-| Snippet management                  | yankpad with yasnippet                             | Org-style snippets in yankpad.org, tab-completion             | All      | C-c y (insert), C-c Y (expand), C-c TAB |
-| Spell checking                      | flyspell with aspell                               | Requires aspell; M-$ for correction                           | All      | M-$                   |
-| PDF reading/annotating              | pdf-tools, org-noter                               | pdf-tools for viewing/highlighting; org-noter for synced annotations in notes | Laptop/All | None (M-x org-noter for annotations) |
-| Record screencasts                  | gif-screencast                                     | Optional in workflows.org (commented out)                      | Laptop   | C-c g                 |
-| Zettelkasten note-taking            | org-roam                                           | In org/roam.org; graph UI on laptop; dailies capture; backlinking with IDs | All      | C-c r n (capture), C-c r f (find), C-c r g (UI), C-c r d (dailies) |
-| Bibliography/Citations              | citar, org-roam-bibtex                             | Zotero integration; insert citations; bib notes in roam        | All      | C-c r c (open note/resource) |
-| Tag Org sections                    | .filetags                                          | In org/filetags.org; tag completion with Vertico               | All      | C-c f t               |     |
+| Workflow                    | Solution                            | Notes                                                                   | Device     | Keybindings                     |
+|-----------------------------|-------------------------------------|-------------------------------------------------------------------------|------------|-----------------------------------|
+| Installing packages         | use-package with straight.el        | Lazy loading in config.org; workflows.org optional (commented)          | All        | None                              |
+| Filter Org files            | sparse trees                        | Built-in Org feature for filtering headings                             | All        | C-c /                             |
+| Focus on Org sub-hierarchy  | org-tree-to-indirect-buffer         | Built-in Org for narrowing to subtree                                   | All        | C-c C-x b                         |
+| Enhanced search/selection   | vertico, orderless                  | Vertical completion and fuzzy matching; Ivy optional in workflows.org (commented) | All      | None (uses Vertico for completion)|
+| Switching buffers           | ibuffer                             | Improved buffer list management                                         | All        | C-x C-b                           |
+| Inserting date/time-stamps  | my-insert-timestamp(), my-insert-datestamp(), my-insert-org-timestamp() | Custom functions for timestamps (including Org format)                | All        | C-c i t, C-c i d, C-c i o         |
+| Org to PDF export           | Org mode export via LaTeX (AUCTeX)  | Uses auctex, reftex for refs; pdf-tools for viewing                     | All/Laptop | C-c C-e l p                       |
+| Passwords                   | org-crypt                           | Encrypt Org sections                                                    | All        | None                              |
+| Snippet management          | yankpad with yasnippet              | Org-style snippets in yankpad.org, tab-completion                       | All        | C-c y (insert), C-c Y (expand), C-c TAB |
+| Spell checking              | flyspell with aspell                | Requires aspell; M-$ for correction                                     | All        | M-$                               |
+| PDF reading/annotating      | pdf-tools, org-noter                | pdf-tools for viewing/highlighting; org-noter for synced annotations in notes | Laptop/All | None (M-x org-noter for annotations) |
+| PDF side preview            | my/org-pdf-vertical-view            | Opens corresponding PDF in right split for quick view                   | All        | C-c v                             |
+| Record screencasts          | gif-screencast                      | Optional in workflows.org (commented out)                               | Laptop     | C-c g                             |
+| Zettelkasten note-taking    | org-roam                            | In org/roam.org; graph UI on laptop; dailies capture; backlinking with IDs | All     | C-c r n (capture), C-c r f (find), C-c r g (UI), C-c r d (dailies) |
+| Bibliography/Citations      | citar, org-roam-bibtex              | Zotero integration; insert citations; bib notes in roam                 | All        | C-c r c (open note/resource)      |
+| Inserting citations         | citar-insert-citation               | Inserts BibTeX citations with Citar                                     | All        | C-c i c                           |
+| Tag Org sections            | .filetags                           | In org/filetags.org; tag completion with Vertico                        | All        | C-c f t                           |
+| Tangling config             | org-babel-tangle, my-tangle-all     | Tangles config.org or all modular files                                 | All        | C-c t (single), C-c T (all)       |
+| Org capture                 | org-capture                         | Captures generic notes using template                                   | All        | C-c c                             |
+| Toggle Org items            | org-toggle-item                     | Converts text to/from list items                                        | All        | C-c i i                           |
+| Window navigation/switching | windmove, winner-mode, ace-window   | Smart movement between windows; undo/redo layouts; fast jumping         | All        | Shift+Arrow (move), C-c left/right (undo/redo), M-o (ace jump) |
+
 * ACTIVE Startup Optimizations
 ;; modular org files tangle process.Tangling only happens when the .org file is newer than the .el file. Each .el file is loaded once after tangling.
 
