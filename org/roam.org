@@ -4,7 +4,7 @@
 #+PROPERTY: header-args:emacs-lisp :tangle yes
 #+DATE: 2025-07-12
 #+CREATED: %U
-#+LAST_MODIFIED: %U
+#+LAST_MODIFIED: [2025-08-10 Sun 16:50]
 
 ** Purpose
 Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, dailies, and dynamic tags from .filetags via my-org-read-filetags in org/filetags.org. Designed to be:
@@ -17,7 +17,7 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, dail
 
 Tangle with `C-c t` or `M-x my-tangle-config-org`.
 
-* My Org-Roam Workflow
+* My Org-Roam Workflow                                             :workflow:
 | Workflow            | Solution                           | Notes                                                       | Device | Keybindings                          |
 |-----------------------|--------------------------------------|---------------------------------------------------------------|----------|----------------------------------------|
 | Find existing note    | org-roam-node-find                   | Search notes by title/ID/tags; Vertico completion             | All      | C-c r f                                |

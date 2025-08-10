@@ -3,6 +3,7 @@
 #+STARTUP: indent
 #+PROPERTY: header-args:emacs-lisp :tangle yes
 #+DATE: 2025-07-12
+#+LAST_MODIFIED: [2025-08-10 Sun 16:55]
 
 * Purpose
 This Org-mode configuration is the single source for my Emacs 30 setup, designed to be:
@@ -14,7 +15,7 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 - **Modular**: Uses org/ for snippets (yankpad.org), workflows (workflows.org), and note-taking (**roam.org**).  **<-- Updated reference for consistency with file rename**
 Tangle with `C-c t` or `M-x my-tangle-config-org`.
 
-* My Digital Workflow
+* My Digital Workflow                                              :workflow:
 | Workflow                    | Solution                            | Notes                                                                   | Device     | Keybindings                     |
 |-----------------------------|-------------------------------------|-------------------------------------------------------------------------|------------|-----------------------------------|
 | Installing packages         | use-package with straight.el        | Lazy loading in config.org; workflows.org optional (commented)          | All        | None                              |

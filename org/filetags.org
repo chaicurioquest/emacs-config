@@ -3,6 +3,7 @@
 #+STARTUP: indent
 #+PROPERTY: header-args:emacs-lisp :tangle yes
 #+DATE: 2025-07-09
+#+LAST_MODIFIED: [2025-08-10 Sun 16:50]
 
 * Filetags Configuration for Emacs
 This configuration sets up two layers of tag files:
@@ -18,7 +19,7 @@ This configuration sets up two layers of tag files:
 - **Portable**: Works across laptop, Termux, tablet
 - **Synced**: Via GitHub and Syncthing.
 
-* ACTIVE Filetags Setup
+* ACTIVE Filetags Setup                                            :workflow:
 Configure filetags for tag management with mutual exclusivity, used by org-roam (C-c r t) and standalone (C-c f t).
 
 | Component              | Purpose                                      | Device | Keybindings | Loading Trigger |
