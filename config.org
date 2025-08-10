@@ -94,8 +94,22 @@ Skips if no changes; handles errors gracefully without deleting files."
             (t (getenv "HOME"))))
 (message "📁 Default directory set to: %s" default-directory)
 #+END_SRC
-** Debug: Confirm startup.
 
+** Customized Agenda view files on startup
+#+BEGIN_SRC emacs-lisp
+(defun my/update-agenda-files ()
+  "Set `org-agenda-files` to all .org files under `default-directory`, excluding `roam`."
+  (setq org-agenda-files
+        (seq-filter
+         (lambda (f) (not (string-match-p "/roam/" f)))
+         (directory-files-recursively default-directory "\\.org$")))
+  (message "Agenda files updated: %d files" (length org-agenda-files)))
+
+;; Run it at startup
+(my/update-agenda-files)
+#+END_SRC
+
+** Debug: Confirm startup.
 #+BEGIN_SRC emacs-lisp
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== STARTUP OPTIMIZATIONS COMPLETE ==="))
