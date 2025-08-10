@@ -655,10 +655,17 @@ If using AUCTeX for LaTeX exports, add reftex package.
 #+END_SRC
 
 ** Switching windows 
-;; Ace Window for fast jumping (M-o)
 #+BEGIN_SRC emacs-lisp
+;; Ace Window for fast jumping (M-o)
 (use-package ace-window
   :bind (("M-o" . ace-window)))
+#+END_SRC
+
+** ORG Agenda keybinding
+#+BEGIN_SRC emacs-lisp
+;;[2025-08-10] Added to ensure org-agenda is loaded and keybinding works
+(require 'org-agenda)
+(global-set-key (kbd "C-c a") 'org-agenda)
 #+END_SRC
 
 * ACTIVE Modular Configs
