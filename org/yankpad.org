@@ -90,6 +90,22 @@
   ${3:Task details}
 #+END_SRC
 
+** web-capture
+:PROPERTIES:
+:snippet-key: wc
+:END:
+** ${1:Title}
+:PROPERTIES:
+:URL: ${2:https://example.com/...}
+:TIMESTAMP: (format-time-string "[%Y-%m-%d %a]")
+:SOURCE: ${3:ChatGPT}
+:TAGS: ${4:web,ai}
+:ID: (org-id-new)
+:END:
+#+BEGIN_QUOTE
+$0
+#+END_QUOTE
+
 ** Code
 *** Python Function
 :PROPERTIES:
@@ -100,3 +116,5 @@
       """${3:Docstring}"""
       ${4:pass}
 #+END_SRC
+
+
