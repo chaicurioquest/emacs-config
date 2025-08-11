@@ -12,24 +12,6 @@
   Hello, ${1:Name}! Welcome to Yankpad!
 #+END_SRC
 
-*** Org Export Header
-:PROPERTIES:
-:yankpad-trigger: ohead
-:src:
-:END:
-#+SETUPFILE: include/setup-latex.org 
-#+TITLE: ${1:Document Title}
-#+AUTHOR: Ram
-#+DATE: \today
-#+LANGUAGE: en
-#+OPTIONS: toc:t num:nil
-#+OPTIONS: toc:nil num:2
-#+PROPERTY: header-args :eval never-export
-#+CITE_EXPORT: biblatex authoryear
-#+ROAM_ALIASES: 
-#+ROAM_REFS: 
-#+CREATED: 
-
 ** Notes
 *** Zettelkasten Note
 :PROPERTIES:
@@ -90,21 +72,23 @@
   ${3:Task details}
 #+END_SRC
 
-** web-capture
+*** web-capture
 :PROPERTIES:
-:snippet-key: wc
+:yankpad-trigger: wc
 :END:
-** ${1:Title}
-:PROPERTIES:
-:URL: ${2:https://example.com/...}
-:TIMESTAMP: (format-time-string "[%Y-%m-%d %a]")
-:SOURCE: ${3:ChatGPT}
-:TAGS: ${4:web,ai}
-:ID: (org-id-new)
-:END:
-#+BEGIN_QUOTE
-$0
-#+END_QUOTE
+#+BEGIN_SRC org
+  * ${1:Title}
+  :PROPERTIES:
+  :URL: ${2:https://example.com/...}
+  :TIMESTAMP: %(format-time-string "[%Y-%m-%d %a]")
+  :SOURCE: ${3:ChatGPT}
+  :TAGS: ${4:web,ai}
+  :ID: %(org-id-new)
+  :END:
+  #+BEGIN_QUOTE
+  $0
+  #+END_QUOTE
+#+END_SRC
 
 ** Code
 *** Python Function

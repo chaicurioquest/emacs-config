@@ -1,9 +1,22 @@
 # -*- mode: snippet -*-
-# name: table
-# key: tbl
+# name: org-table
+# key: orgtbl
 # --
-#+CAPTION: ${1:Your caption here.}
-#+NAME: tbl:${2:your-label}
-| ${3:Column1} | ${4:Column2} |
-|-------------+-------------|
-| ${5:Data1}  | ${6:Data2}  |
+`(let* ((cols (string-to-number (read-string "Number of columns: " "2")))
+        (rows (string-to-number (read-string "Number of rows: " "2")))
+        ;; Header row
+        (header (mapconcat (lambda (i) (format "Col%d" (1+ i)))
+                           (number-sequence 0 (1- cols)) " | "))
+        ;; Divider row (Org table uses '-' with '+' separators)
+        (divider (mapconcat (lambda (_) (make-string 5 ?-))
+                            (number-sequence 1 cols) "+"))
+        ;; Body rows
+        (body (mapconcat
+               (lambda (_)
+                 (concat "| "
+                         (mapconcat (lambda (_) "Data")
+                                    (number-sequence 1 cols) " | ")
+                         " |"))
+               (number-sequence 1 rows)
+               "\n")))
+   (concat "| " header " |\n|-" divider "-|\n" body))`

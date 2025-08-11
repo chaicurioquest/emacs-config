@@ -18,17 +18,17 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, dail
 Tangle with `C-c t` or `M-x my-tangle-config-org`.
 
 * My Org-Roam Workflow                                             :workflow:
-| Workflow            | Solution                           | Notes                                                       | Device | Keybindings                          |
-|-----------------------|--------------------------------------|---------------------------------------------------------------|----------|----------------------------------------|
-| Find existing note    | org-roam-node-find                   | Search notes by title/ID/tags; Vertico completion             | All      | C-c r f                                |
-| Insert link to note   | org-roam-node-insert                 | Link to another note (backlinks auto-created)                 | All      | C-c r i                                |
-| Capture new note      | org-roam-capture                     | Create notes with templates (default, fleeting, permanent, journal, bibliography) | All | C-c r n                                |
-| Dailies capture       | org-roam-dailies-capture-today       | Daily notes with templates; auto-timestamped                  | All      | C-c r d                                |
+| Workflow              | Solution                             | Notes                                                         | Device   | Keybindings                                       |
+|-----------------------|--------------------------------------|---------------------------------------------------------------|----------|-------------------------------------------------  |
+| Find existing note    | org-roam-node-find                   | Search notes by title/ID/tags; Vertico completion             | All      | C-c r f                                           |
+| Insert link to note   | org-roam-node-insert                 | Link to another note (backlinks auto-created)                 | All      | C-c r i                                           |
+| Capture new note      | org-roam-capture                     | Create notes with templates (default, fleeting, permanent, journal, bibliography) | All | C-c r n                            |
+| Dailies capture       | org-roam-dailies-capture-today       | Daily notes with templates; auto-timestamped                  | All      | C-c r d                                           |
 | Navigate dailies      | org-roam-dailies-goto-*              | Jump to today/previous/next/specific date                     | All      | C-c r T (today), P (previous), N (next), D (date) |
-| Bibliography notes    | org-roam-bibtex (with Citar)         | Create notes from Zotero refs; integrates with Org-noter for annotations | All   | C-c r c (via Citar open/create)        |
-| Tag notes             | my-org-roam-tag-add / my-org-roam-tag-remove | Dynamic tags from filetags.org; Vertico completion            | All      | C-c r t (add), r (remove)              |
-| View backlinks        | org-roam-buffer-toggle               | Displays backlinks, references in side buffer                | All      | C-c r b                                |
-| View graph            | org-roam-ui                          | Interactive graph UI (on laptop)                              | Laptop   | C-c r g                                |
+| Bibliography notes    | org-roam-bibtex (with Citar)         | Create notes from Zotero refs; integrates with Org-noter for annotations | All   | C-c r c (via Citar open/create)           |
+| Tag notes             | my-org-roam-tag-add / my-org-roam-tag-remove | Dynamic tags from filetags.org; Vertico completion    | All      | C-c r t (add), r (remove)                         |
+| View backlinks        | org-roam-buffer-toggle               | Displays backlinks, references in side buffer                 | All      | C-c r b                                           |
+| View graph            | org-roam-ui                          | Interactive graph UI (on laptop)                              | Laptop   | C-c r g                                           |  
 
 #+BEGIN_SRC emacs-lisp
   (setq rmy-variable "Hello ramu, Org!")

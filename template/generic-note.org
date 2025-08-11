@@ -3,10 +3,11 @@
 #+TITLE: %^{Title}
 #+AUTHOR: Ram
 #+DATE: \today
-#+LANGUAGE: en
+#+FILETAGS: ::
 # OPTIONS: toc:t num:nil
 #+OPTIONS: toc:nil num:2
 #+PROPERTY: header-args :eval never-export
+#+CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES: 
 #+ROAM_REFS: 
 #+CREATED: %U

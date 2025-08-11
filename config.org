@@ -70,7 +70,7 @@ Skips if no changes; handles errors gracefully without deleting files."
 ** Reset garbage collection threshold to 2MB after startup.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'emacs-startup-hook
-          (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
+  (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
 #+END_SRC
 
 ** Disable startup screen.
@@ -95,7 +95,14 @@ Skips if no changes; handles errors gracefully without deleting files."
 (message "📁 Default directory set to: %s" default-directory)
 #+END_SRC
 
-** Customized Agenda view files on startup
+** Global Variables
+#+BEGIN_SRC emacs-lisp
+(defvar setupfile
+  (expand-file-name "../setup/setup-latex.org" default-directory)
+  "Path to default Org LaTeX setup file.")
+#+END_SRC
+
+** Customized Agenda view files on startup excluding roam directory
 #+BEGIN_SRC emacs-lisp
 (defun my/update-agenda-files ()
   "Set `org-agenda-files` to all .org files under `default-directory`, excluding `roam`."
@@ -154,7 +161,7 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
       `("mkdir -p build"
         "mv %f build/"
         ,(format "latexmk -lualatex -r %s -outdir=build -f build/%%b.tex"
-                 (expand-file-name "../setup/.latexmkrc" default-directory))
+                 (expand-file-name ".latexmkrc" (file-name-directory setupfile)))
         "[ -f build/%b.pdf ] && mv build/%b.pdf ./"
         "[ -f build/%b.tex ] && mv build/%b.tex ./"
         "rm -rf build"))
@@ -173,7 +180,7 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   (setenv "TEXINPUTS" (concat "../setup:" (getenv "TEXINPUTS")))
 
   ;; Warn if setup-latex.org is missing
-  (let ((setup-file (expand-file-name "../setup/setup-latex.org" default-directory)))
+  (let ((setup-file setupfile))
     (unless (file-exists-p setup-file)
       (message "⚠️ Org LaTeX setup file not found: %s" setup-file))))
 #+END_SRC
@@ -287,23 +294,24 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 #+BEGIN_SRC emacs-lisp
 (use-package yankpad
   :straight t
-  :bind (("C-c Y" . yankpad-expand)  ;; Expand snippet at point with yasnippet evaluation
-         ("C-c y" . yankpad-insert)) ;; Insert snippet from completion list (raw, suitable for plain Org content)
-  :init
-  ;; Reload snippets in Org buffers after yankpad loads (simple lazy loading)
-  (with-eval-after-load 'yankpad
-    (add-hook 'org-mode-hook #'yankpad-reload))
+  :bind
+  (("C-c Y" . yankpad-expand)  ;; Expand snippet at point with yasnippet evaluation
+   ("C-c y" . yankpad-insert)) ;; Insert snippet as plain text (no evaluation)
   :config
-  ;; Define yankpad.org location based on device (portable across devices)
-  (message "Yankpad file: %s" yankpad-file)
-   ;; Set yankpad.org in org/ relative to user-emacs-directory (portable across devices)
-  (setq yankpad-file (expand-file-name "org/yankpad.org" user-emacs-directory))
-  ;; Ensure the directory exists (optional, but good for portability)
+  ;; Set yankpad file in a portable location
+  (setq yankpad-file (expand-file-name "org/yankpad.org"
+                                       user-emacs-directory))
+  ;; Ensure directory exists
   (let ((yankpad-dir (file-name-directory yankpad-file)))
     (unless (file-directory-p yankpad-dir)
       (make-directory yankpad-dir t)))
-  ;; Reload yankpad with the new file path
-  (yankpad-reload))
+
+  ;; Load snippets immediately
+  (yankpad-reload)
+
+  ;; Optional: auto-reload in Org buffers
+  (add-hook 'org-mode-hook #'yankpad-reload))
+
 #+END_SRC
 
 ** Install the MELPA sqlite3 package
@@ -354,7 +362,7 @@ Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) f
   :custom
   ;; BibTeX file path relative to your Org note directory
   (citar-bibliography (condition-case nil
-                          (list (expand-file-name "../setup/references.bib" default-directory))
+                          (list (expand-file-name "references.bib" (file-name-directory setupfile)))
                         (error nil)))  ;; Error handling if path missing
   ;; Path where Zotero stores PDFs
   (citar-library-paths (list "~/wspace/src/zotero-kbase/storage"))
@@ -595,7 +603,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
     (insert-file-contents (expand-file-name "template/generic-note.org" user-emacs-directory))
     (goto-char (point-min))
     (while (search-forward "${setupfile}" nil t)
-      (replace-match (expand-file-name "../setup/setup-latex.org" default-directory) t t))
+      (replace-match setupfile t t))
     (buffer-string)))
 ;; Added 2025-07-28: capture template, loading content from generic-note.org.
 (setq org-capture-templates
