@@ -256,25 +256,6 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
         TeX-parse-self t))
 #+END_SRC
 
-** Smart TAB: Yasnippet (inline) → CDLaTeX (math) → Org-cycle
-#+BEGIN_SRC emacs-lisp
-(defun my/org-smart-tab ()
-  "Smart TAB: Inline Yasnippet expand if match, then CDLaTeX math if in LaTeX, then Org-cycle."
-  (interactive)
-  (cond
-   ((org-at-heading-p) (org-cycle))  ;; Cycle headings
-   ((org-in-src-block-p) (org-cycle))  ;; Cycle in source blocks
-   ((and (bound-and-true-p yas-minor-mode)
-         (yas-maybe-expand)) t)  ;; Inline expand snippet if trigger matches
-   ((and (bound-and-true-p cdlatex-mode)
-         (org-inside-LaTeX-fragment-p))  ;; Expand math if in LaTeX
-    (cdlatex-tab))
-   (t (org-cycle))))  ;; Fallback to Org-cycle
-
-;; Bind TAB to smart function in Org-mode
-(define-key org-mode-map (kbd "TAB") #'my/org-smart-tab)
-#+END_SRC
-
 ** Yasnippet package for adding snippets in org files
 #+BEGIN_SRC emacs-lisp
 (use-package yasnippet
@@ -548,6 +529,27 @@ If using AUCTeX for LaTeX exports, add reftex package.
                (window-width . 0.45)
                (slot . 1)))
 #+END_SRC
+
+** Smart TAB: Yasnippet (inline) → CDLaTeX (math) → Org-cycle
+#+BEGIN_SRC emacs-lisp
+(require 'yasnippet)  ;; Ensure yasnippet is loaded for yas-maybe-expand
+(defun my/org-smart-tab ()
+  "Smart TAB: Inline Yasnippet expand if match, then CDLaTeX math if in LaTeX, then Org-cycle."
+  (interactive)
+  (cond
+   ((org-at-heading-p) (org-cycle))
+   ((org-in-src-block-p) (org-cycle))
+   ((org-at-table-p 'any) (org-table-next-field))  ;; Handle tables properly
+   ((and (bound-and-true-p yas-minor-mode)
+         (yas-maybe-expand)) t)
+   ((and (bound-and-true-p cdlatex-mode)
+         (org-inside-LaTeX-fragment-p))
+    (cdlatex-tab))
+   (t (org-cycle)))) ;; Fallback to Org-cycle
+;; Bind TAB to smart function in Org-mode
+(define-key org-mode-map (kbd "TAB") #'my/org-smart-tab)
+#+END_SRC
+
 ** Smart Org + PDF vertical preview
 #+BEGIN_SRC emacs-lisp
 (defun my/org-pdf-vertical-view ()
@@ -559,7 +561,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
       (find-file pdf-file))))
 (global-set-key (kbd "C-c v") #'my/org-pdf-vertical-view)
 #+END_SRC
-
+ 
 ** Org Hooks for file handling
 ;; Added 2025-07-28: Hook for #+LAST_MODIFIED: update while editing the org file. 
 
