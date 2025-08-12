@@ -1,9 +1,15 @@
+# SETUPFILE: /home/ram/wspace/org/setup/setup-latex.org
 #+TITLE: Emacs Literate Config
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent
-#+PROPERTY: header-args:emacs-lisp :tangle yes
-#+DATE: 2025-07-12
-#+LAST_MODIFIED: [2025-08-10 Sun 16:55]
+#+DATE: \today
+#+FILETAGS: ::
+#+OPTIONS: toc:t num:nil
+# OPTIONS: toc:nil num:2
+#+PROPERTY: header-args :eval never-export
+#+CREATED: 2025-07-12
+#+LAST_MODIFIED: [2025-08-12 Tue 01:23]
+
 
 * Purpose
 This Org-mode configuration is the single source for my Emacs 30 setup, designed to be:
