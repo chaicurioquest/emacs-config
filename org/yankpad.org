@@ -91,7 +91,7 @@
 #+END_SRC
 
 ** Code
-*** Python Function
+*** python
 :PROPERTIES:
 :yankpad-trigger: pyfunc
 :END:
@@ -99,6 +99,15 @@
   def ${1:func_name}(${2:args}):
       """${3:Docstring}"""
       ${4:pass}
+#+END_SRC
+
+*** linux
+:PROPERTIES:
+:yankpad-trigger: bashfc
+:END:
+#+BEGIN_SRC bash
+# bash shell commands.
+
 #+END_SRC
 
 

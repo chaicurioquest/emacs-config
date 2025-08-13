@@ -1,0 +1,163 @@
+#+TITLE: Org Extensions Configuration
+#+TODO: ACTIVE | CANCELLED
+#+STARTUP: indent
+#+PROPERTY: header-args:emacs-lisp :tangle yes
+#+DATE: 2025-08-13
+#+CREATED: %U
+#+LAST_MODIFIED: [2025-08-10 Sun 16:50]
+
+This file contains consolidated configurations for Org-mode extensions, including general settings, Babel for code execution, and export (primarily LaTeX/PDF processes). Settings are grouped into sections for maintainability. If Babel or other areas grow significantly, they can be split into separate files later.
+These configurations are tangled to ~org/orgxtn.el~ and loaded via ~my/tangle-if-needed~ in ~config.org~.
+
+
+Features:
+- Centralized attachments directory
+- Smart TAB integration (Yasnippet → CDLaTeX → Org-cycle)
+- Vertical PDF preview
+- Auto-update =#+LAST_MODIFIED=
+- Simple Org-roam capture template loader
+- Minimal Babel support
+- LaTeX/PDF export via =latexmk=
+
+* Quick Reference Table
+| Feature                        | Keybinding / Usage                            | Notes |
+|--------------------------------|-----------------------------------------------|-------|
+| Attachment directory           | N/A                                           | All Org attachments in `.attach/` subfolder |
+| Smart TAB function             | =TAB=                                         | Expands snippet → CDLaTeX → Org-cycle |
+| Fit PDF to height               | =M-x my/pdf-view-fit-height=                  | Works in pdf-tools buffer |
+| Auto-update `#+LAST_MODIFIED`  | On save                                        | Uses `before-save-hook` |
+| Capture template loader        | `(my/load-template FILE)`                     | Replaces `${setupfile}` with actual path |
+| Babel shell blocks             | `#+BEGIN_SRC sh` … `#+END_SRC`                 | No confirm on eval |
+| PDF export                     | `C-c C-e l o`                                  | Uses `latexmk` with `lualatex` |
+
+* General Org Settings
+General Org-mode variables, functions, hooks, and templates that are not tightly coupled to export or Babel. These were moved from ~config.org~'s * ACTIVE General Settings and related sections, as they are Org-specific and have no external dependencies beyond Org itself (e.g., ~setupfile~ is assumed defined globally in ~config.org~).
+
+#+BEGIN_SRC emacs-lisp
+;; Attachments relative to org file, in `.attach` folder
+(setq org-attach-directory ".attach")
+
+;; Smart TAB: Yasnippet (inline) → CDLaTeX (math) → Org-cycle
+(require 'yasnippet) ;; Ensure yasnippet is loaded for yas-maybe-expand
+(defun my/org-smart-tab ()
+  "Smart TAB: Inline Yasnippet expand if match, then CDLaTeX math if in LaTeX, then Org-cycle."
+  (interactive)
+  (cond
+   ((org-at-heading-p) (org-cycle))
+   ((org-in-src-block-p) (org-cycle))
+   ((org-at-table-p 'any) (org-table-next-field)) ;; Handle tables properly
+   ((and (bound-and-true-p yas-minor-mode)
+         (yas-maybe-expand)) t)
+   ((and (bound-and-true-p cdlatex-mode)
+         (org-inside-LaTeX-fragment-p))
+    (cdlatex-tab))
+   (t (org-cycle)))) ;; Fallback to Org-cycle
+;; Bind TAB to smart function in Org-mode
+(define-key org-mode-map (kbd "TAB") #'my/org-smart-tab)
+
+** Smart Org + PDF vertical preview
+#+BEGIN_SRC emacs-lisp
+(defun my/org-pdf-vertical-view ()
+  "Open corresponding PDF in vertical split right of current org buffer."
+  (interactive)
+  (let ((pdf-file (concat (file-name-sans-extension (buffer-file-name)) ".pdf")))
+    (when (file-exists-p pdf-file)
+      (select-window (split-window-right))
+      (find-file pdf-file))))
+(global-set-key (kbd "C-c v") #'my/org-pdf-vertical-view)
+#+END_SRC
+
+** Org Hooks for file handling
+;; Added 2025-07-28: Hook for #+LAST_MODIFIED: update while editing the org file.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'before-save-hook
+  (lambda ()
+    (when (derived-mode-p 'org-mode)
+      (save-excursion
+        ;; Remove all existing #+LAST_MODIFIED lines
+        (goto-char (point-min))
+        (while (re-search-forward "^#\\+LAST_MODIFIED:.*$" nil t)
+          (beginning-of-line)
+          (kill-line 1))
+        ;; Find location of #+CREATED: line
+        (goto-char (point-min))
+        (if (re-search-forward "^#\\+CREATED:.*$" nil t)
+            ;; If found, insert LAST_MODIFIED just after it
+            (let ((created-end (line-end-position)))
+              (goto-char created-end)
+              (insert (format "\n#+LAST_MODIFIED: [%s]"
+                              (format-time-string "%Y-%m-%d %a %H:%M"))))
+          ;; Fallback: insert after metadata block at top
+          (goto-char (point-min))
+          (let ((metadata-end (point)))
+            (while (looking-at "^\\(#\\|[ \t]*$\\)")
+              (setq metadata-end (line-end-position))
+              (forward-line 1))
+            (goto-char metadata-end)
+            ;; Insert newline if necessary
+            (unless (looking-back "\n" nil)
+              (insert "\n"))
+            (insert (format "#+LAST_MODIFIED: [%s]\n"
+                            (format-time-string "%Y-%m-%d %a %H:%M")))))))))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+(defvar my/generic-note-template
+  (with-temp-buffer
+    (insert-file-contents (expand-file-name "template/generic-note.org" user-emacs-directory))
+    (goto-char (point-min))
+    (while (search-forward "${setupfile}" nil t)
+      (replace-match setupfile t t))
+    (buffer-string)))
+;; Added 2025-07-28: capture template, loading content from generic-note.org.
+(setq org-capture-templates
+  `(("n" "Generic Note" plain
+     (file (lambda () (read-file-name "New Note File: " default-directory nil nil ".org")))
+     ,my/generic-note-template
+     :empty-lines 1 :prepend t)))
+#+END_SRC
+
+* Babel Configuration
+Settings for Org Babel code execution. Currently enables shell blocks; expand here for future languages (e.g., Python, Emacs Lisp) without creating a new file unless it grows excessively.
+
+#+BEGIN_SRC emacs-lisp
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((shell . t))) ;; Enables bash/sh blocks
+
+;; Add future Babel settings here, e.g.:
+;; (setq org-confirm-babel-evaluate nil) ;; No confirmation for code evaluation
+;; (org-babel-do-load-languages 'org-babel-load-languages '((python . t) (emacs-lisp . t)))
+#+END_SRC
+
+* Export Configuration
+LaTeX/PDF export processes, citation configurations, and related advices/environment variables. Moved from ~config.org~'s use-package org block. Removed overhead for forcing .tex files into build/ (e.g., no pub-dir advice or pre-parsing hook), so .tex generates in the current directory while PDF and aux files go to build/ via latexmk -outdir.
+
+#+BEGIN_SRC emacs-lisp
+;; Load Org Cite processors for bibliography support
+(require 'oc)
+(require 'oc-biblatex)
+
+;; Configure citation export to use biblatex with biber backend and authoryear style
+(setq org-cite-export-processors '((latex biblatex "backend=biber,style=authoryear")))
+
+;; Define LaTeX-to-PDF export commands using latexmk
+(setq org-latex-pdf-process
+      `(,(format "mkdir -p build && latexmk -lualatex -r %s -outdir=build -f %%f"
+                 (expand-file-name ".latexmkrc" (file-name-directory setupfile)))
+        ;; Optional: copy PDF to project root
+        "cp build/%b.pdf ./"
+        ;; Clean but keep .log and .pdf
+        "find build -type f ! -name '*.log' -delete"))
+
+;; Prevent Org from inserting \usepackage[utf8]{inputenc} with lualatex
+(setq org-latex-inputenc-alist '(("utf8" . nil)))
+
+;; Set TEXINPUTS to include org/setup/ for LaTeX input files
+(setenv "TEXINPUTS" (concat "../setup:" (getenv "TEXINPUTS")))
+
+;; Warn if setup-latex.org is missing
+(let ((setup-file setupfile))
+  (unless (file-exists-p setup-file)
+    (message "⚠️ Org LaTeX setup file not found: %s" setup-file)))
+#+END_SRC

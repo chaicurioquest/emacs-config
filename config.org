@@ -8,7 +8,7 @@
 # OPTIONS: toc:nil num:2
 #+PROPERTY: header-args :eval never-export
 #+CREATED: 2025-07-12
-#+LAST_MODIFIED: [2025-08-12 Tue 01:23]
+#+LAST_MODIFIED: [2025-08-12 Tue 16:06]
 
 
 * Purpose
@@ -18,33 +18,34 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 - **Minimal**: Single config.org, minimal hooks/keybindings, early-init.el for GUI, unified tag management.
 - **Portable**: Device-specific settings (laptop, Termux, tablet) via device.el.
 - **Synced**: Via GitHub[](https://github.com/chaicurioquest/emacs-config) and Syncthing.
-- **Modular**: Uses org/ for snippets (yankpad.org), workflows (workflows.org), and note-taking (**roam.org**).  **<-- Updated reference for consistency with file rename**
+- **Modular**: Uses org/ for snippets (yankpad.org), org-extension (orgxtn.org),  workflows (workflows.org), and note-taking (**roam.org**).  **<-- Updated reference for consistency with file rename**
 Tangle with `C-c t` or `M-x my-tangle-config-org`.
 
-* My Digital Workflow                                              :workflow:
-| Workflow                    | Solution                            | Notes                                                                   | Device     | Keybindings                     |
-|-----------------------------|-------------------------------------|-------------------------------------------------------------------------|------------|-----------------------------------|
-| Installing packages         | use-package with straight.el        | Lazy loading in config.org; workflows.org optional (commented)          | All        | None                              |
-| Filter Org files            | sparse trees                        | Built-in Org feature for filtering headings                             | All        | C-c /                             |
-| Focus on Org sub-hierarchy  | org-tree-to-indirect-buffer         | Built-in Org for narrowing to subtree                                   | All        | C-c C-x b                         |
-| Enhanced search/selection   | vertico, orderless                  | Vertical completion and fuzzy matching; Ivy optional in workflows.org (commented) | All      | None (uses Vertico for completion)|
-| Switching buffers           | ibuffer                             | Improved buffer list management                                         | All        | C-x C-b                           |
-| Inserting date/time-stamps  | my-insert-timestamp(), my-insert-datestamp(), my-insert-org-timestamp() | Custom functions for timestamps (including Org format)                | All        | C-c i t, C-c i d, C-c i o         |
-| Org to PDF export           | Org mode export via LaTeX (AUCTeX)  | Uses auctex, reftex for refs; pdf-tools for viewing                     | All/Laptop | C-c C-e l p                       |
-| Passwords                   | org-crypt                           | Encrypt Org sections                                                    | All        | None                              |
-| Snippet management          | yankpad with yasnippet              | Org-style snippets in yankpad.org, tab-completion                       | All        | C-c y (insert), C-c Y (expand), C-c TAB |
-| Spell checking              | flyspell with aspell                | Requires aspell; M-$ for correction                                     | All        | M-$                               |
-| PDF reading/annotating      | pdf-tools, org-noter                | pdf-tools for viewing/highlighting; org-noter for synced annotations in notes | Laptop/All | None (M-x org-noter for annotations) |
-| PDF side preview            | my/org-pdf-vertical-view            | Opens corresponding PDF in right split for quick view                   | All        | C-c v                             |
-| Record screencasts          | gif-screencast                      | Optional in workflows.org (commented out)                               | Laptop     | C-c g                             |
-| Zettelkasten note-taking    | org-roam                            | In org/roam.org; graph UI on laptop; dailies capture; backlinking with IDs | All     | C-c r n (capture), C-c r f (find), C-c r g (UI), C-c r d (dailies) |
-| Bibliography/Citations      | citar, org-roam-bibtex              | Zotero integration; insert citations; bib notes in roam                 | All        | C-c r c (open note/resource)      |
-| Inserting citations         | citar-insert-citation               | Inserts BibTeX citations with Citar                                     | All        | C-c i c                           |
-| Tag Org sections            | .filetags                           | In org/filetags.org; tag completion with Vertico                        | All        | C-c f t                           |
-| Tangling config             | org-babel-tangle, my-tangle-all     | Tangles config.org or all modular files                                 | All        | C-c t (single), C-c T (all)       |
-| Org capture                 | org-capture                         | Captures generic notes using template                                   | All        | C-c c                             |
-| Toggle Org items            | org-toggle-item                     | Converts text to/from list items                                        | All        | C-c i i                           |
-| Window navigation/switching | windmove, winner-mode, ace-window   | Smart movement between windows; undo/redo layouts; fast jumping         | All        | Shift+Arrow (move), C-c left/right (undo/redo), M-o (ace jump) |
+* My Digital Workflow :workflow:
+| Workflow                     | Solution                          | Notes                                                                 | Device     | Keybindings                          |
+|------------------------------|-----------------------------------|-----------------------------------------------------------------------|------------|--------------------------------------|
+| Installing packages          | use-package with straight.el      | Lazy loading in config.org; workflows.org optional (commented)        | All        | None                                 |
+| Filter Org files             | sparse trees                      | Built-in Org feature for filtering headings                           | All        | C-c /                                |
+| Focus on Org sub-hierarchy   | org-tree-to-indirect-buffer       | Built-in Org for narrowing to subtree                                 | All        | C-c C-x b                            |
+| Enhanced search/selection    | vertico, orderless                | Vertical completion and fuzzy matching; Ivy optional in workflows.org (commented) | All    | None (uses Vertico for completion)   |
+| Switching buffers            | ibuffer                           | Improved buffer list management                                       | All        | C-x C-b                              |
+| Inserting date/time-stamps   | my-insert-timestamp(), my-insert-datestamp(), my-insert-org-timestamp() | Custom functions for timestamps (including Org format)              | All        | C-c i t, C-c i d, C-c i o           |
+| Org to PDF export            | Org mode export via LaTeX (AUCTeX)| Uses auctex, reftex for refs; pdf-tools for viewing; configured in org/orgxtn.org | All/Laptop | C-c C-e l p                          |
+| Passwords                    | org-crypt                         | Encrypt Org sections                                                  | All        | None                                 |
+| Snippet management           | yankpad with yasnippet            | Org-style snippets in yankpad.org, tab-completion                     | All        | C-c y (insert), C-c Y (expand), C-c TAB |
+| Spell checking               | flyspell with aspell              | Requires aspell; M-$ for correction                                   | All        | M-$                                  |
+| PDF reading/annotating       | pdf-tools, org-noter              | pdf-tools for viewing/highlighting; org-noter for synced annotations in notes | Laptop/All | None (M-x org-noter for annotations) |
+| PDF side preview             | my/org-pdf-vertical-view          | Opens corresponding PDF in right split for quick view; configured in org/orgxtn.org | All | C-c v                                |
+| Record screencasts           | gif-screencast                    | Optional in workflows.org (commented out)                             | Laptop     | C-c g                                |
+| Zettelkasten note-taking     | org-roam                          | In org/roam.org; graph UI on laptop; dailies capture; backlinking with IDs | All   | C-c r n (capture), C-c r f (find), C-c r g (UI), C-c r d (dailies) |
+| Bibliography/Citations       | citar, org-roam-bibtex            | Zotero integration; insert citations; bib notes in roam               | All        | C-c r c (open note/resource)         |
+| Inserting citations          | citar-insert-citation             | Inserts BibTeX citations with Citar                                   | All        | C-c i c                              |
+| Tag Org sections             | .filetags                         | In org/filetags.org; tag completion with Vertico                      | All        | C-c f t                              |
+| Tangling config              | org-babel-tangle, my-tangle-all   | Tangles config.org or all modular files                               | All        | C-c t (single), C-c T (all)          |
+| Org capture                  | org-capture                       | Captures generic notes using template; configured in org/orgxtn.org | All  | C-c c                                |
+| Toggle Org items             | org-toggle-item                   | Converts text to/from list items                                      | All        | C-c i i                              |
+| Window navigation/switching  | windmove, winner-mode, ace-window | Smart movement between windows; undo/redo layouts; fast jumping       | All        | Shift+Arrow (move), C-c left/right (undo/redo), M-o (ace jump) |
+| Executing code blocks        | Org Babel                         | Enables shell and other languages in Org files; configured in org/orgxtn.org | All | C-c C-c (in block)                   |
 
 * ACTIVE Startup Optimizations
 ;; modular org files tangle process.Tangling only happens when the .org file is newer than the .el file. Each .el file is loaded once after tangling.
@@ -132,63 +133,37 @@ Skips if no changes; handles errors gracefully without deleting files."
 Configure package managers and lightweight, universal packages with lazy loading.
 Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliographic tools in org/roam.org; filetags in org/filetags.org.
 
-| Package         | Purpose                              | Device     | Keybindings            | Loading Trigger    |
-|------------------+----------------------------------------+-------------+--------------------------+---------------------|
-| org              | Core Org-mode                         | All         | Org-mode keys           | Built-in            |
-| org-roam         | Zettelkasten note-taking              | All         | C-c r n, r f, r i, r g   | Startup             |
-| org-roam-bibtex  | Zotero/BibTeX citation capture        | All         |                         | org-roam-mode hook  |
-| citar            | Bibliography interface                | All         | C-c r c                  | On demand           |
-| org-roam-ui      | Graphical note graph (web UI)         | Laptop only | C-c r g                  | M-x or keybinding   |
-| f                | File/directory manipulation           | All         | None                     | On demand           |
-| ht               | Hash table utilities                  | All         | None                     | On demand           |
-| ibuffer          | Buffer management                     | All         | C-x C-b                  | C-x C-b             |
-| org-crypt        | Password encryption                   | All         | None                     | org-mode hook       |
-| cdlatex          | Math/equation input                   | All         | TAB (contextual)        | TAB                 |
-| yasnippet        | Snippet framework                     | All         | TAB (inline yas-expand), C-c s (yas-insert-snippet) | TAB, C-c s          |
-| yankpad          | Org-style snippet library             | All         | C-c y, C-c Y             | C-c y               |
-| flyspell         | Spell checking                        | All         | M-$                      | M-$                 |
+| Package      | Purpose                          | Device       | Keybindings              | Loading Trigger          |
+|--------------|----------------------------------|--------------|--------------------------|--------------------------|
+| org          | Core Org-mode                    | All          | Org-mode keys            | Built-in                 |
+| org-roam     | Zettelkasten note-taking         | All          | C-c r n, r f, r i, r g   | Startup                  |
+| org-roam-bibtex | Zotero/BibTeX citation capture | All          |                          | org-roam-mode hook       |
+| citar        | Bibliography interface           | All          | C-c r c                  | On demand                |
+| org-roam-ui  | Graphical note graph (web UI)    | Laptop only  | C-c r g                  | M-x or keybinding        |
+| f            | File/directory manipulation      | All          | None                     | On demand                |
+| ht           | Hash table utilities             | All          | None                     | On demand                |
+| ibuffer      | Buffer management                | All          | C-x C-b                  | C-x C-b                  |
+| org-crypt    | Password encryption              | All          | None                     | org-mode hook            |
+| cdlatex      | Math/equation input              | All          | TAB (contextual)         | TAB                      |
+| yasnippet    | Snippet framework                | All          | TAB (inline yas-expand), C-c s (yas-insert-snippet) | TAB, C-c s            |
+| yankpad      | Org-style snippet library        | All          | C-c y, C-c Y             | C-c y                    |
+| flyspell     | Spell checking                   | All          | M-$                      | M-$                      |
 
-** Org LaTeX Export Configuration with Build Directory and Glossaries
-
+** Org Base Configuration
 #+BEGIN_SRC emacs-lisp
 (use-package org
-  :straight (:type built-in) ;; Use built-in Org mode, no external package install
-  :ensure nil ;; Prevent attempting to install Org
+  :straight (:type built-in)
+  :ensure nil
   :config
-  ;; Load Org Cite processors for bibliography support
+  ;; Babel settings (consolidated here for minimal files)
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((shell . t)))
+  ;; Add future Babel expansions above as needed
+
+  ;; Core requires
   (require 'oc)
-  (require 'oc-biblatex)
-
-  ;; Configure citation export to use biblatex with biber backend and authoryear style
-  (setq org-cite-export-processors '((latex biblatex "backend=biber,style=authoryear")))
-
-  ;; Define shell commands for LaTeX-to-PDF export using latexmk
-(setq org-latex-pdf-process
-      `("mkdir -p build"
-        "mv %f build/"
-        ,(format "latexmk -lualatex -r %s -outdir=build -f build/%%b.tex"
-                 (expand-file-name ".latexmkrc" (file-name-directory setupfile)))
-        "[ -f build/%b.pdf ] && mv build/%b.pdf ./"
-        "[ -f build/%b.tex ] && mv build/%b.tex ./"
-        "rm -rf build"))
-
-
-  ;; Suppress "Shell command succeeded with no output" during compilation
-  (advice-add 'org-compile-file :around
-              (lambda (orig-fun &rest args)
-                (let ((inhibit-message t))
-                  (apply orig-fun args))))
-
-  ;; Prevent Org from inserting \usepackage[utf8]{inputenc} with lualatex
-  (setq org-latex-inputenc-alist '(("utf8" . nil)))
-
-  ;; Set TEXINPUTS to include org/setup/ for LaTeX input files
-  (setenv "TEXINPUTS" (concat "../setup:" (getenv "TEXINPUTS")))
-
-  ;; Warn if setup-latex.org is missing
-  (let ((setup-file setupfile))
-    (unless (file-exists-p setup-file)
-      (message "⚠️ Org LaTeX setup file not found: %s" setup-file))))
+  (require 'oc-biblatex))
 #+END_SRC
 
 
@@ -536,89 +511,10 @@ If using AUCTeX for LaTeX exports, add reftex package.
                (slot . 1)))
 #+END_SRC
 
-** Smart TAB: Yasnippet (inline) → CDLaTeX (math) → Org-cycle
+** ACTIVE Org Attachment File directory
 #+BEGIN_SRC emacs-lisp
-(require 'yasnippet)  ;; Ensure yasnippet is loaded for yas-maybe-expand
-(defun my/org-smart-tab ()
-  "Smart TAB: Inline Yasnippet expand if match, then CDLaTeX math if in LaTeX, then Org-cycle."
-  (interactive)
-  (cond
-   ((org-at-heading-p) (org-cycle))
-   ((org-in-src-block-p) (org-cycle))
-   ((org-at-table-p 'any) (org-table-next-field))  ;; Handle tables properly
-   ((and (bound-and-true-p yas-minor-mode)
-         (yas-maybe-expand)) t)
-   ((and (bound-and-true-p cdlatex-mode)
-         (org-inside-LaTeX-fragment-p))
-    (cdlatex-tab))
-   (t (org-cycle)))) ;; Fallback to Org-cycle
-;; Bind TAB to smart function in Org-mode
-(define-key org-mode-map (kbd "TAB") #'my/org-smart-tab)
-#+END_SRC
-
-** Smart Org + PDF vertical preview
-#+BEGIN_SRC emacs-lisp
-(defun my/org-pdf-vertical-view ()
-  "Open corresponding PDF in vertical split right of current org buffer."
-  (interactive)
-  (let ((pdf-file (concat (file-name-sans-extension (buffer-file-name)) ".pdf")))
-    (when (file-exists-p pdf-file)
-      (select-window (split-window-right))
-      (find-file pdf-file))))
-(global-set-key (kbd "C-c v") #'my/org-pdf-vertical-view)
-#+END_SRC
- 
-** Org Hooks for file handling
-;; Added 2025-07-28: Hook for #+LAST_MODIFIED: update while editing the org file. 
-
-#+BEGIN_SRC emacs-lisp
-(add-hook 'before-save-hook
-  (lambda ()
-    (when (derived-mode-p 'org-mode)
-      (save-excursion
-        ;; Remove all existing #+LAST_MODIFIED lines
-        (goto-char (point-min))
-        (while (re-search-forward "^#\\+LAST_MODIFIED:.*$" nil t)
-          (beginning-of-line)
-          (kill-line 1))
-
-        ;; Find location of #+CREATED: line
-        (goto-char (point-min))
-        (if (re-search-forward "^#\\+CREATED:.*$" nil t)
-            ;; If found, insert LAST_MODIFIED just after it
-            (let ((created-end (line-end-position)))
-              (goto-char created-end)
-              (insert (format "\n#+LAST_MODIFIED: [%s]"
-                              (format-time-string "%Y-%m-%d %a %H:%M"))))
-
-          ;; Fallback: insert after metadata block at top
-          (goto-char (point-min))
-          (let ((metadata-end (point)))
-            (while (looking-at "^\\(#\\|[ \t]*$\\)")
-              (setq metadata-end (line-end-position))
-              (forward-line 1))
-            (goto-char metadata-end)
-            ;; Insert newline if necessary
-            (unless (looking-back "\n" nil)
-              (insert "\n"))
-            (insert (format "#+LAST_MODIFIED: [%s]\n"
-                            (format-time-string "%Y-%m-%d %a %H:%M")))))))))
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
-(defvar my/generic-note-template
-  (with-temp-buffer
-    (insert-file-contents (expand-file-name "template/generic-note.org" user-emacs-directory))
-    (goto-char (point-min))
-    (while (search-forward "${setupfile}" nil t)
-      (replace-match setupfile t t))
-    (buffer-string)))
-;; Added 2025-07-28: capture template, loading content from generic-note.org.
-(setq org-capture-templates
-  `(("n" "Generic Note" plain
-     (file (lambda () (read-file-name "New Note File: " default-directory nil nil ".org")))
-     ,my/generic-note-template
-     :empty-lines 1 :prepend t)))
+;; Attachments relative to org file, in `.attach` folder
+(setq org-attach-directory ".attach")
 #+END_SRC
 
 * ACTIVE Keybindings
@@ -686,6 +582,10 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 * ACTIVE Modular Configs
 #+BEGIN_SRC emacs-lisp
+
+(my/tangle-if-needed "org/orgxtn.org" "org/orgxtn.el")
+(load (expand-file-name "org/orgxtn.el" user-emacs-directory) nil 'nomessage)
+
 (my/tangle-if-needed "org/filetags.org" "org/filetags.el")
 (load (expand-file-name "org/filetags.el" user-emacs-directory) nil 'nomessage)
 
