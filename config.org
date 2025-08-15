@@ -366,29 +366,37 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 ** pdf tools: Enable in-buffer PDF viewing in Emacs (rather than opening PDFs in external viewers)
 ;; Use features like highlighting, annotations, or text selection. Work along with org-noter for taking notes synchronized with PDF pages
-
+;; Updated on 2025-08-15 for support termux build in android devices.
 #+BEGIN_SRC emacs-lisp
 (use-package pdf-tools
   :straight t
   :defer t
   :config
-  ;; Install pdf-tools native components
-  (pdf-tools-install)
+  ;; Use existing epdfinfo binary in Termux
+  (setq pdf-info-epdfinfo-program
+        (expand-file-name "~/.emacs.d/straight/build/pdf-tools/build/epdfinfo"))
+  (pdf-tools-install-noverify)
+
   ;; Set display size to fit page
   (setq-default pdf-view-display-size 'fit-page)
+
   ;; Activate annotations automatically
   (setq pdf-annot-activate-created-annotations t)
+
   ;; Set magic mode for PDFs explicitly
   (add-to-list 'magic-mode-alist '("%PDF" . pdf-view-mode))
+
   ;; Suppress pdf-view-mode errors for invalid arguments
   (advice-add 'pdf-view-mode :around
               (lambda (orig-fun &rest args)
                 (ignore-errors (apply orig-fun nil))))
+
   ;; Clear pdf-tools metadata to avoid stale page references
   (add-hook 'pdf-view-mode-hook
             (lambda ()
               (when (buffer-file-name)
                 (pdf-cache-clear-data (buffer-file-name))))))
+
 #+END_SRC
 
 ** pdf annotation using org noter
