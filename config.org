@@ -166,8 +166,6 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   (require 'oc-biblatex))
 #+END_SRC
 
-
-
 ** Ensure use-package is available.
 #+BEGIN_SRC emacs-lisp
 (eval-when-compile
@@ -416,6 +414,8 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 #+END_SRC
 
+
+
 * ACTIVE UI Tweaks
 #+BEGIN_SRC emacs-lisp
 (when (eq my-device 'termux)
@@ -600,8 +600,8 @@ If using AUCTeX for LaTeX exports, add reftex package.
 (my/tangle-if-needed "org/roam.org" "org/roam.el")
 (load (expand-file-name "org/roam.el" user-emacs-directory) nil 'nomessage)
 
-;;(my/tangle-if-needed "org/workflows.org" "org/workflows.el")
-;;(load (expand-file-name "org/workflows.el" user-emacs-directory) nil 'nomessage)
+(my/tangle-if-needed "org/workflow.org" "org/workflow.el")
+(load (expand-file-name "org/workflow.el" user-emacs-directory) nil 'nomessage)
 #+END_SRC
 
 * ACTIVE Startup Confirmation

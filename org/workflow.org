@@ -1,0 +1,101 @@
+** Thunder link for email integration
+#+BEGIN_SRC emacs-lisp
+;; Org-thunderlink (create & follow thunderlinks in org-mode)
+(use-package ol-thunderlink
+    :straight (:type git :host github :repo "lordnik22/ol-thunderlink")
+    :after org
+    :defer t
+    :commands (org-thunderlink-insert-link org-thunderlink-open-link)
+    :init
+    ;; Optional: if you want to bind a key for inserting thunderlinks
+        (with-eval-after-load 'org
+        (define-key org-mode-map (kbd "C-c M-l") #'org-thunderlink-insert-link)))
+#+END_SRC
+
+;; org-alert-config.el --- Configuration for org-alert with device-aware notifications
+#+BEGIN_SRC emacs-lisp
+;; Install alert (dependency for notifications in org-alert, loaded on demand)
+(use-package alert
+  :straight t
+  :defer t)
+
+;; Install and configure org-alert (pops up system notifications for Org agenda, loaded on demand)
+(use-package org-alert
+  :straight t
+  :after (org alert)
+  :defer t
+  :hook (org-agenda-mode . my-org-alert-enable)  ;; Use a wrapped function to guard duplicates
+  :preface
+  ;; Define guard early to avoid warnings
+  (defvar my-org-alert-enabled nil
+    "Non-nil if org-alert has already been enabled this session.")
+  
+  (defun my-org-alert-enable ()
+    "Enable org-alert once per session."
+    (unless my-org-alert-enabled
+      (org-alert-enable)
+      (setq my-org-alert-enabled t)))
+  :config
+  ;; Helper to sanitize/truncate for notifiers (avoids crashes)
+  (defun my-alert-sanitize (str)
+    "Sanitize STR for safe use in notifications."
+    (let* ((s (or str ""))
+           (max-len 200))
+      (replace-regexp-in-string
+       "[\n\r]+" " "
+       (substring-no-properties s 0 (min (length s) max-len)))))
+  
+  ;; Custom Termux style with async, non-blocking call and sanitization
+  (alert-define-style 'termux :title "Termux Notification"
+                      :notifier (lambda (info)
+                                  (let ((title (my-alert-sanitize (plist-get info :title)))
+                                        (message (my-alert-sanitize (plist-get info :message))))
+                                    (start-process "termux-notification" nil "termux-notification"
+                                                   "--title" title "--content" message))))
+  
+  ;; Device-aware settings (styles + custom vars)
+  (pcase my-device
+    ;; Laptop (GNU/Linux, macOS, etc.)
+    ('laptop
+     (setq alert-default-style
+           (cond
+            ((and (eq system-type 'gnu/linux) (executable-find "notify-send")) 'notifications)
+            ((and (eq system-type 'darwin) (executable-find "terminal-notifier")) 'osx-notifier)
+            (t 'message)))
+     (setq org-alert-interval 300  ;; Check every 5min
+           org-alert-notify-cutoff 15  ;; Notify up to 15min before
+           org-alert-notify-after-event-cutoff 15))  ;; Stop notifying 15min after
+    
+    ;; Tablet (Termux)
+    ('tablet
+     (setq alert-default-style
+           (if (executable-find "termux-notification")
+               'termux
+             'message))
+     (setq org-alert-interval 120  ;; Check every 2min
+           org-alert-notify-cutoff 10  ;; Notify up to 10min before
+           org-alert-notify-after-event-cutoff 10))  ;; Stop 10min after
+    
+    ;; Phone (Termux)
+    ('phone
+     (setq alert-default-style
+           (if (executable-find "termux-notification")
+               'termux
+             'message))
+     (setq org-alert-interval 60  ;; Check every 1min (mobile needs quicker)
+           org-alert-notify-cutoff 5  ;; Notify up to 5min before
+           org-alert-notify-after-event-cutoff 5))  ;; Stop 5min after
+    
+    ;; Fallback
+    (_
+     (setq alert-default-style 'message)
+     (setq org-alert-interval 300
+           org-alert-notify-cutoff 10
+           org-alert-notify-after-event-cutoff 10)))
+  
+  ;; Log the chosen style and settings for debugging
+  (message "Org-alert: Using style %s on %s (interval: %ds, cutoff: %dmin)"
+           alert-default-style my-device org-alert-interval org-alert-notify-cutoff))
+
+;;; org-alert-config.el ends here           
+#+END_SRC
