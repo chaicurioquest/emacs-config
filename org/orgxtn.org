@@ -141,6 +141,10 @@ LaTeX/PDF export processes, citation configurations, and related advices/environ
 ;; Configure citation export to use biblatex with biber backend and authoryear style
 (setq org-cite-export-processors '((latex biblatex "backend=biber,style=authoryear")))
 
+;; Ensure Org knows we prefer lualatex for exports (both new and older var names).
+(setq org-export-latex-compiler "lualatex")
+(setq org-latex-compiler "lualatex") ;; compatibility
+
 ;; Define LaTeX-to-PDF export commands using latexmk
 (setq org-latex-pdf-process
       `(,(format "mkdir -p build && latexmk -lualatex -r %s -outdir=build -f %%f"
