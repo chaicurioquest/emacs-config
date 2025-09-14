@@ -1,4 +1,4 @@
-# SETUPFILE: /home/ram/wspace/org/setup/setup-latex.org
+# SETUPFILE: /wspace/org/setup/setup-latex.org
 #+TITLE: Emacs Literate Config
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent
@@ -95,7 +95,7 @@ Skips if no changes; handles errors gracefully without deleting files."
 ** Set default directory per device.
 #+BEGIN_SRC emacs-lisp
 (setq default-directory
-      (cond ((eq my-device 'laptop) (expand-file-name "wspace/org/notes/" (getenv "HOME")))
+      (cond ((eq my-device 'laptop) (expand-file-name "org/notes/" "/wspace/"))
             ((eq my-device 'tablet) (expand-file-name "org/notes/" (getenv "HOME")))
             ((eq my-device 'phone) (expand-file-name "storage/org/notes/" (getenv "HOME")))
             (t (getenv "HOME"))))

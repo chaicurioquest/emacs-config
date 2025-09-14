@@ -1,3 +1,4 @@
+# SETUPFILE: /wspace/org/setup/setup-latex.org
 #+TITLE: Org-Roam Zettelkasten Configuration
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent

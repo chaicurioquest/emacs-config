@@ -1,4 +1,14 @@
-* Enable message alerts in general
+
+# SETUPFILE: /wspace/org/setup/setup-latex.org
+#+TITLE: GTD Workflow configurations
+#+TODO: ACTIVE | CANCELLED
+#+STARTUP: indent
+#+PROPERTY: header-args:emacs-lisp :tangle yes
+#+DATE: 2025-09-12
+#+CREATED: %U
+#+LAST_MODIFIED: [2025-08-10 Sun 16:50]
+
+* ACTIVE Enable message alerts in general
 #+BEGIN_SRC emacs-lisp
 ;; org-alert-config.el --- Device-aware org-alert configuration
 (use-package alert
@@ -6,7 +16,7 @@
   :defer t)
 #+END_SRC
 
-* Enable message alerts for Org mode and across different devices.
+* ACTIVE Enable message alerts for Org mode and across different devices.
 #+BEGIN_SRC emacs-lisp
 (use-package org-alert
   :straight t

@@ -1,3 +1,4 @@
+# SETUPFILE: /wspace/org/setup/setup-latex.org
 #+TITLE: Org Extensions Configuration
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent
@@ -30,7 +31,7 @@ Features:
 | Babel shell blocks             | `#+BEGIN_SRC sh` … `#+END_SRC`                 | No confirm on eval |
 | PDF export                     | `C-c C-e l o`                                  | Uses `latexmk` with `lualatex` |
 
-* General Org Settings
+* ACTIVE General Org Settings
 General Org-mode variables, functions, hooks, and templates that are not tightly coupled to export or Babel. These were moved from ~config.org~'s * ACTIVE General Settings and related sections, as they are Org-specific and have no external dependencies beyond Org itself (e.g., ~setupfile~ is assumed defined globally in ~config.org~).
 
 #+BEGIN_SRC emacs-lisp
@@ -55,7 +56,7 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 ;; Bind TAB to smart function in Org-mode
 (define-key org-mode-map (kbd "TAB") #'my/org-smart-tab)
 
-** Smart Org + PDF vertical preview
+** ACTIVE Smart Org + PDF vertical preview
 #+BEGIN_SRC emacs-lisp
 (defun my/org-pdf-vertical-view ()
   "Open corresponding PDF in vertical split right of current org buffer."
@@ -67,7 +68,7 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 (global-set-key (kbd "C-c v") #'my/org-pdf-vertical-view)
 #+END_SRC
 
-** Org Hooks for file handling
+** ACTIVE Org Hooks for file handling
 ;; Added 2025-07-28: Hook for #+LAST_MODIFIED: update while editing the org file.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'before-save-hook
@@ -117,7 +118,7 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
      :empty-lines 1 :prepend t)))
 #+END_SRC
 
-* Babel Configuration
+* ACTIVE Babel Configuration
 Settings for Org Babel code execution. Currently enables shell blocks; expand here for future languages (e.g., Python, Emacs Lisp) without creating a new file unless it grows excessively.
 
 #+BEGIN_SRC emacs-lisp
@@ -130,7 +131,7 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
 ;; (org-babel-do-load-languages 'org-babel-load-languages '((python . t) (emacs-lisp . t)))
 #+END_SRC
 
-* Export Configuration
+* ACTIVE Export Configuration
 LaTeX/PDF export processes, citation configurations, and related advices/environment variables. Moved from ~config.org~'s use-package org block. Removed overhead for forcing .tex files into build/ (e.g., no pub-dir advice or pre-parsing hook), so .tex generates in the current directory while PDF and aux files go to build/ via latexmk -outdir.
 
 #+BEGIN_SRC emacs-lisp
