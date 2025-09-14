@@ -1,49 +1,56 @@
-# SETUPFILE: /home/ram/wspace/org/setup/setup-latex.org
 #+TITLE: Mail Configuration
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent
-#+DATE: \today
-#+FILETAGS: ::
-#+OPTIONS: toc:t num:nil
-#+PROPERTY: header-args :eval never-export
-#+CREATED: 2025-07-12
+#+DATE: 2025-09-14
+#+CREATED: %U
 #+LAST_MODIFIED: [2025-09-13 Fri 21:43]
 
 * ACTIVE Mail / mu4e integration
+
+
 #+BEGIN_SRC emacs-lisp
 ;; Load personal secrets (git-ignored file; no error if missing)
-(load (expand-file-name "secrets.el" user-emacs-directory) t t)  ;; t t = no error, no message
+(load (expand-file-name "secrets.el" user-emacs-directory) t t) ;; t t = no error, no message
 
 (defvar my-maildir (expand-file-name "~/maildir/mbsync/gmail")
   "Root Maildir mirrored by mbsync.")
+
 ;; Add mu4e load-path from source install (adjust if not /usr/local/)
 (add-to-list 'load-path "/usr/local/share/emacs/site-lisp/mu4e")
+
 ;; Only configure mu4e if mu is available
 (when (executable-find "mu")
+  ;; Set core vars EARLY (global, before mu4e load/validation/timers)
   (setq mu4e-maildir my-maildir
-  mu4e-create-maildir-if-needed nil)  ;; Disable prompts globally
-  (message "mail.el: mu4e-maildir set to %s" mu4e-maildir))
-  ;; Configure mu4e details 
+        mu4e-create-maildir-if-needed nil ;; NO prompts for missing folders
+        mu4e-get-mail-command "true" ;; No-op for timers (prevents "not defined" error)
+        mu4e-update-interval 0 ;; Disable timers
+        mu4e-headers-auto-update nil ;; No header auto-refresh
+        mu4e-view-prefer-html t
+        mu4e-headers-include-related t
+        mu4e-view-show-images t
+        mu4e-inbox-folder "/INBOX") ;; Explicit for Gmail structure
+  (message "mail.el: mu4e-maildir set to %s" mu4e-maildir)
+  ;; Configure mu4e details
   (use-package mu4e
     :straight nil ; mu4e comes from mu installation; keep nil if provided by system
-    :defer t
+    ;; No :defer t: Load immediately for early config application
     :config
-    (setq mu4e-get-mail-command nil) ;; we use systemd/mbsync
-    (setq mu4e-update-interval 0
-          mu4e-headers-auto-update nil
-          mu4e-view-prefer-html t
-          mu4e-headers-include-related t)
-    ;; adjust these once you inspect ~/maildir/mbsync/gmail
+    ;; Post-load folder paths (RELATIVE: mu4e prefixes with mu4e-maildir)
+    ;; Matches .mbsyncrc Patterns: INBOX, [Gmail]/Sent Mail, etc.
     (setq mu4e-sent-folder "/[Gmail]/Sent Mail"
           mu4e-drafts-folder "/[Gmail]/Drafts"
-          mu4e-trash-folder "/[Gmail]/Trash"
+          mu4e-trash-folder "/[Gmail]/Bin"
           mu4e-maildir-shortcuts
-          `((, (concat mu4e-maildir "/INBOX") . ?i)
+          '(("/INBOX" . ?i)
             ("/[Gmail]/Sent Mail" . ?s)
-            ("/[Gmail]/Trash" . ?t)
+            ("/[Gmail]/Bin" . ?t)
             ("/[Gmail]/Drafts" . ?d)))
-    ;; prefer to open inline when possible
-    (setq mu4e-view-show-images t))
+    ;; Cancel any existing refresh timer to prevent get-mail-command error
+    (when (boundp 'mu4e~refresh-timer)
+      (cancel-timer mu4e~refresh-timer)
+      (setq mu4e~refresh-timer nil)
+      (message "mu4e: Disabled refresh timer (using mbsync)"))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -56,14 +63,14 @@
   (define-key mu4e-view-mode-map (kbd "C-c C-c") #'mu4e-org-store-and-capture))
 ;; Org capture template for mu4e messages
 (with-eval-after-load 'org
-  (require 'org-capture)  ;; Ensure org-capture.el is loaded (defines org-capture-templates)
+  (require 'org-capture) ;; Ensure org-capture.el is loaded (defines org-capture-templates)
   ;; Safely append to org-capture-templates (default to nil if unbound)
   (let ((existing-templates (if (boundp 'org-capture-templates) org-capture-templates nil)))
     (setq org-capture-templates
           (append existing-templates
                   '(("m" "Email task (mu4e)" entry
                      (file+headline "~/org/inbox.org" "Emails")
-                     "* TODO [#A] %:subject :@email:\n:PROPERTIES:\n:From: %:from\n:Message-ID: %:message-id\n:Mu4e-Message: %:id\n:END:\nLink: [[mu4e:message:%:id][Open email]]\n%?\n"
+                     "* TODO [#A] %:subject :email:\n:PROPERTIES:\n:From: %:from\n:Message-ID: %:message-id\n:Mu4e-Message: %:id\n:END:\nLink: [[mu4e:message:%:id][Open email]]\n%?\n"
                      :empty-lines 1 :prepend t))))))
 #+END_SRC
 
@@ -81,7 +88,8 @@
   (setq mu4e-alert-interesting-mail-query "maildir:/INBOX AND flag:unread")
   ;; update frequency (optional): refresh mu4e-alert at interval (guard if mu4e active)
   (when (and (boundp 'mu4e-maildir)
-    (fboundp 'mu4e-alert-refresh))  ;; Prevent void-function error
+             (fboundp 'mu4e-alert-refresh)
+             (not (zerop mu4e-update-interval))) ;; Already 0, so skips—fine for mbsync
     (run-with-timer 10 300 #'mu4e-alert-refresh)))
 ;; org-alert is already configured in your org config; make sure it doesn't double-notify.
 ;; Add a guard: only enable mu4e-alert notifications if not on mobile device
