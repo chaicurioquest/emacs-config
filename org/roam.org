@@ -66,11 +66,14 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
   ;; allow completion/insert everywhere (so you can insert roam nodes in top-level notes)
   (setq org-roam-completion-everywhere t)
 
-  ;; Delay autosync slightly to avoid DB race on startup
-    (run-with-idle-timer 2 nil
-     (lambda ()
+  ;; Delay autosync slightly to avoid DB race on startup and print
+  (run-with-idle-timer 2 nil
+    (lambda ()
       (when (require 'org-roam nil 'noerror)
-        (org-roam-db-autosync-mode 1))))
+     (unless (bound-and-true-p my/org-roam-initialized)
+       (setq my/org-roam-initialized t)
+       (org-roam-db-autosync-mode 1)
+       (message "✅ org-roam initialized and DB autosync enabled.")))))
 
   ;; (setq org-roam-v2-ack t org-roam-completion-everywhere t)
 
@@ -100,8 +103,8 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
     (dolist (d (list org-roam-directory org-roam-dailies-directory))
     (unless (file-directory-p d) (make-directory d t)))
 
-  (org-roam-db-autosync-mode 1)
-  (message "✅ org-roam initialized and DB autosync enabled.")
+  ;;(org-roam-db-autosync-mode 1)
+  ;;(message "✅ org-roam initialized and DB autosync enabled.")
   )
 
  

@@ -109,6 +109,15 @@ Skips if no changes; handles errors gracefully without deleting files."
   "Path to default Org LaTeX setup file.")
 #+END_SRC
 
+** Tag-to-ID mappings for tag-based auto-refile script
+#+BEGIN_SRC emacs-lisp
+;; automatically refiling (moving) Org headings based on their tags added on 2025-09-20
+(defcustom my-org-refile-to-ids nil
+  "Tag to target ID mappings."
+  :group 'sacha
+  :type '(repeat (cons string string)))
+#+END_SRC
+
 ** Customized Agenda view files on startup excluding roam, build, backup and other directory
 #+BEGIN_SRC emacs-lisp
 ;; Use default-directory + "notes/" for the notes directory
@@ -189,6 +198,8 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   (setq org-refile-targets '((org-agenda-files :maxlevel . 5)))
   (setq org-refile-use-outline-path 'file) ;; Show file paths in prompt
   (setq org-outline-path-complete-in-steps nil) ;; Complete in one step (Vertico fuzzy)
+  (setq org-refile-allow-creating-parent-nodes 'confirm)
+  (setq org-refile-use-cache t)  ; Cache targets for speed
 #+END_SRC
 
 ** Ensure use-package is available.

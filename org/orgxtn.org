@@ -71,6 +71,59 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 ** ACTIVE Org Hooks for file handling
 ;; Added 2025-07-28: Hook for #+LAST_MODIFIED: update while editing the org file.
 #+BEGIN_SRC emacs-lisp
+;; enable auto-revert when entering org buffers
+(add-hook 'org-mode-hook (lambda () (auto-revert-mode 1)))
+
+;; prefer file-notify (less polling) when available
+(setq auto-revert-use-notify t)
+
+;;my-org-update-tag-targets function scans all agenda files for headings with :TAG_TARGET: properties
+;;constructing the mapping by prefixing tags with "+" (Org's match syntax for tags) and associating them with generated IDs
+(defun my-org-update-tag-targets ()
+  (interactive)
+  (setq my-org-refile-to-ids
+        (let (list)
+          (org-map-entries
+           (lambda ()
+             (cons (concat "+" (org-entry-get (point) "TAG_TARGET"))
+                   (org-id-get-create)))
+           "TAG_TARGET={.}" 'agenda)))
+  (customize-save-variable 'my-org-refile-to-ids my-org-refile-to-ids))
+
+;; For adding new targets on the fly, my-org-add-tag-target  set the property and updating the list immediately
+(defun my-org-add-tag-target (tag)
+  (interactive "MTag: ")
+  (org-entry-put (point) "TAG_TARGET" tag)
+  (push (cons (concat "+" tag) (org-id-get-create)) my-org-refile-to-ids)
+  (customize-save-variable 'my-org-refile-to-ids my-org-refile-to-ids))
+
+;; Performs the actual refiling by identifying matching headings and moving them to the target
+  (defun my-org-refile-matches-to-heading (match target-heading-id &optional scope copy)
+  "Refile matching headings to target."
+  (if-let (target-marker (org-id-find target-heading-id t))
+      (let* ((target-rfloc (with-current-buffer (marker-buffer target-marker)
+                             (goto-char target-marker)
+                             (list (org-get-heading)
+                                   (buffer-file-name (marker-buffer target-marker))
+                                   nil
+                                   target-marker)))
+             (headings-to-copy (org-map-entries (lambda () (point-marker)) match scope)))
+        (mapc
+         (lambda (heading-marker)
+           (with-current-buffer (marker-buffer heading-marker)
+             (goto-char heading-marker)
+             (org-refile nil nil target-rfloc (when copy "Copy"))))
+         (nreverse headings-to-copy))
+        (message "%s %d headings!" (if copy "Copied" "Refiled") (length headings-to-copy)))
+     (warn "Could not find target %S" target-heading-id)))
+
+;; my-org-refile-to-tag-targets iterates over all rules to execute batch refiles
+
+(defun my-org-refile-to-tag-targets ()
+  (interactive)
+  (dolist (rule my-org-refile-to-ids)
+    (my-org-refile-matches-to-heading (car rule) (cdr rule) 'file)))  ; Scope to inbox.org
+
 (add-hook 'before-save-hook
   (lambda ()
     (when (derived-mode-p 'org-mode)
