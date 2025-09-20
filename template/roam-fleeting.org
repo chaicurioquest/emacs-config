@@ -1,12 +1,18 @@
-#+SETUPFILE: ${setupfile}
-#+TITLE: ${title}
+#+TITLE: Fleeting Notes
+#+AUTHOR: Ram
 #+FILETAGS: :fleeting:
-#+BIBLIOGRAPHY: include/references.bib
+#+OPTIONS: toc:nil num:nil
+#+PROPERTY: header-args :eval never-export
 #+CITE_EXPORT: biblatex authoryear
-#+ROAM_ALIASES: 
-#+ROAM_REFS: 
-#+CREATED: %U  ;; Creation timestamp
+#+ROAM_ALIASES:
+#+ROAM_REFS:
+#+BIBLIOGRAPHY: references.bib  ;; Added bibliography reference
+#+CREATED: %U
+#+LAST_MODIFIED: %U
 
-* Thought  
-%?
-#+PRINT_BIBLIOGRAPHY:
+* Fleeting Captures
+:PROPERTIES:
+:ID:       %^{ID|fleeting-%%(org-id-new)}  ;; Prompt ID or auto-gen for roam
+:END:
+%?  ;; Your note here
+- %U  ;; Timestamp

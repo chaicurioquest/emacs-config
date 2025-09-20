@@ -111,9 +111,11 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
       (replace-match setupfile t t))
     (buffer-string)))
 ;; Added 2025-07-28: capture template, loading content from generic-note.org.
+
+
 (setq org-capture-templates
   `(("n" "Generic Note" plain
-     (file (lambda () (read-file-name "New Note File: " default-directory nil nil ".org")))
+     (file (lambda () (read-file-name "New Note File: " (expand-file-name "notes/" default-directory) nil nil ".org")))
      ,my/generic-note-template
      :empty-lines 1 :prepend t)))
 #+END_SRC

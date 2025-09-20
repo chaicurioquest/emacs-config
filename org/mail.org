@@ -59,6 +59,7 @@
 (use-package mu4e-org
   :defer t
   :after mu4e)
+  (message "Default dir: %s" default-directory)
 (with-eval-after-load 'mu4e-view
   ;; store message meta and prompt capture quickly
   (define-key mu4e-view-mode-map (kbd "C-c C-c") #'mu4e-org-store-and-capture))
@@ -69,9 +70,9 @@
   (let ((existing-templates (if (boundp 'org-capture-templates) org-capture-templates nil)))
     (setq org-capture-templates
           (append existing-templates
-                  '(("m" "Email task (mu4e)" entry
-                     (file+headline "~/org/inbox.org" "Emails")
-                     "* TODO [#A] %:subject :email:\n:PROPERTIES:\n:From: %:from\n:Message-ID: %:message-id\n:Mu4e-Message: %:id\n:END:\nLink: [[mu4e:message:%:id][Open email]]\n%?\n"
+                  `(("m" "Email task (mu4e)" entry
+                     (file+headline, (expand-file-name "notes/inbox.org" default-directory)"Emails")
+                     "* TODO [#A] %:subject :email:\n:PROPERTIES:\n:From: %:from\n:Message-ID: %:message-id\n:Mu4e-Message: %:id\n:END:\nLink: [[mu4e:msgid:%:message-id][Open email]]\n%?\n"
                      :empty-lines 1 :prepend t))))))
 #+END_SRC
 

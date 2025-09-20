@@ -1,4 +1,3 @@
-
 # SETUPFILE: /wspace/org/setup/setup-latex.org
 #+TITLE: GTD Workflow configurations
 #+TODO: ACTIVE | CANCELLED
@@ -22,18 +21,11 @@
   :straight t
   :after (org alert)
   :defer t
-  :hook (org-agenda-mode . my-org-alert-enable)
-  :preface
+  :config
   (defvar my-org-alert-enabled nil
     "Non-nil when org-alert has been enabled this session.")
-  (defun my-org-alert-enable ()
-    "Enable org-alert once per session."
-    (unless my-org-alert-enabled
-      ;; ensure org-alert settings are already set before enabling
-      (org-alert-enable)
-      (setq my-org-alert-enabled t)))
-  :config
-  ;; sanitizer for notifications: single-line, truncated
+
+ ;; sanitizer for notifications: single-line, truncated
   (defun my-alert-sanitize (str)
     (let* ((s (or str ""))
            (max-len 200))
@@ -50,6 +42,11 @@
                         (message (my-alert-sanitize (plist-get info :message))))
                     (start-process "termux-notification" nil "termux-notification"
                                    "--title" title "--content" message)))))
+
+  ;; Enable once (post-load; avoids void function in hook)
+  (unless my-org-alert-enabled
+    (org-alert-enable)
+    (setq my-org-alert-enabled t))                                 
 
   ;; Default per-device settings (ensure my-device is defined earlier)
   (pcase (and (boundp 'my-device) my-device)

@@ -95,9 +95,9 @@ Skips if no changes; handles errors gracefully without deleting files."
 ** Set default directory per device.
 #+BEGIN_SRC emacs-lisp
 (setq default-directory
-      (cond ((eq my-device 'laptop) (expand-file-name "org/notes/" "/wspace/"))
-            ((eq my-device 'tablet) (expand-file-name "org/notes/" (getenv "HOME")))
-            ((eq my-device 'phone) (expand-file-name "storage/org/notes/" (getenv "HOME")))
+      (cond ((eq my-device 'laptop) (expand-file-name "org/" "/wspace/"))
+            ((eq my-device 'tablet) (expand-file-name "org/" (getenv "HOME")))
+            ((eq my-device 'phone) (expand-file-name "storage/org" (getenv "HOME")))
             (t (getenv "HOME"))))
 (message "📁 Default directory set to: %s" default-directory)
 #+END_SRC
@@ -105,23 +105,44 @@ Skips if no changes; handles errors gracefully without deleting files."
 ** Global Variables
 #+BEGIN_SRC emacs-lisp
 (defvar setupfile
-  (expand-file-name "../setup/setup-latex.org" default-directory)
+  (expand-file-name "setup/setup-latex.org" default-directory)
   "Path to default Org LaTeX setup file.")
 #+END_SRC
 
-** Customized Agenda view files on startup excluding roam directory
+** Customized Agenda view files on startup excluding roam, build, backup and other directory
 #+BEGIN_SRC emacs-lisp
+;; Use default-directory + "notes/" for the notes directory
 (defun my/update-agenda-files ()
-  "Set `org-agenda-files` to all .org files under `default-directory`, excluding `roam`."
-  (setq org-agenda-files
-        (seq-filter
-         (lambda (f) (not (string-match-p "/roam/" f)))
-         (directory-files-recursively default-directory "\\.org$")))
-  (message "Agenda files updated: %d files" (length org-agenda-files)))
+  "Set `org-agenda-files` to top-level .org files in `notes/` under `default-directory`."
+  (interactive)
+  (let* ((notes-dir (file-name-as-directory (expand-file-name "notes/" default-directory)))
+         (names (when (file-directory-p notes-dir) (directory-files notes-dir nil "^[^.].*"))))
+    (if (not names)
+        (progn
+          (setq org-agenda-files nil)
+          (message "my/update-agenda-files: notes dir missing or empty: %s" notes-dir))
+      (setq org-agenda-files
+            (mapcar (lambda (n) (expand-file-name n notes-dir))
+                    (seq-filter (lambda (n)
+                                  (and (string-match-p "\\.org\\'" n)
+                                       (file-regular-p (expand-file-name n notes-dir))))
+                                names)))
+      (message "org-agenda-files set (%d files) from %s" (length org-agenda-files) notes-dir))))
 
-;; Run it at startup
+;; Initialize once
 (my/update-agenda-files)
+
+;; Rescan only when saving a top-level Org file under the same notes/ derived from default-directory
+(add-hook 'after-save-hook
+          (lambda ()
+            (when (and (derived-mode-p 'org-mode)
+                       buffer-file-name)
+              (let ((notes-dir (file-name-as-directory (expand-file-name "notes/" default-directory)))
+                    (bufdir (file-name-as-directory (expand-file-name (file-name-directory buffer-file-name)))))
+                (when (string= notes-dir bufdir)
+                  (my/update-agenda-files))))))
 #+END_SRC
+
 
 ** Debug: Confirm startup.
 #+BEGIN_SRC emacs-lisp
@@ -164,6 +185,10 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   ;; Core requires
   (require 'oc)
   (require 'oc-biblatex))
+  ;; Enable refiling to any heading in agenda files (incl. roam/notes/mobile)
+  (setq org-refile-targets '((org-agenda-files :maxlevel . 5)))
+  (setq org-refile-use-outline-path 'file) ;; Show file paths in prompt
+  (setq org-outline-path-complete-in-steps nil) ;; Complete in one step (Vertico fuzzy)
 #+END_SRC
 
 ** Ensure use-package is available.
@@ -397,6 +422,18 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 #+END_SRC
 
+** pdf annotation org noter optional dependancies
+#+BEGIN_SRC emacs-lisp
+;; Optional for org-noter EPUB/DJVU (suppress warnings if not used)
+(use-package nov
+  :straight t
+  :defer t)
+(use-package djvu
+  :straight t
+  :defer t)
+#+END_SRC
+
+
 ** pdf annotation using org noter
 #+BEGIN_SRC emacs-lisp
 (use-package org-noter
@@ -441,7 +478,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 ** Device-specific backup directory under default-directory
 #+BEGIN_SRC emacs-lisp
-(defvar my-backup-dir (expand-file-name ".backups/" default-directory)
+(defvar my-backup-dir (expand-file-name "notes/.backups/" default-directory)
   "Directory to store Emacs backup (~) files.")
 #+END_SRC
 
@@ -455,7 +492,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
       make-backup-files t
       backup-by-copying t)
 
-(defvar my-autosave-dir (expand-file-name ".autosaves/" default-directory)
+(defvar my-autosave-dir (expand-file-name "notes/.autosaves/" default-directory)
   "Directory to store Emacs auto-save files.")
 #+END_SRC
 

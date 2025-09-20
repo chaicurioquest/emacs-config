@@ -32,68 +32,96 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 | View graph            | org-roam-ui                          | Interactive graph UI (on laptop)                              | Laptop   | C-c r g                                           |  
 
 #+BEGIN_SRC emacs-lisp
-  (setq rmy-variable "Hello ramu, Org!")
+;; Use id: links when interactively inserting links
+  (require 'org-id)
+  (setq org-id-link-to-org-use-id 'create-if-interactive) 
 #+END_SRC
 
 * ACTIVE Org-roam Setup
 #+BEGIN_SRC emacs-lisp
 
 ;; Helper Function for Template Preloading ${setupfile} for setup-latex file path in template
-
 (defun my/load-template (filename)
-  "Load org template file and replace ${setupfile}."
+  "Load template FILENAME from user-emacs-directory and replace ${setupfile} with absolute repo path."
   (let ((template-path (expand-file-name filename user-emacs-directory)))
     (if (file-exists-p template-path)
         (with-temp-buffer
           (insert-file-contents template-path)
           (goto-char (point-min))
           (while (search-forward "${setupfile}" nil t)
-            (replace-match (expand-file-name "include/setup-latex.org" default-directory) t t))
+            (replace-match (expand-file-name "setup/setup-latex.org" (expand-file-name "" default-directory)) t t))
           (buffer-string))
-      (error "Template %s not found" template-path))))
-
+      (message "Template %s not found; using fallback." template-path)
+      "* Default Note\n:PROPERTIES:\n:ID: %^{id-or-auto}\n:END:\n%?\n- %U")))
 
 (use-package org-roam
   :straight t
   :init
   ;; Set org-roam-directory relative to the default-directory (user device-aware)
-  (setq org-roam-directory (expand-file-name "roam" default-directory))
+    (setq org-roam-directory (expand-file-name "notes/roam" default-directory))
    
-  ;; Set org-roam dailies directory inside roam/
-  (setq org-roam-dailies-directory (expand-file-name "daily" org-roam-directory))
-  
-  ;; Ensure base roam directory and dailies directory exists
-  (dolist (dir (list org-roam-directory org-roam-dailies-directory))
-    (unless (file-directory-p dir)
-      (make-directory dir t)))
+  ;; dailies inside roam/
+    (setq org-roam-dailies-directory (expand-file-name "daily" org-roam-directory))
 
-  (setq org-roam-v2-ack t
-        org-roam-completion-everywhere t)
+  ;; allow completion/insert everywhere (so you can insert roam nodes in top-level notes)
+  (setq org-roam-completion-everywhere t)
+
+  ;; Delay autosync slightly to avoid DB race on startup
+    (run-with-idle-timer 2 nil
+     (lambda ()
+      (when (require 'org-roam nil 'noerror)
+        (org-roam-db-autosync-mode 1))))
+
+  ;; (setq org-roam-v2-ack t org-roam-completion-everywhere t)
 
   ;; Debugging paths
   (message "✅ Org-roam dir: %s" org-roam-directory)
   (message "📅 Dailies dir: %s" org-roam-dailies-directory)
   (message "Default dir: %s" default-directory)
 
-  :bind
-  (("C-c r f" . org-roam-node-find)
-  ("C-c r i" . org-roam-node-insert)
-  ("C-c r n" . org-roam-capture)
+:bind
+    (("C-c r f" . org-roam-node-find)
+     ("C-c r i" . org-roam-node-insert)
+     ("C-c r n" . org-roam-capture)
 
- ;; Dailies
-  ("C-c r d" . org-roam-dailies-capture-today)
-  ("C-c r T" . org-roam-dailies-goto-today)
-  ("C-c r P" . org-roam-dailies-goto-previous-note)
-  ("C-c r N" . org-roam-dailies-goto-next-note)
-  ("C-c r D" . org-roam-dailies-goto-date)
+     ;; Dailies
+     ("C-c r d" . org-roam-dailies-capture-today)
+     ("C-c r T" . org-roam-dailies-goto-today)
+     ("C-c r P" . org-roam-dailies-goto-previous-note)
+     ("C-c r N" . org-roam-dailies-goto-next-note)
+     ("C-c r D" . org-roam-dailies-goto-date)
 
- ;; Tag management
-  ("C-c r t" . my-org-roam-tag-add)
-  ("C-c r r" . my-org-roam-tag-remove))
+     ;; Tag management
+     ("C-c r t" . my-org-roam-tag-add)
+     ("C-c r r" . my-org-roam-tag-remove))
 
   :config
+  ;; ensure roam dirs exist (optional but low-cost)
+    (dolist (d (list org-roam-directory org-roam-dailies-directory))
+    (unless (file-directory-p d) (make-directory d t)))
+
   (org-roam-db-autosync-mode 1)
-  (message "✅ org-roam initialized and DB autosync enabled."))
+  (message "✅ org-roam initialized and DB autosync enabled.")
+  )
+
+ 
+  ;;;; To avoid org roam DB race condition error "wrong-type-argument sqlitep nil"
+  ;;(defun my/org-roam-safe-rebuild ()
+  ;;"Disable autosync, rebuild org-roam DB, then re-enable autosync (delayed)."
+  ;;(interactive)
+  ;;;; 1. Disable autosync if running
+  ;;(when (bound-and-true-p org-roam-db-autosync-mode)
+  ;;  (org-roam-db-autosync-mode -1)
+  ;;  (message "org-roam autosync disabled temporarily"))
+  ;;;; 2. Rebuild DB
+  ;;(org-roam-db-build-cache t)
+  ;;(message "org-roam DB rebuild complete")
+  ;;;; 3. Re-enable autosync after idle
+  ;;(run-with-idle-timer
+  ;; 2 nil
+  ;; (lambda ()
+  ;;   (org-roam-db-autosync-mode 1)
+  ;;   (message "org-roam autosync re-enabled (delayed)"))))
 
 ;; Used eval with progn to evaluate multiple setq forms and resolve stringp error by ensuring paths are strings
 (setq org-roam-capture-templates
