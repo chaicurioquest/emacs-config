@@ -213,8 +213,8 @@ LaTeX/PDF export processes, citation configurations, and related advices/environ
 ;; Prevent Org from inserting \usepackage[utf8]{inputenc} with lualatex
 (setq org-latex-inputenc-alist '(("utf8" . nil)))
 
-;; Set TEXINPUTS to include org/notes/ for LaTeX input files
-(setenv "TEXINPUTS" (concat "../notes:" (getenv "TEXINPUTS")))
+;; Set TEXINPUTS to include the absolute path to your org/notes/ root (via default-directory) for LaTeX inputs
+(setenv "TEXINPUTS" (concat default-directory ":" (getenv "TEXINPUTS")))
 
 ;; Warn if setup-latex.org is missing
 (let ((setup-file setupfile))
