@@ -1,4 +1,4 @@
-# SETUPFILE: /wspace/org/setup/setup-latex.org
+# SETUPFILE: /wspace/org/notes/latex/setup-latex.org
 #+TITLE: Emacs Literate Config
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent
@@ -95,9 +95,9 @@ Skips if no changes; handles errors gracefully without deleting files."
 ** Set default directory per device.
 #+BEGIN_SRC emacs-lisp
 (setq default-directory
-      (cond ((eq my-device 'laptop) (expand-file-name "org/" "/wspace/"))
-            ((eq my-device 'tablet) (expand-file-name "org/" (getenv "HOME")))
-            ((eq my-device 'phone) (expand-file-name "storage/org" (getenv "HOME")))
+      (cond ((eq my-device 'laptop) (expand-file-name "org/notes/" "/wspace/"))
+            ((eq my-device 'tablet) (expand-file-name "org/notes" (getenv "HOME")))
+            ((eq my-device 'phone) (expand-file-name "storage/org/notes" (getenv "HOME")))
             (t (getenv "HOME"))))
 (message "📁 Default directory set to: %s" default-directory)
 #+END_SRC
@@ -105,7 +105,7 @@ Skips if no changes; handles errors gracefully without deleting files."
 ** Global Variables
 #+BEGIN_SRC emacs-lisp
 (defvar setupfile
-  (expand-file-name "setup/setup-latex.org" default-directory)
+  (expand-file-name "latex/setup-latex.org" default-directory)
   "Path to default Org LaTeX setup file.")
 #+END_SRC
 
@@ -122,9 +122,9 @@ Skips if no changes; handles errors gracefully without deleting files."
 #+BEGIN_SRC emacs-lisp
 ;; Use default-directory + "notes/" for the notes directory
 (defun my/update-agenda-files ()
-  "Set `org-agenda-files` to top-level .org files in `notes/` under `default-directory`."
+  "Set `org-agenda-files` to top-level .org notes in `default-directory`."
   (interactive)
-  (let* ((notes-dir (file-name-as-directory (expand-file-name "notes/" default-directory)))
+  (let* ((notes-dir (file-name-as-directory default-directory))
          (names (when (file-directory-p notes-dir) (directory-files notes-dir nil "^[^.].*"))))
     (if (not names)
         (progn
@@ -146,7 +146,7 @@ Skips if no changes; handles errors gracefully without deleting files."
           (lambda ()
             (when (and (derived-mode-p 'org-mode)
                        buffer-file-name)
-              (let ((notes-dir (file-name-as-directory (expand-file-name "notes/" default-directory)))
+              (let ((notes-dir (file-name-as-directory default-directory))
                     (bufdir (file-name-as-directory (expand-file-name (file-name-directory buffer-file-name)))))
                 (when (string= notes-dir bufdir)
                   (my/update-agenda-files))))))
@@ -489,7 +489,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 ** Device-specific backup directory under default-directory
 #+BEGIN_SRC emacs-lisp
-(defvar my-backup-dir (expand-file-name "notes/.backups/" default-directory)
+(defvar my-backup-dir (expand-file-name ".backups/" default-directory)
   "Directory to store Emacs backup (~) files.")
 #+END_SRC
 
@@ -503,7 +503,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
       make-backup-files t
       backup-by-copying t)
 
-(defvar my-autosave-dir (expand-file-name "notes/.autosaves/" default-directory)
+(defvar my-autosave-dir (expand-file-name ".autosaves/" default-directory)
   "Directory to store Emacs auto-save files.")
 #+END_SRC
 

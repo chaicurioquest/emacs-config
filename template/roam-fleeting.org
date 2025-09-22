@@ -6,7 +6,7 @@
 #+CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES:
 #+ROAM_REFS:
-#+BIBLIOGRAPHY: references.bib  ;; Added bibliography reference
+#+BIBLIOGRAPHY: bib/references.bib  ;; Added bibliography reference
 #+CREATED: %U
 #+LAST_MODIFIED: %U
 

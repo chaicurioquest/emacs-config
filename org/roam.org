@@ -1,4 +1,4 @@
-# SETUPFILE: /wspace/org/setup/setup-latex.org
+# SETUPFILE: /wspace/org/notes/latex/setup-latex.org
 #+TITLE: Org-Roam Zettelkasten Configuration
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent
@@ -49,7 +49,7 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
           (insert-file-contents template-path)
           (goto-char (point-min))
           (while (search-forward "${setupfile}" nil t)
-            (replace-match (expand-file-name "setup/setup-latex.org" (expand-file-name "" default-directory)) t t))
+            (replace-match (expand-file-name "latex/setup-latex.org" (expand-file-name "" default-directory)) t t))
           (buffer-string))
       (message "Template %s not found; using fallback." template-path)
       "* Default Note\n:PROPERTIES:\n:ID: %^{id-or-auto}\n:END:\n%?\n- %U")))
@@ -58,7 +58,7 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
   :straight t
   :init
   ;; Set org-roam-directory relative to the default-directory (user device-aware)
-    (setq org-roam-directory (expand-file-name "notes/roam" default-directory))
+    (setq org-roam-directory (expand-file-name "roam" default-directory))
    
   ;; dailies inside roam/
     (setq org-roam-dailies-directory (expand-file-name "daily" org-roam-directory))

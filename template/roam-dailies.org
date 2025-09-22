@@ -1,7 +1,7 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: %<%Y-%m-%d>
 #+FILETAGS: :daily:journal:
-#+BIBLIOGRAPHY: include/references.bib
+#+BIBLIOGRAPHY: bib/references.bib
 #+CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES: 
 #+ROAM_REFS: 

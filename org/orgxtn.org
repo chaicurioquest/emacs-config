@@ -1,4 +1,4 @@
-# SETUPFILE: /wspace/org/setup/setup-latex.org
+# SETUPFILE: /wspace/org/notes/latex/setup-latex.org
 #+TITLE: Org Extensions Configuration
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent
@@ -168,7 +168,7 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 
 (setq org-capture-templates
   `(("n" "Generic Note" plain
-     (file (lambda () (read-file-name "New Note File: " (expand-file-name "notes/" default-directory) nil nil ".org")))
+     (file (lambda () (read-file-name "New Note File: " default-directory nil nil ".org")))
      ,my/generic-note-template
      :empty-lines 1 :prepend t)))
 #+END_SRC

@@ -1,7 +1,7 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: ${citekey}
 #+FILETAGS: :bib:
-#+BIBLIOGRAPHY: include/references.bib
+#+BIBLIOGRAPHY: bib/references.bib
 #+CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES: @${citekey}
 #+ROAM_REFS: 

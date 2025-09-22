@@ -1,7 +1,7 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: ${title}
 #+FILETAGS: :permanent:
-#+BIBLIOGRAPHY: include/references.bib
+#+BIBLIOGRAPHY: bib/references.bib
 #+CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES: 
 #+ROAM_REFS: 

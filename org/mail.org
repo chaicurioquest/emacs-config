@@ -1,4 +1,4 @@
-# SETUPFILE: /wspace/org/setup/setup-latex.org
+# SETUPFILE: /wspace/org/notes/latex/setup-latex.org
 #+TITLE: Mail Configuration
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent
@@ -71,7 +71,7 @@
     (setq org-capture-templates
           (append existing-templates
                   `(("m" "Email task (mu4e)" entry
-                     (file+headline, (expand-file-name "notes/inbox.org" default-directory)"Emails")
+                     (file+headline, (expand-file-name "inbox.org" default-directory)"Emails")
                      "* TODO [#A] %:subject :email:\n:PROPERTIES:\n:From: %:from\n:Message-ID: %:message-id\n:Mu4e-Message: %:id\n:END:\nLink: [[mu4e:msgid:%:message-id][Open email]]\n%?\n"
                      :empty-lines 1 :prepend t))))))
 #+END_SRC
