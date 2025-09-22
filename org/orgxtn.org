@@ -198,13 +198,13 @@ LaTeX/PDF export processes, citation configurations, and related advices/environ
 (setq org-cite-export-processors '((latex biblatex "backend=biber,style=authoryear")))
 
 ;; Ensure Org knows we prefer lualatex for exports (both new and older var names).
-(setq org-export-latex-compiler "lualatex")
+;; (setq org-export-latex-compiler "lualatex")
 (setq org-latex-compiler "lualatex") ;; compatibility
 
-;; Define LaTeX-to-PDF export commands using latexmk
+;; Define LaTeX-to-PDF export commands using latexmk. here latexmkrc location relative to to setupfile folder since org file can be executed any where inside org folder including roam files.
 (setq org-latex-pdf-process
       `(,(format "mkdir -p build && latexmk -lualatex -r %s -outdir=build -f %%f"
-                 (expand-file-name ".latexmkrc" (file-name-directory setupfile)))
+                 (expand-file-name "../.latexmkrc" (file-name-directory setupfile)))
         ;; Optional: copy PDF to project root
         "cp build/%b.pdf ./"
         ;; Clean but keep .log and .pdf
@@ -213,8 +213,8 @@ LaTeX/PDF export processes, citation configurations, and related advices/environ
 ;; Prevent Org from inserting \usepackage[utf8]{inputenc} with lualatex
 (setq org-latex-inputenc-alist '(("utf8" . nil)))
 
-;; Set TEXINPUTS to include org/setup/ for LaTeX input files
-(setenv "TEXINPUTS" (concat "../setup:" (getenv "TEXINPUTS")))
+;; Set TEXINPUTS to include org/notes/ for LaTeX input files
+(setenv "TEXINPUTS" (concat "../notes:" (getenv "TEXINPUTS")))
 
 ;; Warn if setup-latex.org is missing
 (let ((setup-file setupfile))
