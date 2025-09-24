@@ -462,8 +462,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 #+END_SRC
 
-
-
 * ACTIVE UI Tweaks
 #+BEGIN_SRC emacs-lisp
 (when (eq my-device 'termux)
@@ -583,7 +581,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
   (message "✅ config.org tangled")))
 #+END_SRC
 
-
 #+BEGIN_SRC emacs-lisp
 (defun my-tangle-all ()
   "Tangle all modular Org files."
@@ -601,7 +598,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
 (global-set-key (kbd "C-c i d") 'my-insert-datestamp)    ;; YYYY-MM-DD
 (global-set-key (kbd "C-c i o") 'my-insert-org-timestamp) ;; [YYYY-MM-DD Day HH:MM]
 #+END_SRC
-
 
 ** Citar Citation insertion keybinding
 #+BEGIN_SRC emacs-lisp
@@ -623,7 +619,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
 ;; mu4e Email integration quick access
 (global-set-key (kbd "C-c m") 'mu4e)
 
-
 #+END_SRC
 
 ** Switching windows 
@@ -643,8 +638,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
 * ACTIVE Modular Configs
 #+BEGIN_SRC emacs-lisp
 
-
-
 (my/tangle-if-needed "org/orgxtn.org" "org/orgxtn.el")
 (load (expand-file-name "org/orgxtn.el" user-emacs-directory) nil 'nomessage)
 
@@ -660,15 +653,47 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 (my/tangle-if-needed "org/workflow.org" "org/workflow.el")
 (load (expand-file-name "org/workflow.el" user-emacs-directory) nil 'nomessage)
-
-
-
 #+END_SRC
 
-* ACTIVE Startup Confirmation
+* Git enabled org notes sync with repo
+Note: If you are not using git source control for org notes across devices, comment/remove following function
+
 #+BEGIN_SRC emacs-lisp
-(message "✅ config.el loaded successfully on device: %s" my-device)
+(defun my--run-shell-command-async (cmd message-prefix)
+  "Run CMD asynchronously and display output with MESSAGE-PREFIX."
+  (async-shell-command cmd (get-buffer-create "*Git Output*"))
+  (with-current-buffer "*Git Output*"
+    (goto-char (point-max))
+    (insert (format "\n%s: Running %s\n" message-prefix cmd))))
+
+;; Manual pull function
+(defun git-pull-repo ()
+  "Manually pull the Org notes repo asynchronously."
+  (interactive)
+  (let ((repo-dir (file-truename default-directory)))
+    (when repo-dir  ; Ensure default-directory is set
+      (my--run-shell-command-async (format "cd %s && git pull origin main" (shell-quote-argument repo-dir)) "Git pull")
+      (message "Git pull started (check *Git Output*)."))))
+
+;; Manual push function
+(defun git-push-repo ()
+  "Manually push changes in the Org notes repo asynchronously."
+  (interactive)
+  (let ((repo-dir (file-truename default-directory)))
+    (when repo-dir
+      (my--run-shell-command-async (format "cd %s && git add . && git commit -m 'Manual update' && git push origin main" (shell-quote-argument repo-dir)) "Git push")
+      (message "Git push started (check *Git Output*)."))))
+
+;; Your prefix map (C-c g p for pull, C-c g u for push)
+(defvar git-org-map (make-sparse-keymap) "Keymap for Git Org commands.")
+(define-key global-map (kbd "C-c g") git-org-map)
+(define-key git-org-map (kbd "p") 'git-pull-repo)
+(define-key git-org-map (kbd "u") 'git-push-repo)
+
+;; Async buffer settings
+(setq async-shell-command-buffer 'new-buffer)
 #+END_SRC
+
 
 * CANCELLED Deprecated Settings
 #+BEGIN_SRC emacs-lisp
