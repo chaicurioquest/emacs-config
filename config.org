@@ -244,12 +244,25 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 ** Flyspell for spell checking (loaded on M-$).
 #+BEGIN_SRC emacs-lisp
 (use-package flyspell
-  :straight t
   :defer t
   :bind ("M-$" . flyspell-correct-word-before-point)
+  :init
+  ;; Force Hunspell with UK English dictionary
+  (setq ispell-program-name "hunspell"
+        ispell-dictionary "en_GB"
+        ispell-local-dictionary "en_GB"
+        ispell-local-dictionary-alist
+        '(("en_GB" "[[:alpha:]]" "[^[:alpha:]]" "[']" t
+           ("-d" "en_GB") nil utf-8))))
   :config
-  (when (executable-find "aspell")
-    (setq ispell-program-name "aspell")))
+  ;; Enable flyspell everywhere you write text
+  (add-hook 'text-mode-hook #'flyspell-mode)
+  ;; For code: only check strings & comments
+  (add-hook 'prog-mode-hook #'flyspell-prog-mode)
+
+  ;; Correction interface for M-$
+  (use-package flyspell-correct :straight t))
+
 #+END_SRC
 
 ** CD Latex package for latex equations
