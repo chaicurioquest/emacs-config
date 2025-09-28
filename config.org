@@ -253,7 +253,7 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
         ispell-local-dictionary "en_GB"
         ispell-local-dictionary-alist
         '(("en_GB" "[[:alpha:]]" "[^[:alpha:]]" "[']" t
-           ("-d" "en_GB") nil utf-8))))
+           ("-d" "en_GB") nil utf-8)))
   :config
   ;; Enable flyspell everywhere you write text
   (add-hook 'text-mode-hook #'flyspell-mode)
