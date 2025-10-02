@@ -1,8 +1,8 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: ${title}
 #+FILETAGS: :journal:
-#+BIBLIOGRAPHY: bib/references.bib
-#+CITE_EXPORT: biblatex authoryear
+# BIBLIOGRAPHY: bib/references.bib
+# CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES: 
 #+ROAM_REFS: 
 #+CREATED: %U  ;; Creation timestamp

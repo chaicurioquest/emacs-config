@@ -3,10 +3,8 @@
 #+FILETAGS: :fleeting:
 #+OPTIONS: toc:nil num:nil
 #+PROPERTY: header-args :eval never-export
-#+CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES:
 #+ROAM_REFS:
-#+BIBLIOGRAPHY: bib/references.bib  ;; Added bibliography reference
 #+CREATED: %U
 #+LAST_MODIFIED: %U
 

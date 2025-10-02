@@ -1,8 +1,6 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: ${title}
 #+FILETAGS: :default:
-#+BIBLIOGRAPHY: bib/references.bib
-#+CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES: 
 #+ROAM_REFS: 
 #+CREATED: %U  ;; Creation timestamp
