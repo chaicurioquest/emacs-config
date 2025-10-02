@@ -704,7 +704,7 @@ Note: If you are not using git source control for org notes across devices, comm
   (let ((repo-dir (file-truename default-directory)))
     (my--run-shell-command-async
      (format
-      "cd %s && git add -A && (git diff --cached --quiet || git commit -m 'Manual update') && git push origin main"
+      "cd %s && git add -A && (git diff --cached --quiet || git commit -m 'Update from laptop') && git push origin main"
       (shell-quote-argument repo-dir))
      "Git push")
     (message "Git push started (check *Git Output*).")))
