@@ -679,10 +679,14 @@ Note: If you are not using git source control for org notes across devices, comm
 #+BEGIN_SRC emacs-lisp
 (defun my--run-shell-command-async (cmd message-prefix)
   "Run CMD asynchronously and display output with MESSAGE-PREFIX."
-  (async-shell-command cmd (get-buffer-create "*Git Output*"))
-  (with-current-buffer "*Git Output*"
-    (goto-char (point-max))
-    (insert (format "\n%s: Running %s\n" message-prefix cmd))))
+  (let ((buf (get-buffer-create "*Git Output*")))
+    (with-current-buffer buf
+      (read-only-mode -1)                     ;; make buffer editable
+      (erase-buffer)                          ;; clear old contents
+      (insert (format "%s: Running %s\n\n"    ;; header line
+                      message-prefix cmd)))
+    (async-shell-command cmd buf)))           ;; run command asynchronously, send output here
+
 
 ;; Manual pull function
 (defun git-pull-repo ()
@@ -695,12 +699,15 @@ Note: If you are not using git source control for org notes across devices, comm
 
 ;; Manual push function
 (defun git-push-repo ()
-  "Manually push changes in the Org notes repo asynchronously."
+  "Stage all changes, commit if needed, then push asynchronously."
   (interactive)
   (let ((repo-dir (file-truename default-directory)))
-    (when repo-dir
-      (my--run-shell-command-async (format "cd %s && git add . && git commit -m 'Manual update' && git push origin main" (shell-quote-argument repo-dir)) "Git push")
-      (message "Git push started (check *Git Output*)."))))
+    (my--run-shell-command-async
+     (format
+      "cd %s && git add -A && (git diff --cached --quiet || git commit -m 'Manual update') && git push origin main"
+      (shell-quote-argument repo-dir))
+     "Git push")
+    (message "Git push started (check *Git Output*).")))
 
 ;; Your prefix map (C-c g p for pull, C-c g u for push)
 (defvar git-org-map (make-sparse-keymap) "Keymap for Git Org commands.")
@@ -710,6 +717,7 @@ Note: If you are not using git source control for org notes across devices, comm
 
 ;; Async buffer settings
 (setq async-shell-command-buffer 'new-buffer)
+
 #+END_SRC
 
 
