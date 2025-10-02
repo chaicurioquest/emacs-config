@@ -194,11 +194,7 @@ LaTeX/PDF export processes, citation configurations, and related advices/environ
 (require 'oc)
 (require 'oc-biblatex)
 
-
-;; Add dynamic headers to LaTeX preamble for all exports
-(add-to-list 'org-latex-packages-alist
-             `("" ,(my-org-latex-modular-paths) t))
-         
+        
 ;; Ensure Org knows we prefer lualatex for exports (both new and older var names).
 ;; (setq org-export-latex-compiler "lualatex")
 (setq org-latex-compiler "lualatex") ;; compatibility
