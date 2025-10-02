@@ -194,9 +194,11 @@ LaTeX/PDF export processes, citation configurations, and related advices/environ
 (require 'oc)
 (require 'oc-biblatex)
 
-;; Configure citation export to use biblatex with biber backend and authoryear style
-(setq org-cite-export-processors '((latex biblatex "backend=biber,style=authoryear")))
 
+;; Add dynamic headers to LaTeX preamble for all exports
+(add-to-list 'org-latex-packages-alist
+             `("" ,(my-org-latex-modular-paths) t))
+         
 ;; Ensure Org knows we prefer lualatex for exports (both new and older var names).
 ;; (setq org-export-latex-compiler "lualatex")
 (setq org-latex-compiler "lualatex") ;; compatibility
@@ -204,7 +206,7 @@ LaTeX/PDF export processes, citation configurations, and related advices/environ
 ;; Define LaTeX-to-PDF export commands using latexmk. here latexmkrc location relative to to setupfile folder since org file can be executed any where inside org folder including roam files.
 (setq org-latex-pdf-process
       `(,(format "mkdir -p build && latexmk -lualatex -r %s -outdir=build -f %%f"
-                 (expand-file-name "../.latexmkrc" (file-name-directory setupfile)))
+                 (expand-file-name ".latexmkrc" (file-name-directory setupfile)))
         ;; Optional: copy PDF to project root
         "cp build/%b.pdf ./"
         ;; Clean but keep .log and .pdf
@@ -213,8 +215,16 @@ LaTeX/PDF export processes, citation configurations, and related advices/environ
 ;; Prevent Org from inserting \usepackage[utf8]{inputenc} with lualatex
 (setq org-latex-inputenc-alist '(("utf8" . nil)))
 
-;; Set TEXINPUTS to include the absolute path to your org/notes/ root (via default-directory) for LaTeX inputs
-(setenv "TEXINPUTS" (concat default-directory ":" (getenv "TEXINPUTS")))
+;; Set TEXINPUTS to include subdirs under root (via default-directory) for LaTeX inputs (latex/, images/)
+(setenv "TEXINPUTS" (concat
+                     (file-name-as-directory default-directory) "latex:"
+                     (file-name-as-directory default-directory) "images:"
+                     (getenv "TEXINPUTS")))
+
+;; Set BIBINPUTS to include bib/ under root (via default-directory) for bibliography files
+(setenv "BIBINPUTS" (concat
+                     (file-name-as-directory default-directory) "bib:"
+                     (getenv "BIBINPUTS")))
 
 ;; Warn if setup-latex.org is missing
 (let ((setup-file setupfile))
