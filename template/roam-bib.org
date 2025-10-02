@@ -1,6 +1,7 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: ${citekey}
 #+FILETAGS: :bib:
+#+OPTIONS: toc:nil
 #+ROAM_ALIASES: @${citekey}
 #+ROAM_REFS: 
 #+CREATED: %U  ;; Creation timestamp

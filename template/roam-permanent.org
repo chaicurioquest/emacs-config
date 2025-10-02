@@ -1,6 +1,7 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: ${title}
 #+FILETAGS: :permanent:
+#+OPTIONS: toc:nil
 #+ROAM_ALIASES: 
 #+ROAM_REFS: 
 #+CREATED: %U  ;; Creation timestamp

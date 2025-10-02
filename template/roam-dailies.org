@@ -1,6 +1,7 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: %<%Y-%m-%d>
 #+FILETAGS: :daily:journal:
+#+OPTIONS: toc:nil
 #+ROAM_ALIASES: 
 #+ROAM_REFS: 
 #+CREATED: %U  ;; Creation timestamp

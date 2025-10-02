@@ -1,7 +1,7 @@
 #+TITLE: Fleeting Notes
 #+AUTHOR: Ram
 #+FILETAGS: :fleeting:
-#+OPTIONS: toc:nil num:nil
+#+OPTIONS: toc:nil
 #+PROPERTY: header-args :eval never-export
 #+ROAM_ALIASES:
 #+ROAM_REFS:

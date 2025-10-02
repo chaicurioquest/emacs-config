@@ -1,6 +1,7 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: ${title}
 #+FILETAGS: :journal:
+#+OPTIONS: toc:nil
 # BIBLIOGRAPHY: bib/references.bib
 # CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES: 
