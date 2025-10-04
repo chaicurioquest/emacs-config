@@ -109,6 +109,19 @@ For circuit diagrams (e.g., VLSI engineers):
   - Ditaa (`sudo apt install ditaa` for `/usr/share/ditaa/ditaa.jar`).
 - Usage: Enables LaTeX and ditaa Babel blocks, previews for TikZ/CircuitTikZ, ditaa output to `images/`.
 
+*NOTE*: ImageMagick-based LaTeX preview for TikZ / CircuitTikZ
+
+Security note (Ubuntu/Debian):
+- Recent ImageMagick packages disable PDF processing by default.
+  To allow PDF→PNG conversion, you must locally enable PDF coder in ImageMagick's policy:
+  Edit /etc/ImageMagick-6/policy.xml or /etc/ImageMagick-7/policy.xml and change:
+    <policy domain="coder" rights="none" pattern="PDF" />
+  to:
+    <policy domain="coder" rights="read|write" pattern="PDF" />
+  (same for "PS"/"EPS" if present). This is a local security decision — enabling PDF processing allows Ghostscript to be invoked and may increase attack surface. Do this only if you trust the LaTeX inputs.
+
+Alternative (safer): install pdftocairo (poppler-utils) and use that instead of ImageMagick — no policy changes required.
+
 ---
 
 ## 📦 Configurations
