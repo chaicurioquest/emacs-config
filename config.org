@@ -185,12 +185,6 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :straight (:type built-in)
   :ensure nil
   :config
-  ;; Babel settings (consolidated here for minimal files)
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((shell . t)))
-  ;; Add future Babel expansions above as needed
-
   ;; Core requires
   (require 'oc)
   (require 'oc-biblatex))
@@ -659,6 +653,34 @@ If using AUCTeX for LaTeX exports, add reftex package.
 (my/tangle-if-needed "org/orgxtn.org" "org/orgxtn.el")
 (load (expand-file-name "org/orgxtn.el" user-emacs-directory) nil 'nomessage)
 
+(my/tangle-if-needed "org/roam.org" "org/roam.el")
+(load (expand-file-name "org/roam.el" user-emacs-directory) nil 'nomessage)
+
+(my/tangle-if-needed "org/filetags.org" "org/filetags.el")
+(load (expand-file-name "org/filetags.el" user-emacs-directory) nil 'nomessage)
+
+(my/tangle-if-needed "org/workflow.org" "org/workflow.el")
+(load (expand-file-name "org/workflow.el" user-emacs-directory) nil 'nomessage)
+
+(when (eq my-device 'laptop)
+(my/tangle-if-needed "org/mail.org" "org/mail.el")
+(load (expand-file-name "org/mail.el" user-emacs-directory) nil 'nomessage))
+
+;; Optional: General LaTeX export configs (requires TeX Live, latexmk)
+(my/tangle-if-needed "org/latextn.org" "org/latextn.el")
+(load (expand-file-name "org/latextn.el" user-emacs-directory) nil 'nomessage)
+
+;; Optional: Engineering-specific configs for TikZ/CircuitTikZ diagrams
+(my/tangle-if-needed "org/customxtn.org" "org/customxtn.el")
+(load (expand-file-name "org/customxtn.el" user-emacs-directory) nil 'nomessage)
+
+#+END_SRC
+
+* ACTIVE Modular Configs
+#+BEGIN_SRC emacs-lisp
+(my/tangle-if-needed "org/orgxtn.org" "org/orgxtn.el")
+(load (expand-file-name "org/orgxtn.el" user-emacs-directory) nil 'nomessage)
+
 (when (eq my-device 'laptop)
   (my/tangle-if-needed "org/mail.org" "org/mail.el")
   (load (expand-file-name "org/mail.el" user-emacs-directory) nil 'nomessage))
@@ -671,7 +693,18 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 (my/tangle-if-needed "org/workflow.org" "org/workflow.el")
 (load (expand-file-name "org/workflow.el" user-emacs-directory) nil 'nomessage)
+
+;; Optional: General LaTeX export configs (requires TeX Live, latexmk)
+(my/tangle-if-needed "org/latextn.org" "org/latextn.el")
+(load (expand-file-name "org/latextn.el" user-emacs-directory) nil 'nomessage)
+
+;; Optional: VLSI-specific configs for TikZ/CircuitTikZ diagrams
+;; Uncomment to enable (requires TeX Live with tikz/circuitikz, ImageMagick, Ghostscript, ditaa.jar)
+;; (my/tangle-if-needed "org/customxtn.org" "org/customxtn.el")
+;; (load (expand-file-name "org/customxtn.el" user-emacs-directory) nil 'nomessage)
 #+END_SRC
+
+
 
 * Git enabled org notes sync with repo
 Note: If you are not using git source control for org notes across devices, comment/remove following function

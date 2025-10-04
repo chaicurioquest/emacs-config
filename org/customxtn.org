@@ -1,0 +1,54 @@
+# SETUPFILE: /wspace/org/notes/latex/setup-latex.org
+#+TITLE: Engineering-Specific Org Extensions Configuration
+#+TODO: ACTIVE | CANCELLED
+#+STARTUP: indent
+#+PROPERTY: header-args:emacs-lisp :tangle yes
+#+DATE: 2025-10-04
+#+CREATED: [%<%Y-%m-%d %a %H:%M>]
+#+LAST_MODIFIED: [%<%Y-%m-%d %a %H:%M>]
+
+This file contains configurations for VLSI-specific Org-mode features, primarily for TikZ and CircuitTikZ diagrams used in circuit design. It is optional and should only be loaded by users who need these features. Dependencies: TeX Live (with tikz, circuitikz), ImageMagick, Ghostscript, ditaa.jar. Tangled to ~org/customxtn.el~ and loaded via ~config.org~ (uncomment the load if needed).
+
+* ACTIVE VLSI Diagram Support
+#+BEGIN_SRC emacs-lisp
+;; Enable LaTeX and ditaa for VLSI diagrams (circuitikz, ASCII backups)
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((latex . t)
+   (ditaa . t)))
+
+;; Path to ditaa.jar (installed via Ubuntu package)
+(setq org-ditaa-jar-path "/usr/share/ditaa/ditaa.jar")
+
+;; Default ditaa output to images/ folder
+(setq org-babel-default-header-args:ditaa
+      '((:file . "images/output.png")
+        (:cmdline . "-r -s 0.8")))
+
+;; Use ImageMagick for LaTeX previews (preferred for CircuitTikZ)
+(setq org-preview-latex-default-process 'imagemagick)
+
+;; Configure ImageMagick for previews
+(setq org-preview-latex-process-alist
+      (append org-preview-latex-process-alist
+              '((imagemagick
+                 :programs ("lualatex" "convert")
+                 :description "pdf > png"
+                 :message "You need to install lualatex and imagemagick."
+                 :image-input-type "pdf"
+                 :image-output-type "png"
+                 :image-size-adjust (1.0 . 1.0)
+                 :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
+                 :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O")))))
+
+;; Fallback LaTeX packages (in case not in setup-latex.org)
+(add-to-list 'org-latex-packages-alist '("" "tikz" t))
+(add-to-list 'org-latex-packages-alist '("" "circuitikz" t))
+
+;; Enable previews for tikzpicture environments
+(eval-after-load "preview"
+  '(add-to-list 'preview-default-preamble "\\PreviewEnvironment{tikzpicture}" t))
+
+;; No confirmation for code evaluation
+(setq org-confirm-babel-evaluate nil)
+#+END_SRC

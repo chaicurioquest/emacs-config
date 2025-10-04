@@ -1,0 +1,46 @@
+# SETUPFILE: /wspace/org/notes/latex/setup-latex.org
+#+TITLE: General LaTeX Export Configuration
+#+TODO: ACTIVE | CANCELLED
+#+STARTUP: indent
+#+PROPERTY: header-args:emacs-lisp :tangle yes
+#+DATE: 2025-10-04
+#+CREATED: [%<%Y-%m-%d %a %H:%M>]
+#+LAST_MODIFIED: [%<%Y-%m-%d %a %H:%M>]
+
+This file contains general LaTeX export configurations for Org-mode, including PDF export processes, bibliography support, and path settings for LaTeX inputs and bibliographies. It is optional and should be loaded by users who need LaTeX/PDF export (requires TeX Live with latexmk). VLSI-specific diagram settings (TikZ, CircuitTikZ, ditaa) are in `org/customxtn.org`. Tangled to `org/latextn.el` and loaded via `config.org` (uncomment the load if needed).
+
+* ACTIVE LaTeX Export Configuration
+#+BEGIN_SRC emacs-lisp
+;; Load Org Cite processors for bibliography support
+(require 'oc)
+(require 'oc-biblatex)
+
+;; Prefer lualatex for exports
+(setq org-latex-compiler "lualatex")
+
+;; Define LaTeX-to-PDF export commands using latexmk
+(setq org-latex-pdf-process
+      `(,(format "mkdir -p build && latexmk -lualatex -r %s -outdir=build -f %%f"
+                 (expand-file-name ".latexmkrc" (file-name-directory setupfile)))
+        "cp build/%b.pdf ./"
+        "find build -type f ! -name '*.log' -delete"))
+
+;; Prevent Org from inserting \usepackage[utf8]{inputenc} with lualatex
+(setq org-latex-inputenc-alist '(("utf8" . nil)))
+
+;; Set TEXINPUTS to include subdirs under root for LaTeX inputs
+(setenv "TEXINPUTS" (concat
+                     (file-name-as-directory default-directory) "latex:"
+                     (file-name-as-directory default-directory) "images:"
+                     (getenv "TEXINPUTS")))
+
+;; Set BIBINPUTS to include bib/ under root for bibliography files
+(setenv "BIBINPUTS" (concat
+                     (file-name-as-directory default-directory) "bib:"
+                     (getenv "BIBINPUTS")))
+
+;; Warn if setup-latex.org is missing
+(let ((setup-file setupfile))
+  (unless (file-exists-p setup-file)
+    (message "⚠️ Org LaTeX setup file not found: %s" setup-file)))
+#+END_SRC

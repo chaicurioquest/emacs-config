@@ -70,11 +70,14 @@
   (error (message "[%s] Error loading config.el: %s" (format-time-string "%T") err)
          (setq config-load-status "failed to load")))
 
+;; Load private tweaks if present (won't error if missing)
+;; (let ((private-file (expand-file-name "private.el" user-emacs-directory)))
+;;  (when (file-exists-p private-file)
+;;    (load-file private-file)))
 
 ;; Start the Emacs with Full Screen and Font Size for readablity
 ;; Maximize the initial frame on startup
  (add-to-list 'initial-frame-alist '(fullscreen . maximized))
-
 
 ;; Set default font size (adjust the :height value as needed; 100 is default, 120-140 is larger/readable)
 (set-face-attribute 'default nil :height 160)
