@@ -18,26 +18,25 @@ This repository contains a modular and portable Emacs configuration designed for
 
 - **Emacs Version**: Emacs 30 or later (tested on 30).
 - **Dependencies**: 
-  - Git for cloning the repo.
-  - Aspell for spell-checking (install via package manager, e.g., `sudo apt install aspell` on Linux).
-  - Zotero with Better BibTeX add-on for bibliography integration (optional but recommended for Citar/Org-roam-bibtex).
-- **No Internet for Packages**: The config uses `straight.el` to bootstrap packages, so an initial internet connection is needed for installation. Subsequent launches use local copies.
+  - Git for cloning the repo (`sudo apt install git` on Ubuntu).
+  - Aspell for spell-checking (`sudo apt install aspell`).
+  - Zotero with Better BibTeX add-on for bibliography integration (optional, for Citar/Org-roam-bibtex).
+  - For general LaTeX/PDF export: TeX Live (`sudo apt install texlive-full`) and latexmk (`sudo apt install latexmk`).
+  - No Internet for Packages: `straight.el` bootstraps packages, requiring an initial internet connection. Subsequent launches use local copies.
 
 ### Step 1: Clone the Repository
-
-Clone the repository to your Emacs directory:
 
 ```bash
 git clone https://github.com/chaicurioquest/emacs-config.git ~/.emacs.d
 ```
 
-- **Why ~/.emacs.d?**: This is the default Emacs configuration directory. The config is self-contained within it.
+- **Why ~/.emacs.d?**: This is the default Emacs configuration directory. The config is self-contained.
 
 ### Step 2: Customize device.el
 
-The config uses `device.el` to detect your device type (laptop, Termux, tablet) and adjust paths (e.g., default-directory for notes).
+The config uses `device.el` to detect device type (laptop, Termux, tablet) and adjust paths.
 
-- Open `~/.emacs.d/device.el` and edit the hash table to match your system names:
+- Edit `~/.emacs.d/device.el`:
   ```elisp
   (defvar my-device-configs
     (let ((table (make-hash-table :test 'equal)))
@@ -54,27 +53,26 @@ The config uses `device.el` to detect your device type (laptop, Termux, tablet) 
   (provide 'device)
   ```
 
-- **How to Get system-name**: In Emacs, run `M-: system-name` to get your device's hostname.
-- **Save and Restart**: After editing, restart Emacs to load the changes.
+- **Get system-name**: Run `M-: system-name` in Emacs.
+- **Save and Restart**: Restart Emacs to apply changes.
 
-### Step 3: Set Up Zotero Integration (Optional but Recommended)
-For bibliography and citations (using Citar and Org-roam-bibtex):
-- Install Zotero and the Better BibTeX add-on.
-- In Zotero, export your library as Better BibLaTeX to `~/wspace/org/notes/references.bib` (laptop path; adjust for other devices).
-- Set automatic export in Zotero Preferences > Better BibTeX > Automatic Export ( "On Change" trigger).
-- PDFs are stored in `~/wspace/src/zotero-kbase/storage` (update in config.org if needed).
+### Step 3: Set Up Zotero Integration (Optional)
+For bibliography and citations (Citar, Org-roam-bibtex):
+- Install Zotero and Better BibTeX add-on.
+- Export library as Better BibLaTeX to `~/wspace/org/notes/references.bib` (adjust for other devices).
+- Enable automatic export in Zotero: Preferences > Better BibTeX > Automatic Export ("On Change").
+- PDFs: `~/wspace/src/zotero-kbase/storage` (update in `config.org` if needed).
 
 ### Step 4: Install Packages and Tangle Config
-- Start Emacs—the config will auto-install packages via `straight.el` (initial run may take time).
-- Manually tangle if needed: Open `config.org` (`C-x C-f ~/.emacs.d/config.org`), press `C-c t` (or `M-x my-tangle-config-org`).
+- Start Emacs—`straight.el` auto-installs packages (initial run may take time).
+- Manually tangle: Open `config.org` (`C-x C-f ~/.emacs.d/config.org`), press `C-c t` (or `M-x my-tangle-config-org`).
 
 ### Step 5: Customize Templates and Setup Files
-- **Templates**: Located in `~/.emacs.d/template/` (e.g., `roam-default.org` for Org-roam notes, `generic-note.org` for regular Org notes). Edit them to add headers/metadata (e.g., LaTeX packages).
-- **Setup Files**: Located in `~/.emacs.d/setup/` (e.g., `setup-latex.org` for LaTeX exports, `acronyms.org` for glossaries). Update `setup-latex.org` with your LaTeX headers:
+- **Templates**: In `~/.emacs.d/template/` (e.g., `roam-default.org`, `generic-note.org`). Edit to add headers/metadata.
+- **Setup Files**: In `~/wspace/org/notes/latex/` (e.g., `setup-latex.org`, `acronyms.org`). Update `setup-latex.org`:
   ```org
   #+LATEX_HEADER: \pdfminorversion=7
   #+LATEX_CLASS_OPTIONS: [a4paper,12pt,fleqn]
-
   #+LATEX_HEADER: \usepackage{amsmath}
   #+LATEX_HEADER: \usepackage{graphicx}
   #+LATEX_HEADER: \usepackage{hyperref}
@@ -83,70 +81,103 @@ For bibliography and citations (using Citar and Org-roam-bibtex):
   #+LATEX_HEADER: \makeglossaries
   #+LATEX_HEADER: \usepackage{booktabs}
   #+LATEX_HEADER: \usepackage{siunitx}
-
   #+OPTIONS: toc:2 num:t
   #+LATEX: \printglossaries
-
   #+INCLUDE: "acronyms.org"
   ```
-- **Acronyms**: Edit `acronyms.org` with your terms (e.g., BJT, JFET for engineering notes).
+- **Acronyms**: Edit `acronyms.org` with terms (e.g., BJT, JFET).
 
-### Step 6: (Optional) Enable Debug Logs
-To log startup details (e.g., paths, device detection):
-- Set environment variable: `export MY_DEBUG_DEVICE=1` (add to shell profile, e.g., `.bashrc` for persistence).
+### Step 6: Enable Debug Logs (Optional)
+- Set environment variable: `export MY_DEBUG_DEVICE=1` (add to `.bashrc`).
 - View logs in `*Messages*` buffer.
+
+### Step 7: Optional LaTeX Export Support
+For users needing LaTeX/PDF export:
+- Tangle/load `org/latextn.org` to `org/latextn.el` (enabled by default in `config.org`).
+- Dependencies:
+  - TeX Live (`sudo apt install texlive-full`).
+  - latexmk (`sudo apt install latexmk`).
+- Usage: Enables LaTeX export (`C-c C-e l p`) with latexmk, bibliography support, and device-aware paths.
+
+### Step 8: Optional VLSI Diagram Support (TikZ/CircuitTikZ)
+For circuit diagrams (e.g., VLSI engineers):
+- Tangle/load `org/customxtn.org` to `org/customxtn.el` by uncommenting lines in `config.org`'s "* ACTIVE Modular Configs".
+- Dependencies:
+  - TeX Live with `tikz` and `circuitikz` (`sudo apt install texlive-full texlive-science`).
+  - ImageMagick (`sudo apt install imagemagick`; enable PDF/PS in `/etc/ImageMagick-6/policy.xml`: change `rights="none"` to `rights="read|write"` for "PDF", "PS", "EPS").
+  - Ghostscript (`sudo apt install ghostscript`).
+  - Ditaa (`sudo apt install ditaa` for `/usr/share/ditaa/ditaa.jar`).
+- Usage: Enables LaTeX and ditaa Babel blocks, previews for TikZ/CircuitTikZ, ditaa output to `images/`.
 
 ---
 
 ## 📦 Configurations
 
 ### General Configurations
-- **Startup Optimizations**: Inhibits startup screen, resets garbage collection, disables UI elements for speed (early-init.el if present).
-- **Package Management**: Uses `straight.el` for reproducible installs; `use-package` for declarations. Packages include Org-roam for note-taking, Citar for bibliography, PDF-tools/Org-noter for annotations.
-- **Keybindings**: Minimal, e.g., `C-c t` for tangling, `C-c i t` for timestamps, `C-c r n` for Org-roam capture.
+- **Startup Optimizations**: Inhibits startup screen, resets garbage collection, disables UI elements.
+- **Package Management**: `straight.el` for installs; `use-package` for declarations. Packages: Org-roam, Citar, PDF-tools, Org-noter, Vertico, Orderless, Yasnippet, Yankpad, Flyspell, AUCTeX, RefTeX, Ace-Window, Org-agenda.
+- **Keybindings**: `C-c t` (tangle), `C-c i t/d/o` (timestamps), `C-c r n` (Org-roam capture), `C-c a` (Org-agenda), `C-c f t` (tagging).
 
 ### Org-Roam for Note-Taking
-- Configured in `org/roam.org`: Zettelkasten with templates (default, fleeting, permanent, journal, bib).
-- Dailies in `roam/daily/` for daily notes.
-- Keybindings: `C-c r f` (find note), `C-c r n` (capture), `C-c r d` (dailies), `C-c r g` (graph UI on laptop).
-- Backlinking: Manual `:ID:` addition for regular Org files; auto in templates.
+- In `org/roam.org`: Zettelkasten with templates (default, fleeting, permanent, journal, bib).
+- Dailies in `roam/daily/`.
+- Keybindings: `C-c r f` (find), `C-c r n` (capture), `C-c r d` (dailies), `C-c r g` (graph UI, laptop).
+- Backlinking: Manual `:ID:` or auto in templates.
+- Tags: `C-c r t` (add), `C-c r r` (remove) via `.filetags`, `.filetags-org`.
 
 ### Citar for Bibliography/Zotero
-- Bib file: `references.bib` in default-directory (device-aware).
+- Bib file: `references.bib` in default-directory.
 - PDFs: `~/wspace/src/zotero-kbase/storage`.
-- Keybindings: `C-c r c` to open note/resource.
-- Integration: Org-roam-bibtex for bib notes; Org-noter for PDF annotations.
+- Keybindings: `C-c r c` (open note/resource).
+- Integration: Org-roam-bibtex, Org-noter for annotations.
 
 ### Tags and Snippets
-- Tags: `org/filetags.org` for dynamic tagging, `C-c f t` to add.
-- Snippets: Yankpad with Yasnippet, `C-c y` to insert.
+- Tags: `org/filetags.org`, `C-c f t` to add (uses `.filetags`, `.filetags-org`).
+- Snippets: Yankpad with Yasnippet, `C-c y` to insert (`org/yankpad.org`).
 
 ### UI and General Settings
 - Theme: tsdh-dark.
-- Hooks: Auto-update LAST_MODIFIED on save; timestamp insertion.
-- Backups: Device-specific in `.backups/` and `.autosaves/`.
+- Hooks: Auto-update LAST_MODIFIED; timestamp insertion.
+- Backups: `.backups/`, `.autosaves/` (git-ignored).
+- Git Sync: `C-c g p` (pull), `C-c g u` (push).
+
+### GTD Workflow (org-alert)
+- In `org/workflow.org`: Device-specific alerts (libnotify on laptop, termux-notification on mobile).
+- Integrates with Org-agenda.
+
+### Mail Integration
+- In `org/mail.org`: mbsync for Gmail, msmtp for sending.
+- Keybindings: `C-c C-c` in mu4e-view for Org capture.
+- Alerts via mu4e-alert.
+
+### LaTeX Export
+- In `org/latextn.org`: LaTeX/PDF export with latexmk, bibliography support, device-aware paths.
+- Keybindings: `C-c C-e l p` (export PDF).
 
 ---
 
 ## 🧪 Testing and Troubleshooting
 
 ### Test Setup
-- Open Emacs—check `*Messages*` for "✅ config.el loaded successfully on device: [device]".
-- Create a note: `C-c r n` (Org-roam capture).
-- Add citation: `M-x citar-insert-cite` (bind if needed).
-- Annotate PDF: Open PDF, `M-x org-noter`.
+- Check `*Messages*` for "✅ config.el loaded successfully on device: [device]".
+- Note: `C-c r n`.
+- Citation: `C-c i c`.
+- PDF annotation: `M-x org-noter`.
+- PDF export: `C-c C-e l p`.
+- VLSI test (if enabled): Run CircuitTikZ block with `C-c C-c`, preview with `C-c C-x C-l`.
 
 ### Common Issues
-- **Path Errors**: Verify default-directory (`M-: default-directory`) matches your device (e.g., "~/wspace/org/notes/" for laptop). Fix in device.el.
-- **Packages Not Installed**: Run `M-x straight-pull-all` on first start.
+- **Path Errors**: Verify `default-directory` (`M-: default-directory`) matches device (e.g., "~/wspace/org/notes/"). Fix in `device.el`.
+- **Packages Not Installed**: `M-x straight-pull-all`.
 - **Org-Roam Db Errors**: Delete `~/.emacs.d/org-roam.db`, run `M-x org-roam-db-sync`.
-- **Debug**: Set `export MY_DEBUG_DEVICE=1` for detailed logs in `*Messages*`.
+- **Debug**: `export MY_DEBUG_DEVICE=1` for logs in `*Messages*`.
+- **LaTeX/VLSI Issues**: Ensure TeX Live, latexmk (`latextn.org`), or additional dependencies (`customxtn.org`) are installed.
 
 ### Customization
-- Edit templates in `~/.emacs.d/template/` (e.g., add headers to `generic-note.org`).
-- Add more capture templates in `config.org` for specific workflows (e.g., "e" for engineering notes).
-- Extend for Consult/Ivy if needed (currently commented in workflows.org).
-
----
+- Edit templates in `~/.emacs.d/template/` (e.g., `generic-note.org`).
+- Add capture templates in `orgxtn.org` (e.g., "e" for engineering).
+- Enable Consult/Ivy (commented in `config.org`).
 
 Happy hacking! Open an issue on GitHub for questions.
+
+[Download README.md](data:text/markdown;base64,...)
