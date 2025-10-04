@@ -8,7 +8,7 @@
 !early-init.el 
 !init.el 
 !device.el 
-!README.me
+!README.md
 !org/ 
 !org/*.org
 !template/
