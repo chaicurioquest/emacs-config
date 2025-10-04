@@ -1,4 +1,3 @@
-# SETUPFILE: /wspace/org/notes/latex/setup-latex.org
 #+TITLE: Mail Configuration
 #+TODO: ACTIVE | CANCELLED
 #+STARTUP: indent

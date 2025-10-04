@@ -158,10 +158,9 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
   (with-temp-buffer
     (insert-file-contents (expand-file-name "template/generic-note.org" user-emacs-directory))
     (goto-char (point-min))
-    (when (and (boundp 'setupfile) (stringp setupfile))
     (while (search-forward "${setupfile}" nil t)
       (replace-match setupfile t t))
-    (buffer-string))))
+    (buffer-string)))
 ;; Added 2025-07-28: capture template, loading content from generic-note.org.
 
 
