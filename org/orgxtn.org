@@ -22,11 +22,11 @@ Features:
 |--------------------------------|-----------------------------------------------|-------|
 | Attachment directory           | N/A                                           | All Org attachments in `.attach/` subfolder |
 | Smart TAB function             | =TAB=                                         | Expands snippet → CDLaTeX → Org-cycle |
-| Fit PDF to height               | =M-x my/pdf-view-fit-height=                  | Works in pdf-tools buffer |
+| Fit PDF to height              | =M-x my/pdf-view-fit-height=                  | Works in pdf-tools buffer |
 | Auto-update `#+LAST_MODIFIED`  | On save                                       | Uses `before-save-hook` |
 | Capture template loader        | `(my/load-template FILE)`                     | Replaces `${setupfile}` with actual path |
 | Babel shell blocks             | `#+BEGIN_SRC sh` … `#+END_SRC`                | No confirm on eval |
-| PDF export                     | `C-c C-e l o`                                 | Uses `latexmk` with `lualatex` |
+| PDF export                     | `C-c C-e l o`                                 | Uses `latexmk` with `Fba` |
 
 * ACTIVE General Org Settings
 General Org-mode variables, functions, hooks, and templates that are not tightly coupled to export or Babel. These were moved from ~config.org~'s * ACTIVE General Settings and related sections, as they are Org-specific and have no external dependencies beyond Org itself (e.g., ~setupfile~ is assumed defined globally in ~config.org~).
@@ -175,7 +175,11 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
 
 #+BEGIN_SRC emacs-lisp
 ;; Enable bash/shell for general-purpose code execution
-(org-babel-do-load-languages 'org-babel-load-languages '((shell . t)))
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((shell . t)
+   (latex . t)))
+
 
 ;; Add future Babel settings here, e.g.:
 ;; (setq org-confirm-babel-evaluate nil) ;; No confirmation for code evaluation
