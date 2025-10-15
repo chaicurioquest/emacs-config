@@ -47,8 +47,7 @@
 (defvar my-config-org (expand-file-name "config.org" user-emacs-directory))
 (defvar my-config-el (expand-file-name "config.el" user-emacs-directory))
 
-
-;; Variable to track configuration status
+  ;; Variable to track configuration status
 (defvar config-load-status "not started")
 
 ;; Tangle config.org if needed
@@ -86,10 +85,12 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(custom-enabled-themes '(whiteboard))
  '(my-org-refile-to-ids
    '(("+fleeting" . "df82ceed-3a1c-470c-8703-6fa24823e363")
      ("+meeting" . "d39cd7c9-99bf-483e-b338-4bd08ae6e413")
-     ("+task" . "07bb75d6-077e-4ea8-a8a7-f7dc86cb5737"))))
+     ("+task" . "07bb75d6-077e-4ea8-a8a7-f7dc86cb5737")))
+ '(warning-suppress-log-types '((emacs))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

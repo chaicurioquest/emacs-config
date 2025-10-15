@@ -174,14 +174,10 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 Settings for Org Babel code execution. Currently enables shell blocks; expand here for future languages (e.g., Python, Emacs Lisp) without creating a new file unless it grows excessively.
 
 #+BEGIN_SRC emacs-lisp
-;; Enable bash/shell for general-purpose code execution
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((shell . t)
-   (latex . t)))
-
-
-;; Add future Babel settings here, e.g.:
-;; (setq org-confirm-babel-evaluate nil) ;; No confirmation for code evaluation
-;; (org-babel-do-load-languages 'org-babel-load-languages '((python . t) (emacs-lisp . t)))
+;; Enable bash/shell  for general-purpose code and latex block code execution.
+(org-babel-do-load-languages 'org-babel-load-languages '((shell . t) (latex . t)))  
+   
+  ;; Add future Babel settings here, e.g.:
+  ;; (org-babel-do-load-languages 'org-babel-load-languages '((python . t) (emacs-lisp . t)))
+  ;; (setq org-confirm-babel-evaluate nil) ;; No confirmation for code evaluation
 #+END_SRC

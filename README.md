@@ -99,6 +99,77 @@ For users needing LaTeX/PDF export:
   - latexmk (`sudo apt install latexmk`).
 - Usage: Enables LaTeX export (`C-c C-e l p`) with latexmk, bibliography support, and device-aware paths.
 
+** Following is concise guide how to use latex export
+* 📘 Org-LaTeX Export Quick Guide
+:PROPERTIES:
+:CREATED: [%<%Y-%m-%d %a %H:%M>]
+:END:
+
+** ⚙️ Switch Engine (inside Emacs)
+Run one of these in `M-x`:
+#+BEGIN_SRC emacs-lisp
+(my/org-latex-use-lualatex)   ;; switch to LuaLaTeX (recommended)
+(my/org-latex-use-pdflatex)   ;; switch to pdfLaTeX temporarily
+#+END_SRC
+
+Re-export after switching: `C-c C-e l o`
+
+** 📄 Export to PDF
+- `C-c C-e l o` → Export to **LaTeX → PDF → open**
+- `C-c C-e l p` → Export to **LaTeX → PDF (no open)**
+- `C-c C-e l L` → Export to **LaTeX (.tex file)**
+
+** 🧮 Preview Math / TikZ Inline
+Show preview:
+#+BEGIN_SRC emacs-lisp
+M-x org-latex-preview   ;; or C-c C-x C-l
+#+END_SRC
+
+Remove preview:
+#+BEGIN_SRC emacs-lisp
+C-u C-c C-x C-l
+#+END_SRC
+
+Uses: `lualatex → pdf → ImageMagick (magick/convert) → png`
+
+** 🧱 Debugging
+- Check logs in `build/*.log` or `*Messages*`
+- Look for message:
+  `Org LaTeX configured: engine=lualatex; preview-process=imagemagick`
+- If fonts fail → install with:
+  #+BEGIN_SRC shell
+  sudo tlmgr install collection-fontsrecommended
+  #+END_SRC
+- If preview fails → ensure `magick` or `convert` + `ghostscript` installed.
+
+** 🧩 Per-File Override
+You can override the compiler in any `.org` file:
+#+BEGIN_EXAMPLE
+#+LATEX_COMPILER: pdflatex
+#+END_EXAMPLE
+or revert:
+#+BEGIN_EXAMPLE
+#+LATEX_COMPILER: lualatex
+#+END_EXAMPLE
+
+** 🔄 File Structure
+| File | Purpose |
+|------|----------|
+| `setup-latex.org` | LaTeX headers (fonts, hyperref, tikz, etc.) |
+| `latextn.org` | Export + preview engine configuration |
+| `.latexmkrc` | latexmk build rules (engine, glossaries, biber, etc.) |
+
+** ✅ Summary
+| Task | Command |
+|------|----------|
+| Export to PDF | `C-c C-e l o` |
+| Preview math | `C-c C-x C-l` |
+| Switch to LuaLaTeX | `M-x my/org-latex-use-lualatex` |
+| Switch to pdfLaTeX | `M-x my/org-latex-use-pdflatex` |
+| Check current engine | `M-: my/org-latex-engine RET` |
+
+
+
 ### Step 8: Optional VLSI Diagram Support (TikZ/CircuitTikZ)
 For circuit diagrams (e.g., VLSI engineers):
 - Tangle/load `org/customxtn.org` to `org/customxtn.el` by uncommenting lines in `config.org`'s "* ACTIVE Modular Configs".

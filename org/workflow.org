@@ -4,14 +4,14 @@
 #+PROPERTY: header-args:emacs-lisp :tangle yes
 #+DATE: 2025-09-12
 #+CREATED: %U
-#+LAST_MODIFIED: [2025-08-10 Sun 16:50]
+#+LAST_MODIFIED: [2025-10-10 Fri 22:17]
 
 * ACTIVE Enable message alerts in general
 #+BEGIN_SRC emacs-lisp
 ;; org-alert-config.el --- Device-aware org-alert configuration
 (use-package alert
   :straight t
-  :defer t)
+  :defer nil)
 #+END_SRC
 
 * ACTIVE Enable message alerts for Org mode and across different devices.
@@ -21,10 +21,11 @@
   :after (org alert)
   :defer t
   :config
+  ;; my flag for single enable per session
   (defvar my-org-alert-enabled nil
     "Non-nil when org-alert has been enabled this session.")
 
- ;; sanitizer for notifications: single-line, truncated
+  ;; sanitizer for notifications: single-line, truncated
   (defun my-alert-sanitize (str)
     (let* ((s (or str ""))
            (max-len 200))
@@ -32,7 +33,7 @@
        "[\n\r]+" " "
        (substring-no-properties s 0 (min (length s) max-len)))))
 
-  ;; Termux notifier (async)
+  ;; Termux notifier style (only define if available)
   (when (executable-find "termux-notification")
     (alert-define-style 'termux
       :title "Termux Notification"
@@ -42,19 +43,13 @@
                     (start-process "termux-notification" nil "termux-notification"
                                    "--title" title "--content" message)))))
 
-  ;; Enable once (post-load; avoids void function in hook)
-  (unless my-org-alert-enabled
-    (org-alert-enable)
-    (setq my-org-alert-enabled t))                                 
-
-  ;; Default per-device settings (ensure my-device is defined earlier)
+  ;; set per-device defaults *before* enabling org-alert
   (pcase (and (boundp 'my-device) my-device)
     ('laptop
-     ;; prefer libnotify/notify-send on Linux, terminal-notifier on macOS
      (setq alert-default-style
            (cond
             ((and (eq system-type 'gnu/linux) (executable-find "notify-send")) 'libnotify)
-            ((and (eq system-type 'darwin) (executable-find "terminal-notifier")) 'osx-notifier)
+            ((and (eq system-type 'darwin)  (executable-find "terminal-notifier")) 'osx-notifier)
             (t 'message)))
      (setq org-alert-interval 300
            org-alert-notify-cutoff 15
@@ -69,11 +64,16 @@
      (setq org-alert-interval 60
            org-alert-notify-cutoff 5
            org-alert-notify-after-event-cutoff 5))
-    (_
+    (_ ;; fallback
      (setq alert-default-style 'message
            org-alert-interval 300
            org-alert-notify-cutoff 10
            org-alert-notify-after-event-cutoff 10)))
+
+  ;; Enable once after variables set
+  (unless my-org-alert-enabled
+    (org-alert-enable)
+    (setq my-org-alert-enabled t))
 
   (message "Org-alert: style=%s device=%s interval=%ds cutoff=%dmin"
            alert-default-style

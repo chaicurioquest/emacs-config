@@ -1,31 +1,40 @@
 #+TITLE: General LaTeX Export Configuration
-#+TODO: ACTIVE | CANCELLED
-#+STARTUP: indent
 #+PROPERTY: header-args:emacs-lisp :tangle yes
-#+DATE: 2025-10-04
-#+CREATED: [%<%Y-%m-%d %a %H:%M>]
-#+LAST_MODIFIED: [%<%Y-%m-%d %a %H:%M>]
+#+DATE: [%<%Y-%m-%d>]
 
-This file contains general LaTeX export configurations for Org-mode, including PDF export processes, bibliography support, and path settings for LaTeX inputs and bibliographies. It is optional and should be loaded by users who need LaTeX/PDF export (requires TeX Live with latexmk). VLSI-specific diagram settings (TikZ, CircuitTikZ, ditaa) are in `org/customxtn.org`. Tangled to `org/latextn.el` and loaded via `config.org` (uncomment the load if needed).
-
-* ACTIVE LaTeX Export Configuration
+* LaTeX export & preview configuration
 #+BEGIN_SRC emacs-lisp
-;; Load Org Cite processors for bibliography support
+;; ------------------------------
+;; setup-latex.org
+;; Default engine: LuaLaTeX
+;; pdfLaTeX kept as standby for compatibility
+;; ------------------------------
+
 (require 'oc)
 (require 'oc-biblatex)
 
-;; Prefer lualatex for exports
-(setq org-latex-compiler "lualatex")
+;; Prefer LuaLaTeX for export & Babel execution
+;;(defvar my/org-latex-engine "lualatex"
+;;  "Default LaTeX engine for Org export. Change to \"pdflatex\" only when needed.")
+  
+(setq org-latex-compiler "lualatex")  ; Hardcode to avoid nil
+(setq org-babel-latex-compiler "lualatex")  ; Hardcode to avoid nil
 
-;; Define LaTeX-to-PDF export commands using latexmk
-(setq org-latex-pdf-process
-      `(,(format "mkdir -p build && latexmk -lualatex -r %s -outdir=build -f %%f"
-                 (expand-file-name ".latexmkrc" (file-name-directory setupfile)))
-        "cp build/%b.pdf ./"
-        "find build -type f ! -name '*.log' -delete"))
+;; Remove inputenc and fontenc with exact match (fourth element is engine list)
+(setq org-latex-default-packages-alist
+      (delete '("AUTO" "inputenc" t ("pdflatex"))
+              (delete '("T1" "fontenc" t ("pdflatex")) org-latex-default-packages-alist)))
 
-;; Prevent Org from inserting \usepackage[utf8]{inputenc} with lualatex
-(setq org-latex-inputenc-alist '(("utf8" . nil)))
+;; Add fontspec for LuaTeX
+(add-to-list 'org-latex-default-packages-alist '("" "fontspec" t) t)
+
+;; Show previews only when you ask (change to t to enable automatically)
+;; (setq org-startup-with-latex-preview t)
+;; (setq org-preview-latex-default-process 'imagemagick)
+
+;; Tweak preview scale and other options
+;; (setq org-format-latex-options
+;;      (plist-put org-format-latex-options :scale 1.1)) ;; 1.0–1.3 typical
 
 ;; Set TEXINPUTS to include subdirs under root for LaTeX inputs
 (setenv "TEXINPUTS" (concat
@@ -38,8 +47,26 @@ This file contains general LaTeX export configurations for Org-mode, including P
                      (file-name-as-directory default-directory) "bib:"
                      (getenv "BIBINPUTS")))
 
+;; Define LaTeX-to-PDF export commands using latexmk
+;;(setq org-latex-pdf-process
+;;      `(,(format "mkdir -p build && latexmk -lualatex -r %s -outdir=build -f %%f"
+;;                 (expand-file-name ".latexmkrc" (file-name-directory setupfile)))
+;;        "cp build/%b.pdf ./"
+;;        "find build -type f ! -name '*.log' -delete"))                 
+
+;; Define LaTeX-to-PDF export commands using latexmk
+(let ((latexmkrc (expand-file-name ".latexmkrc" (file-name-directory setupfile))))
+  (setq org-latex-pdf-process
+        `(,(format "mkdir -p %%o/build && latexmk -lualatex -r %s -outdir=%%o/build -f %%f" latexmkrc)
+          "cp %o/build/%b.pdf %o/%b.pdf"
+          "find %o/build -type f ! -name '*.log' -delete")))
+
+
+
+
 ;; Warn if setup-latex.org is missing
 (let ((setup-file setupfile))
   (unless (file-exists-p setup-file)
     (message "⚠️ Org LaTeX setup file not found: %s" setup-file)))
+
 #+END_SRC

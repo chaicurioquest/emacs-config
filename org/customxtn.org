@@ -10,44 +10,159 @@ This file contains configurations for VLSI-specific Org-mode features, primarily
 
 * ACTIVE VLSI Diagram Support
 #+BEGIN_SRC emacs-lisp
-;; Enable LaTeX and ditaa for VLSI diagrams (circuitikz, ASCII backups)
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((latex . t)
-   (ditaa . t)))
 
-;; Path to ditaa.jar (installed via Ubuntu package)
-(setq org-ditaa-jar-path "/usr/share/ditaa/ditaa.jar")
+;; --------------------------------------------
+;; Automatic org latex preview. If you dont require diable by commenting
+;; -------------------------------------------
 
-;; Default ditaa output to images/ folder
-(setq org-babel-default-header-args:ditaa
-      '((:file . "images/output.png")
-        (:cmdline . "-r -s 0.8")))
+;; Enable automatic preview of LaTeX fragments when opening an Org buffer
+;; (setq org-startup-with-latex-preview t)
 
-;; Use ImageMagick for LaTeX previews (preferred for CircuitTikZ)
-(setq org-preview-latex-default-process 'imagemagick)
+;; Use your chosen process (recommended: pdftoppm for LuaLaTeX)
+(setq org-preview-latex-default-process 'pdftoppm)
 
-;; Configure ImageMagick for previews
-(setq org-preview-latex-process-alist
-      (append org-preview-latex-process-alist
-              '((imagemagick
-                 :programs ("lualatex" "convert")
-                 :description "pdf > png"
-                 :message "You need to install lualatex and imagemagick."
-                 :image-input-type "pdf"
-                 :image-output-type "png"
-                 :image-size-adjust (1.0 . 1.0)
-                 :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
-                 :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O")))))
+;; -----------------------------------------------------------------------------------------------------------
+;; Custom Latex make commands for latex-compiler in Image converter selection and org-preview-latex-process-alist
+;; -------------------------------------------------------------------------------------------------------------
 
-;; Fallback LaTeX packages (in case not in setup-latex.org)
-(add-to-list 'org-latex-packages-alist '("" "tikz" t))
-(add-to-list 'org-latex-packages-alist '("" "circuitikz" t))
+(defun my/org-latex-make-latex-cmd (engine)
+  "Return a latex command template using ENGINE for org-preview (no latexmk here).
+   engine -interaction=nonstopmode -halt-on-error -output-directory=%o %f"
+   ;; Fallback prevents nil errors
+  (format "%s -interaction=nonstopmode -halt-on-error -output-directory=%%o %%f" (or engine "lualatex")))  
 
-;; Enable previews for tikzpicture environments
-(eval-after-load "preview"
-  '(add-to-list 'preview-default-preamble "\\PreviewEnvironment{tikzpicture}" t))
+;; --------------------------------------------
+;; Choose the compiler. Default modern lualatex or pdflatex as Fallback
+;; -------------------------------------------
 
-;; No confirmation for code evaluation
-(setq org-confirm-babel-evaluate nil)
+;; Remove inputenc from default packages for all LaTeX exports (safe for pdfLaTeX/LuaTeX/XeTeX)
+(setq org-latex-default-packages-alist
+      (delete '("AUTO" "inputenc" t) org-latex-default-packages-alist))  
+
+;; Ensure AUCTeX preview uses LuaLaTeX
+(setq preview-LaTeX-command
+      '("%`%l -interaction=nonstopmode -halt-on-error -output-directory=%o %t"))
+(setq preview-dvips-command "dvips -Ppdf -q -f %d -o %m/preview.ps") 
+
+;; Choose engine (call interactively if you want)
+(defun my/org-use-lualatex () (interactive) (setq my/org-latex-engine "lualatex"))
+(defun my/org-use-pdflatex () (interactive) (setq my/org-latex-engine "pdflatex"))
+
+;; --------------------------------------------
+;; Choose the compiler. Default modern lualatex or pdflatex as Fallback
+;; -------------------------------------------
+
+
+;; Make sure Emacs has the TeX binaries on its exec-path before running preview
+(dolist (d '("/usr/local/texlive/2025/bin/x86_64-linux" "/usr/bin" "/usr/local/bin"))
+  (when (and (stringp d) (file-directory-p d) (not (member d exec-path)))
+    (add-to-list 'exec-path d)))
+(setenv "PATH" (concat (mapconcat 'identity exec-path ":") ":" (or (getenv "PATH") "")))
+
+;; ---------------------------
+;; IMPORTANT: preview preamble (NO \\begin{document}, only packages + preview directives)
+;; ---------------------------
+(setq org-format-latex-header
+"\\documentclass[varwidth=true,border=0pt]{standalone}
+\\usepackage{fontspec}
+\\usepackage{amsmath,mathtools}
+\\usepackage{xcolor}
+\\usepackage{tikz}
+\\usepackage{circuitikz}
+
+% preview: active, tightpage; latexmath lets preview capture inline/display math when they are separate blocks
+\\usepackage[active,tightpage,displaymath,latexmath]{preview}
+\\setlength\\PreviewBorder{0pt}
+
+% Environments to crop tightly
+\\PreviewEnvironment{math}        % inline math when it is its own paragraph / block
+\\PreviewEnvironment{displaymath}
+\\PreviewEnvironment{equation}
+\\PreviewEnvironment{equation*}
+\PreviewEnvironment{align}
+\PreviewEnvironment{align*}
+\\PreviewEnvironment{tikzpicture}
+\\PreviewEnvironment{circuitikz}
+
+% Use unique color names (avoid collision with any \"fg/bg\" inserted later)
+\\definecolor{orgfg}{rgb}{1,1,1}          % pure white text
+\\definecolor{orgbg}{rgb}{0.2,0.2,0.2}    % dark background
+
+% Apply the unique colors for previews
+% Use AtBeginDocument so it runs when document starts
+\\AtBeginDocument{\\pagecolor{orgbg}\\color{orgfg}}
+
+
+% Helper macro: wrap expression in \\pv{...} to force a preview box around it.
+% Usage: \\pv{\\( E = mc^2 \\)} or \\pv{$E=mc^2$}
+\\newcommand{\\pv}[1]{\\begin{preview}#1\\end{preview}}
+
+% Reduce incidental spacing
+\\mathsurround=0pt
+\\setlength\\abovedisplayskip{0pt}
+\\setlength\\belowdisplayskip{0pt}
+\\setlength\\parindent{0pt}
+")
+
+
+;; ---------------------------
+;;Initialize and set appearance options
+;; ---------------------------
+
+;; Initialize and set appearance options
+(unless (boundp 'org-latex-preview-appearance-options)
+  (setq org-latex-preview-appearance-options (list)))
+(setq org-latex-preview-appearance-options
+  (plist-put org-latex-preview-appearance-options :page-width 0.8)) ; Narrower page
+(setq org-format-latex-options
+  (plist-put (or org-format-latex-options (list)) :scale 1)) ; Default scale
+;; ---------------------------
+;; Image converter selection and org-preview-latex-process-alist
+;; ---------------------------
+;; Prefer pdftoppm (poppler) because it produces the single-file PNG reliably.
+(let* ((engine (or (and (boundp 'my/org-latex-engine) my/org-latex-engine) "lualatex"))
+       (pdftoppm (executable-find "pdftoppm"))
+       (magick   (or (executable-find "magick") (executable-find "convert")))
+       (ghostscript (executable-find "gs"))
+       process-entry)
+  (cond
+   (pdftoppm
+    (setq process-entry
+          (list 'imagemagick
+                :programs (list engine "pdftoppm")
+                :description (format "%s -> pdf -> pdftoppm -> png" engine)
+                :message (format "Requires %s + pdftoppm." engine)
+                :image-input-type "pdf"
+                :image-output-type "png"
+                ;; latex-compiler must be a list of *one* string (Org will call it)
+                :latex-compiler (list (my/org-latex-make-latex-cmd engine))
+                ;; image-converter should be a list for execvp; here we use a shell wrapper
+                ;; NOTE: use -singlefile so pdftoppm produces a known basename "%o-1.png" or "%o.png"
+                :image-converter (list "sh" "-c" (concat "pdftoppm -png -singlefile -r %D %f %o && "
+                    "if [ -f \"%o-1.png\" ]; then convert \"%o-1.png\" -trim \"%O\"; "
+                    "elif [ -f \"%o.png\" ]; then convert \"%o.png\" -trim \"%O\"; "
+                    "else echo \"pdftoppm produced no expected file\" 1>&2; exit 2; fi")))))
+   ((and magick ghostscript)
+    (setq process-entry
+          (list 'imagemagick
+                :programs (list engine (file-name-nondirectory magick))
+                :description (format "%s -> pdf -> %s -> png" engine (file-name-nondirectory magick))
+                :message (format "Requires %s + %s." engine (file-name-nondirectory magick))
+                :image-input-type "pdf"
+                :image-output-type "png"
+                :latex-compiler (list (my/org-latex-make-latex-cmd engine))
+                ;; use convert/magick as list of args
+                :image-converter (list magick "-density" "%D" "%f" "-trim" "-flatten" "%O"))))
+          (magick
+           (message "Warning: Ghostscript (gs) not found; ImageMagick may fail to process PDFs.")))
+  (when process-entry
+    (setq org-preview-latex-default-process 'imagemagick)
+    ;; assign a proper alist (Org expects an alist; using (list process-entry) is correct)
+    (setq org-preview-latex-process-alist (list process-entry))
+    ;; older variable name sync if needed
+    (when (boundp 'org-latex-preview-process-alist)
+      (setq org-latex-preview-process-alist org-preview-latex-process-alist))
+    (message "Org preview pipeline installed using %s" (if pdftoppm "pdftoppm" (file-name-nondirectory magick))))
+  (unless process-entry
+    (message "Warning: neither pdftoppm nor ImageMagick (magick/convert) found; cannot preview LaTeX.")))
 #+END_SRC
