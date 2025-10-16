@@ -79,8 +79,8 @@ This file contains configurations for VLSI-specific Org-mode features, primarily
 \\PreviewEnvironment{displaymath}
 \\PreviewEnvironment{equation}
 \\PreviewEnvironment{equation*}
-\PreviewEnvironment{align}
-\PreviewEnvironment{align*}
+\\PreviewEnvironment{align}
+\\PreviewEnvironment{align*}
 \\PreviewEnvironment{tikzpicture}
 \\PreviewEnvironment{circuitikz}
 

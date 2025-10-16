@@ -48,20 +48,11 @@
                      (getenv "BIBINPUTS")))
 
 ;; Define LaTeX-to-PDF export commands using latexmk
-;;(setq org-latex-pdf-process
-;;      `(,(format "mkdir -p build && latexmk -lualatex -r %s -outdir=build -f %%f"
-;;                 (expand-file-name ".latexmkrc" (file-name-directory setupfile)))
-;;        "cp build/%b.pdf ./"
-;;        "find build -type f ! -name '*.log' -delete"))                 
-
-;; Define LaTeX-to-PDF export commands using latexmk
 (let ((latexmkrc (expand-file-name ".latexmkrc" (file-name-directory setupfile))))
   (setq org-latex-pdf-process
         `(,(format "mkdir -p %%o/build && latexmk -lualatex -r %s -outdir=%%o/build -f %%f" latexmkrc)
           "cp %o/build/%b.pdf %o/%b.pdf"
           "find %o/build -type f ! -name '*.log' -delete")))
-
-
 
 
 ;; Warn if setup-latex.org is missing
