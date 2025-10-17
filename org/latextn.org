@@ -47,13 +47,12 @@
                      (file-name-as-directory default-directory) "bib:"
                      (getenv "BIBINPUTS")))
 
-;; Define LaTeX-to-PDF export commands using latexmk
+;; Define LaTeX-to-PDF export commands with explicit multiple runs, without separate build dir
 (let ((latexmkrc (expand-file-name ".latexmkrc" (file-name-directory setupfile))))
   (setq org-latex-pdf-process
-        `(,(format "mkdir -p %%o/build && latexmk -lualatex -r %s -outdir=%%o/build -f %%f" latexmkrc)
-          "cp %o/build/%b.pdf %o/%b.pdf"
-          "find %o/build -type f ! -name '*.log' -delete")))
-
+        `(,(format "latexmk -lualatex -r %s -f %%f" latexmkrc)
+          "cp build/%b.pdf %b.pdf"
+          "find build -type f ! -name '*.log' -delete")))
 
 ;; Warn if setup-latex.org is missing
 (let ((setup-file setupfile))
