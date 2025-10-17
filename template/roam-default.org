@@ -2,14 +2,15 @@
 #+TITLE: ${title}
 #+FILETAGS: :default:
 #+OPTIONS: toc:nil
-#+ROAM_ALIASES: 
-#+ROAM_REFS: 
-#+CREATED: %U  ;; Creation timestamp
+#+ROAM_ALIASES:
+#+ROAM_REFS:
+#+CREATED: %U
 
 * Overview
-%?
+%?  ;; Quick summary
 
 * Details
+;; In-depth explanation or data
 
 * References
-#+PRINT_BIBLIOGRAPHY:
+#+print_bibliography:

@@ -364,10 +364,10 @@ Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) f
   :custom
   ;; BibTeX file path relative to your Org note directory
   (citar-bibliography (condition-case nil
-                          (list (expand-file-name "references.bib" (file-name-directory setupfile)))
+                          (list (expand-file-name "bib/references.bib" (file-name-directory default-directory)))
                         (error nil)))  ;; Error handling if path missing
   ;; Path where Zotero stores PDFs
-  (citar-library-paths (list "~/wspace/src/zotero-kbase/storage"))
+  (citar-library-paths (list "/wspace/src/zotero-kbase/storage"))
   ;; Integrate with org-roam-bibtex
   (citar-open-note-function #'orb-citar-edit-note)
   ;; Enables inserting citations, following/opening citations and Enables styling and mouse-hover/click interaction
@@ -692,7 +692,6 @@ Note: If you are not using git source control for org notes across devices, comm
                       message-prefix cmd)))
     (async-shell-command cmd buf)))           ;; run command asynchronously, send output here
 
-
 ;; Manual pull function
 (defun git-pull-repo ()
   "Manually pull the Org notes repo asynchronously."
@@ -722,7 +721,6 @@ Note: If you are not using git source control for org notes across devices, comm
 
 ;; Async buffer settings
 (setq async-shell-command-buffer 'new-buffer)
-
 #+END_SRC
 
 

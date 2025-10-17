@@ -2,13 +2,16 @@
 #+TITLE: ${title}
 #+FILETAGS: :permanent:
 #+OPTIONS: toc:nil
-#+ROAM_ALIASES: 
-#+ROAM_REFS: 
-#+CREATED: %U  ;; Creation timestamp
+#+ROAM_ALIASES:
+#+ROAM_REFS:
+#+CREATED: %U
+#+LAST_MODIFIED: %U
 
 * Idea Summary
-%?
+%?  ;; Concise overview
+
 * Connections
+;; Link to related notes, e.g., [[id:uuid][Concept]]
 
 * References
-#+PRINT_BIBLIOGRAPHY:
+#+print_bibliography:

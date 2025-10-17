@@ -1,16 +1,14 @@
+#+SETUPFILE: ${setupfile}
 #+TITLE: Fleeting Notes
-#+AUTHOR: Ram
 #+FILETAGS: :fleeting:
 #+OPTIONS: toc:nil
 #+PROPERTY: header-args :eval never-export
 #+ROAM_ALIASES:
 #+ROAM_REFS:
 #+CREATED: %U
-#+LAST_MODIFIED: %U
 
 * Fleeting Captures
 :PROPERTIES:
-:ID:       %^{ID|fleeting-%%(org-id-new)}  ;; Prompt ID or auto-gen for roam
+:ID: %(org-id-new)  ;; Auto-gen UUID; no prompt needed
 :END:
-%?  ;; Your note here
-- %U  ;; Timestamp
+- %U %?  ;; Timestamp + cursor for quick note

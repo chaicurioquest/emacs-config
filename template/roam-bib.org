@@ -3,14 +3,15 @@
 #+FILETAGS: :bib:
 #+OPTIONS: toc:nil
 #+ROAM_ALIASES: @${citekey}
-#+ROAM_REFS: 
-#+CREATED: %U  ;; Creation timestamp
+#+ROAM_REFS: @${citekey}  ;; Canonical ref for reflinks
+#+CREATED: %U
 
 * Overview
-%?
+%?  ;; Cursor here for quick summary
 
 * Details
-[cite:@${citekey}]
+;; Elaborate, quote, or link to related concepts
 
 * References
- #+PRINT_BIBLIOGRAPHY:
+[cite:@${citekey}]
+#+print_bibliography:

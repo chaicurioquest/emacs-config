@@ -2,12 +2,13 @@
 #+TITLE: ${title}
 #+FILETAGS: :journal:
 #+OPTIONS: toc:nil
-# BIBLIOGRAPHY: bib/references.bib
-# CITE_EXPORT: biblatex authoryear
-#+ROAM_ALIASES: 
-#+ROAM_REFS: 
-#+CREATED: %U  ;; Creation timestamp
+#+bibliography: bib/references.bib  ;; Uncomment if not in setupfile
+#+cite_export: biblatex authoryear
+#+ROAM_ALIASES:
+#+ROAM_REFS:
+#+CREATED: %U
 
-* Journal Entry  
-%?
-#+PRINT_BIBLIOGRAPHY:
+* Journal Entry
+%?  ;; Cursor for free-form reflection
+
+#+print_bibliography:
