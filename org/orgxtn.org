@@ -66,14 +66,16 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 #+END_SRC
 
 ** ACTIVE Org Hooks for file handling
-;; Added 2025-07-28: Hook for #+LAST_MODIFIED: update while editing the org file.
+
 #+BEGIN_SRC emacs-lisp
 ;; enable auto-revert when entering org buffers
 (add-hook 'org-mode-hook (lambda () (auto-revert-mode 1)))
 
 ;; prefer file-notify (less polling) when available
 (setq auto-revert-use-notify t)
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp
 ;;my-org-update-tag-targets function scans all agenda files for headings with :TAG_TARGET: properties
 ;;constructing the mapping by prefixing tags with "+" (Org's match syntax for tags) and associating them with generated IDs
 (defun my-org-update-tag-targets ()
@@ -86,7 +88,9 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
                    (org-id-get-create)))
            "TAG_TARGET={.}" 'agenda)))
   (customize-save-variable 'my-org-refile-to-ids my-org-refile-to-ids))
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp
 ;; For adding new targets on the fly, my-org-add-tag-target  set the property and updating the list immediately
 (defun my-org-add-tag-target (tag)
   (interactive "MTag: ")
@@ -120,7 +124,10 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
   (interactive)
   (dolist (rule my-org-refile-to-ids)
     (my-org-refile-matches-to-heading (car rule) (cdr rule) 'file)))  ; Scope to inbox.org
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp
+;; Added 2025-07-28: Hook for #+LAST_MODIFIED: update while editing the org file.
 (add-hook 'before-save-hook
   (lambda ()
     (when (derived-mode-p 'org-mode)
