@@ -56,11 +56,6 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 (use-package org-roam
   :straight t
   :init
-  ;; Set org-roam-directory relative to the default-directory (user device-aware)
-    (setq org-roam-directory (expand-file-name "roam" default-directory))
-   
-  ;; dailies inside roam/
-    (setq org-roam-dailies-directory (expand-file-name "daily" org-roam-directory))
 
   ;; allow completion/insert everywhere (so you can insert roam nodes in top-level notes)
   (setq org-roam-completion-everywhere t)
@@ -88,7 +83,7 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
     (("C-c r f" . org-roam-node-find)
      ("C-c r i" . org-roam-node-insert)
      ("C-c r n" . org-roam-capture)
-
+     
      ;; Dailies
      ("C-c r d" . org-roam-dailies-capture-today)
      ("C-c r T" . org-roam-dailies-goto-today)
@@ -98,7 +93,11 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 
      ;; Tag management
      ("C-c r t" . my-org-roam-tag-add)
-     ("C-c r r" . my-org-roam-tag-remove))
+     ("C-c r r" . my-org-roam-tag-remove)
+     
+     ;; Safe rebuild org roam packages for avoiding race condition
+     ("C-c r s" . my/org-roam-safe-rebuild)
+     )
 
   :config
   ;; ensure roam dirs exist (optional but low-cost)
@@ -108,58 +107,56 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
   ;;(org-roam-db-autosync-mode 1)
   ;;(message "✅ org-roam initialized and DB autosync enabled.")
   )
-
  
-  ;;;; To avoid org roam DB race condition error "wrong-type-argument sqlitep nil"
-  ;;(defun my/org-roam-safe-rebuild ()
-  ;;"Disable autosync, rebuild org-roam DB, then re-enable autosync (delayed)."
-  ;;(interactive)
-  ;;;; 1. Disable autosync if running
-  ;;(when (bound-and-true-p org-roam-db-autosync-mode)
-  ;;  (org-roam-db-autosync-mode -1)
-  ;;  (message "org-roam autosync disabled temporarily"))
-  ;;;; 2. Rebuild DB
-  ;;(org-roam-db-build-cache t)
-  ;;(message "org-roam DB rebuild complete")
-  ;;;; 3. Re-enable autosync after idle
-  ;;(run-with-idle-timer
-  ;; 2 nil
-  ;; (lambda ()
-  ;;   (org-roam-db-autosync-mode 1)
-  ;;   (message "org-roam autosync re-enabled (delayed)"))))
+  ;; To avoid org roam DB race condition error "wrong-type-argument sqlitep nil" in Big DB BUG GitHub  834/#2474
+    (defun my/org-roam-safe-rebuild ()
+    "Disable autosync, rebuild org-roam DB, then re-enable autosync (delayed)."
+    (interactive)
+  ;; 1. Disable autosync if running
+     (when (bound-and-true-p org-roam-db-autosync-mode)
+      (org-roam-db-autosync-mode -1)
+      (message "org-roam autosync disabled temporarily"))
+  ;; 2. Rebuild DB
+     (org-roam-db-build-cache t)
+      (message "org-roam DB rebuild complete")
+  ;; 3. Re-enable autosync after idle
+     (run-with-idle-timer
+      2 nil
+     (lambda ()
+      (org-roam-db-autosync-mode 1)
+      (message "org-roam autosync re-enabled (delayed)"))))
 
 ;; Used eval with progn to evaluate multiple setq forms and resolve stringp error by ensuring paths are strings
 (setq org-roam-capture-templates
-        `(("d" "default" plain
-           ,(my/load-template "template/roam-default.org")
-           :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
-           :unnarrowed t)
-         ("f" "fleeting" entry  ;; Changed to 'entry' for subheading; use 'plain' for bullets if preferred
-         "* %<%H:%M> %?"  ;; Simple body: Timestamped subheading + cursor; no full template load to avoid headers
-         :target (file+olp "../fleeting.org" ("Fleeting Captures"))  ;; Appends here; file relative to org-roam-directory
-         :empty-lines 1  ;; Space before new entry
+      `(("d" "default" plain
+         ,(my/load-template "template/roam-default.org")
+         :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")  
          :unnarrowed t)
-          ("p" "permanent" plain
-           ,(my/load-template "template/roam-permanent.org")
-           :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
-           :unnarrowed t)
-          ("j" "journal" plain
-           ,(my/load-template "template/roam-journal.org")
-           :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
-           :unnarrowed t)
-          ("b" "bibliography" plain
-           ,(my/load-template "template/roam-bib.org")
-           :if-new (file+head "%<%Y%m%d%H%M%S>-${citekey}.org" "")
-           :unnarrowed t)))
-
+        ("f" "fleeting" entry
+         "* %<%H:%M> %^{Title|New Thought}\n:PROPERTIES:\n:CREATED: %U\n:SOURCE: %^{Source|email|article|blog|book|other}\n:END:\n%?"
+         :target (file+olp "fleeting.org" ("Fleeting Captures"))
+         :empty-lines 1
+         :unnarrowed t)
+        ("p" "permanent" plain
+         ,(my/load-template "template/roam-permanent.org")
+         :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")  
+         :unnarrowed t)
+        ("j" "journal" plain
+         ,(my/load-template "template/roam-journal.org")
+         :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")  
+         :unnarrowed t)
+        ("b" "bibliography" plain
+         ,(my/load-template "template/roam-bib.org")
+         :target (file+head "%<%Y%m%d%H%M%S>-${citekey}.org" "")  
+         :unnarrowed t)))
 ;; Daily Templates
-  (setq org-roam-dailies-capture-templates
-        `(("d" "default" plain
-           ,(my/load-template "template/roam-dailies.org")
-           :if-new (file+head "%<%Y-%m-%d>.org" "")
-           :empty-lines 1
-           :prepend t
-           :unnarrowed t)))
+(setq org-roam-dailies-capture-templates
+      `(("d" "default" plain
+         ,(my/load-template "template/roam-dailies.org")
+         :target (file+head "%<%Y-%m-%d>.org" "")  
+         :empty-lines 1
+         :prepend t
+         :unnarrowed t)))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -175,10 +172,10 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
         orb-attached-file-extensions '("pdf"))
 
   (setq orb-templates
-        `(("b" "bibliography" plain
-           ,(my/load-template "template/roam-bib.org")
-           :if-new (file+head "%<%Y%m%d%H%M%S>-${citekey}.org" "")
-           :unnarrowed t)))
+      `(("b" "bibliography" plain
+         ,(my/load-template "template/roam-bib.org")
+         :target (file+head "%<%Y%m%d%H%M%S>-${citekey}.org" "")  ;; Swap
+         :unnarrowed t))) 
 
   (add-hook 'org-mode-hook #'org-roam-bibtex-mode))
 #+END_SRC

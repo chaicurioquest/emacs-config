@@ -117,6 +117,14 @@ Skips if no changes; handles errors gracefully without deleting files."
   :type '(repeat (cons string string)))
 #+END_SRC
 
+** Org Roam and Org Roam path definition
+#+BEGIN_SRC emacs-lisp
+(defvar org-roam-directory (expand-file-name "roam" default-directory)
+  "Directory for Org-roam notes.")
+(defvar org-roam-dailies-directory (expand-file-name "daily" org-roam-directory)
+  "Directory for Org-roam dailies.")
+#+END_SRC
+
 ** Customized Agenda view files on startup excluding roam, build, backup and other directory
 #+BEGIN_SRC emacs-lisp
 ;; Use default-directory + "notes/" for the notes directory
@@ -376,8 +384,7 @@ Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) f
   (org-cite-activate-processor 'citar)
   :config
   ;; Allow both roam and general notes
-  (setq citar-notes-paths
-  (list (expand-file-name org-roam-directory)))
+  (setq citar-notes-paths (list org-roam-directory))
   (citar-capf-setup)  ;; Completion-at-point for citations
   :bind
   ("C-c r c" . citar-open)) ;; Open citation note or resource
