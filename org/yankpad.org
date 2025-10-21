@@ -4,7 +4,7 @@
 * Snippets
 
 ** General
-*** Greeting
+*** greet
 :PROPERTIES:
 :yankpad-trigger: hello
 :END:
@@ -12,21 +12,18 @@
   Hello, ${1:Name}! Welcome to Yankpad!
 #+END_SRC
 
-** Notes
-*** Zettelkasten Note
+*** latex-export
 :PROPERTIES:
-:yankpad-trigger: note
+:yankpad-trigger: latexp
 :END:
-#+BEGIN_SRC org
-  * ${1:Note Title} :notes:${2:Tags}:
-  :PROPERTIES:
-  :ID:       %(org-id-new)
-  :CREATED:  [%(format-time-string "%Y-%m-%d %a %H:%M")]
-  :END:
-  ${3:Note content}
-#+END_SRC
+#+BEGIN_EXPORT latex
+;; org to latex export
 
-*** Emacs Lisp Function
+
+
+#+END_EXPORT
+
+*** elisp
 :PROPERTIES:
 :yankpad-trigger: elfunc
 :END:
@@ -34,11 +31,28 @@
 ;; Emacs LISP commands.
 
 
+#+END_SRC
+
+*** linux
+:PROPERTIES:
+:yankpad-trigger: bashfc
+:END:
+#+BEGIN_SRC bash
+# bash shell commands.
 
 #+END_SRC
 
-** Meetings
-*** Meeting Note
+*** python
+:PROPERTIES:
+:yankpad-trigger: pyfunc
+:END:
+#+BEGIN_SRC python
+  def ${1:func_name}(${2:args}):
+      """${3:Docstring}"""
+      ${4:pass}
+#+END_SRC
+
+*** meetings
 :PROPERTIES:
 :yankpad-trigger: meet
 :END:
@@ -58,8 +72,7 @@
   ${4:Discussion Points}
 #+END_SRC
 
-** Tasks
-*** Task Template
+*** todo
 :PROPERTIES:
 :yankpad-trigger: task
 :END:
@@ -72,7 +85,7 @@
   DEADLINE: <%<%Y-%m-%d>>
   ${3:Task details}
 #+END_SRC
-
+ 
 *** web-capture
 :PROPERTIES:
 :yankpad-trigger: wc
@@ -91,24 +104,5 @@
   #+END_QUOTE
 #+END_SRC
 
-** Code
-*** python
-:PROPERTIES:
-:yankpad-trigger: pyfunc
-:END:
-#+BEGIN_SRC python
-  def ${1:func_name}(${2:args}):
-      """${3:Docstring}"""
-      ${4:pass}
-#+END_SRC
-
-*** linux
-:PROPERTIES:
-:yankpad-trigger: bashfc
-:END:
-#+BEGIN_SRC bash
-# bash shell commands.
-
-#+END_SRC
 
 
