@@ -37,21 +37,29 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 
 ;; Smart TAB: Yasnippet (inline) → CDLaTeX (math) → Org-cycle
 (require 'yasnippet) ;; Ensure yasnippet is loaded for yas-maybe-expand
-(defun my/org-smart-tab ()
-  "Smart TAB: Inline Yasnippet expand if match, then CDLaTeX math if in LaTeX, then Org-cycle."
-  (interactive)
-  (cond
-   ((org-at-heading-p) (org-cycle))
-   ((org-in-src-block-p) (org-cycle))
-   ((org-at-table-p 'any) (org-table-next-field)) ;; Handle tables properly
-   ((and (bound-and-true-p yas-minor-mode)
-         (yas-maybe-expand)) t)
-   ((and (bound-and-true-p cdlatex-mode)
-         (org-inside-LaTeX-fragment-p))
-    (cdlatex-tab))
-   (t (org-cycle)))) ;; Fallback to Org-cycle
-;; Bind TAB to smart function in Org-mode
-(define-key org-mode-map (kbd "TAB") #'my/org-smart-tab)
+(with-eval-after-load 'yasnippet
+  (defun my/org-smart-tab ()
+    "Smart TAB: Inline Yasnippet expand if match, then CDLaTeX math if in LaTeX, then Org-cycle."
+    (interactive)
+    (cond
+     ((org-at-heading-p) (org-cycle))
+     ((org-in-src-block-p) (org-cycle))
+     ((org-at-table-p 'any) (org-table-next-field))
+     ((and (bound-and-true-p yas-minor-mode)
+           ;; call yas only if the function exists
+           (or (and (fboundp 'yas-maybe-expand) (yas-maybe-expand))
+               (and (fboundp 'yas-expand) (yas-expand))))
+      t)
+     ;; support org-cdlatex-mode as well as cdlatex-mode
+     ((and (or (bound-and-true-p cdlatex-mode)
+               (bound-and-true-p org-cdlatex-mode))
+           (org-inside-LaTeX-fragment-p))
+      (cdlatex-tab))
+     (t (org-cycle))))
+  ;; Bind after org loads
+  (with-eval-after-load 'org
+    (define-key org-mode-map (kbd "TAB") #'my/org-smart-tab)))
+#+END_SRC
 
 ** ACTIVE Smart Org + PDF vertical preview
 #+BEGIN_SRC emacs-lisp
@@ -128,35 +136,33 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 
 #+BEGIN_SRC emacs-lisp
 ;; Added 2025-07-28: Hook for #+LAST_MODIFIED: update while editing the org file.
-(add-hook 'before-save-hook
-  (lambda ()
-    (when (derived-mode-p 'org-mode)
-      (save-excursion
-        ;; Remove all existing #+LAST_MODIFIED lines
+
+(defun my/org-update-last-modified ()
+  "Update #+LAST_MODIFIED: after #+CREATED: in current Org buffer."
+  (when (derived-mode-p 'org-mode)
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward "^#\\+LAST_MODIFIED:.*$" nil t)
+        (beginning-of-line)
+        (kill-line 1))
+      (goto-char (point-min))
+      (if (re-search-forward "^#\\+CREATED:.*$" nil t)
+          (let ((created-end (line-end-position)))
+            (goto-char created-end)
+            (insert (format "\n#+LAST_MODIFIED: [%s]" (format-time-string "%Y-%m-%d %a %H:%M"))))
         (goto-char (point-min))
-        (while (re-search-forward "^#\\+LAST_MODIFIED:.*$" nil t)
-          (beginning-of-line)
-          (kill-line 1))
-        ;; Find location of #+CREATED: line
-        (goto-char (point-min))
-        (if (re-search-forward "^#\\+CREATED:.*$" nil t)
-            ;; If found, insert LAST_MODIFIED just after it
-            (let ((created-end (line-end-position)))
-              (goto-char created-end)
-              (insert (format "\n#+LAST_MODIFIED: [%s]"
-                              (format-time-string "%Y-%m-%d %a %H:%M"))))
-          ;; Fallback: insert after metadata block at top
-          (goto-char (point-min))
-          (let ((metadata-end (point)))
-            (while (looking-at "^\\(#\\|[ \t]*$\\)")
-              (setq metadata-end (line-end-position))
-              (forward-line 1))
-            (goto-char metadata-end)
-            ;; Insert newline if necessary
-            (unless (looking-back "\n" nil)
-              (insert "\n"))
-            (insert (format "#+LAST_MODIFIED: [%s]\n"
-                            (format-time-string "%Y-%m-%d %a %H:%M")))))))))
+        (let ((metadata-end (point)))
+          (while (looking-at "^\\(#\\|[ \t]*$\\)")
+            (setq metadata-end (line-end-position))
+            (forward-line 1))
+          (goto-char metadata-end)
+          (unless (looking-back "\n" nil) (insert "\n"))
+          (insert (format "#+LAST_MODIFIED: [%s]\n" (format-time-string "%Y-%m-%d %a %H:%M"))))))))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            ;; buffer-local add (nil t => append, make buffer-local)
+            (add-hook 'before-save-hook #'my/org-update-last-modified nil t)))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp

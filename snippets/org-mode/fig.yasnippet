@@ -1,16 +1,9 @@
 # -*- mode: snippet -*-
+# name: fig
 # key: fig
-# name: figs
 # expand-env: ((yas-indent-line 'fixed))
 # --
-`(let ((count (string-to-number (read-string "Number of figures: "))))
-   (mapconcat
-    (lambda (i)
-      (let ((caption (read-string (format "Caption for figure %d: " i)))
-            (label   (read-string (format "Label for figure %d (without 'fig:'): " i))))
-        (format "#+ATTR_LATEX: :width 0.8\\textwidth
-[[file:images/wavefun3d.jpg]]
-#+CAPTION: %s
-#+NAME: fig:%s" caption label)))
-    (number-sequence 1 count)
-    "\n\n"))`
+#+NAME: fig:${1:label}
+#+CAPTION: ${2:Caption here}
+#+ATTR_LATEX: :width 0.8\textwidth
+[[file:images/${3:wavefun3d.jpg}]]

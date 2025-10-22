@@ -1,0 +1,20 @@
+# -*- mode: snippet -*-
+# name: mfig
+# key: mfig
+# expand-env: ((yas-indent-line 'fixed))
+# --
+#+BEGIN_EXPORT latex
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/${1:wavefun3d.jpg}}
+  \end{subfigure}\hfill
+  \begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{images/${2:wavefun3d.jpg}}
+  \end{subfigure}
+  \caption{${3:Combined view}}
+  \label{fig:${4:wave}}
+\end{figure}
+#+END_EXPORT
