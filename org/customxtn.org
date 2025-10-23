@@ -67,8 +67,9 @@ This file contains configurations for VLSI-specific Org-mode features, primarily
 \\usepackage{fontspec}
 \\usepackage{amsmath,mathtools}
 \\usepackage{xcolor}
+\\usepackage{siunitx}
 \\usepackage{tikz}
-\\usepackage{circuitikz}
+\\usepackage[american]{circuitikz}
 
 % preview: active, tightpage; latexmath lets preview capture inline/display math when they are separate blocks
 \\usepackage[active,tightpage,displaymath,latexmath]{preview}
