@@ -1,8 +1,15 @@
-#+TITLE: ${title}
-#+ROAM_REFS: cite:${citar-citekey}
+#+TITLE: %s
+#+ROAM_REFS: cite:%s
+
 :PROPERTIES:
-:DOI: ${doi}
-:YEAR: ${date}${year}
-:NOTER_DOCUMENT: %^{PDF|${file}}
+:DOI: %s
+:YEAR: %s
+:NOTER_DOCUMENT: %s
 :END:
 
+* Overview
+
+* Annotations
+
+* Bib Entry
+[cite:@%s]

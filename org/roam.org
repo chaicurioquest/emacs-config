@@ -154,14 +154,6 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
          :empty-lines 1
          :prepend t
          :unnarrowed t)))
-;; Bib Note Template
-(add-to-list 'org-roam-capture-templates
-  `("b" "bibliography note" plain
-    "%?"
-    :target (file+head "literature/${citar-citekey}.org"
-      ,(my/load-template "template/roam-bib.org"))
-    :unnarrowed t))
- 
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -173,7 +165,6 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
   (setq citar-org-roam-subdir "literature")
   (setq citar-org-roam-note-title-template
         "${author editor} (${year issued date}) - ${title}")
-  (setq citar-org-roam-capture-template-key "b")
   (message "✅ Citar-Org-Roam integration active."))
 #+END_SRC
 

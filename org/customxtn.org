@@ -184,62 +184,15 @@ This file contains configurations for VLSI-specific Org-mode features, primarily
   )
 #+END_SRC
 
-** Custom function: annotation with Org Noter 
+** Citar + Org noter + pdf annoation on roam bib file
 #+BEGIN_SRC emacs-lisp
-;; --- Key function: open note & PDF side-by-side, prepare for annotation ---
-(defun my/open-paper-and-note ()
-  "Open the PDF and org-roam note linked to a citation key.
-Select the citation key via `citar-select-ref`. Open the associated PDF in the right window,
-and open or create the corresponding org note. Set `NOTER_DOCUMENT` property in the note.
-Start `org-noter` for annotation if available."
-  (interactive)
-  (require 'citar)
-  (require 'org-noter)
-  (let* ((key (citar-select-ref))
-         (entry (when key (citar-get-entry key)))
-         (files (ignore-errors (citar-get-files key)))
-         (pdf (my/citar-extract-first-path files))
-         (title (when entry (or (cdr (assoc "title" entry)) key)))
-         (note-file (expand-file-name (concat key ".org")
-                                     (expand-file-name "literature" org-roam-directory))))
-    (unless (file-directory-p (file-name-directory note-file))
-      (make-directory (file-name-directory note-file) t))
-    (delete-other-windows)
-    (if pdf
-        (progn (split-window-right)
-               (find-file pdf)
-               (when (fboundp 'pdf-view-fit-page-to-window)
-                 (pdf-view-fit-page-to-window))
-               (other-window 1))
-      (message "No PDF found for citekey: %s" key))
-    (unless (file-exists-p note-file)
-      (find-file note-file)
-      (let ((id (org-id-new)))
-        (insert (format "#+TITLE: %s\n#+ROAM_REFS: cite:%s\n:PROPERTIES:\n:ID: %s\n:NOTER_DOCUMENT: %s\n:END:\n\n* Overview\n\n* Annotations\n\n* Bib Entry\n[cite:@%s]\n"
-                        title key id (or pdf "") key))
-        (save-buffer)))
-    (find-file note-file)
-    (save-excursion
-      (goto-char (point-min))
-      (unless (re-search-forward ":NOTER_DOCUMENT:" nil t)
-        (when pdf
-          (re-search-forward ":END:" nil t)
-          (insert (format "\n:NOTER_DOCUMENT: %s" pdf))
-          (save-buffer))))
-    (when (and (featurep 'org-noter) pdf)
-      (org-noter))))
-
-(global-set-key (kbd "C-c i a") #'my/open-paper-and-note)
+;; Required packages
+(require 'citar)
+(require 'org-noter)
+(require 'org-roam)
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-;; ---------------------------
-;; Consolidated: Citar + Org-Noter annotation capture
-;; ---------------------------
-
-(require 'citar)
-(require 'org-noter)
-
 (defvar my/last-citar-note nil
   "Path to the last bib note opened by `my/annotate-bib-pdf`.")
 
@@ -251,8 +204,51 @@ Start `org-noter` for annotation if available."
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
+;; --- Load template file content helper ---
+(defun my/load-template (filename)
+  "Load template FILENAME from user-emacs-directory/template."
+  (let ((template-path (expand-file-name filename (expand-file-name "template" user-emacs-directory))))
+    (if (file-exists-p template-path)
+        (with-temp-buffer
+          (insert-file-contents template-path)
+          (buffer-string))
+      (error "Template file not found: %s" template-path))))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+;; --- Dynamic roam-bib.org capture template generator ---
+(defun my/load-roam-bib-template ()
+  "Load roam-bib.org template and inject citation metadata."
+  (let* ((template (my/load-template "roam-bib.org"))
+         (citekey (org-roam-capture-get :citar-citekey))
+         (entry (citar-get-entry citekey))
+         (title (or (cdr (assoc "title" entry)) (org-roam-capture-get :title) ""))
+         (doi (or (cdr (assoc "DOI" entry)) ""))
+         (date (or (cdr (assoc "date" entry)) ""))
+         (year (or (cdr (assoc "year" entry)) (and (> (length date) 3) (substring date 0 4)) ""))
+         (file (or (car (ignore-errors (citar-get-files citekey))) ""))
+         (noter-document (if (string-empty-p file) "%^{Noter Document Path}" file)))
+    (format template title citekey doi year noter-document citekey)))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+;; ;; Add bibliography capture template deferred until org-roam loads
+(with-eval-after-load 'org-roam
+  (setq org-roam-capture-templates
+        (append
+         (cl-remove-if (lambda (tpl) (string= (car tpl) "b")) org-roam-capture-templates)
+         `(("b" "bibliography note" plain
+            (function my/load-roam-bib-template)
+            :target (file+head "literature/${citar-citekey}.org"
+                              ,(my/load-template "roam-bib.org"))
+            :unnarrowed t)))))
+#+END_SRC
+
+
+
+#+BEGIN_SRC emacs-lisp
 ;; -----------------------------
-;; Refined: Open PDF and Note Side-by-Side for Annotation
+;; Helper: Extract first string path from complex data structures
 ;; -----------------------------
 (defun my/citar-extract-first-path (x)
   "Recursively extract first string path from X, or nil."
@@ -271,52 +267,52 @@ Start `org-noter` for annotation if available."
    (t nil)))
 #+END_SRC
 
+** Custom function: annotation with Org Noter 
 #+BEGIN_SRC emacs-lisp
+;; --- Key function: open note & PDF side-by-side, prepare for annotation ---
 (defun my/open-paper-and-note ()
-  "Open PDF & org-roam note for a bib entry, always setting NOTER_DOCUMENT to absolute path.
-Select cite key, open PDF in right window, open or create org note with citation metadata,
-and start org-noter if possible."
+  "Open PDF and roam note side-by-side for citation key."
   (interactive)
-  (require 'citar)
-  (require 'org-noter)
   (let* ((key (citar-select-ref))
          (entry (when key (citar-get-entry key)))
          (files (ignore-errors (citar-get-files key)))
-         (pdf (when files (expand-file-name (my/citar-extract-first-path files))))
+         (pdf (let ((p (my/citar-extract-first-path files))) (and p (file-exists-p p) (expand-file-name p))))
          (title (when entry (or (cdr (assoc "title" entry)) key)))
-         (note-file (expand-file-name (concat key ".org")
-                                     (expand-file-name "literature" org-roam-directory))))
-    (unless (file-directory-p (file-name-directory note-file))
-      (make-directory (file-name-directory note-file) t))
-    ;; Window management: split only if one window; otherwise preserve layout
-    (when (= (length (window-list)) 1)
-      (split-window-right))
-    (if pdf
-        (progn
-          (find-file pdf)
-          (when (fboundp 'pdf-view-fit-page-to-window)
-            (pdf-view-fit-page-to-window))
-          (other-window 1))
-      (message "No PDF found for citekey: %s" key))
-    (unless (file-exists-p note-file)
-      (find-file note-file)
-      (let ((id (org-id-new)))
-        (insert (format "#+TITLE: %s\n#+ROAM_REFS: cite:%s\n:PROPERTIES:\n:ID: %s\n:NOTER_DOCUMENT: %s\n:END:\n\n* Overview\n\n* Annotations\n\n* Bib Entry\n[cite:@%s]\n"
-                        title key id (or pdf "") key))
-        (save-buffer)))
+         (note-file (expand-file-name (concat key ".org") (expand-file-name "literature" org-roam-directory))))
+    (unless (file-directory-p (file-name-directory note-file)) (make-directory (file-name-directory note-file) t))
+    (delete-other-windows)
     (find-file note-file)
-    (save-excursion
-      (goto-char (point-min))
-      (unless (re-search-forward ":NOTER_DOCUMENT:" nil t)
-        (when pdf
-          (re-search-forward ":END:" nil t)
-          (insert (format "\n:NOTER_DOCUMENT: %s" pdf))
-          (save-buffer))))
-    (when (and (featurep 'org-noter) pdf)
-      (org-noter))))
+    (let ((left-win (selected-window)))
+      (split-window-right)
+      (let ((right-win (next-window left-win)))
+        (select-window right-win)
+        (if pdf
+            (progn
+              (let ((display-buffer-alist nil)) (find-file pdf))
+              (when (fboundp 'pdf-view-fit-page-to-window) (pdf-view-fit-page-to-window)))
+          (switch-to-buffer "*scratch*")
+          (message "[LOG] No PDF found for %s, showing scratch buffer." key))
+        (select-window left-win)
+        ;; Create note template if note doesn't exist
+        (unless (file-exists-p note-file)
+          (let ((id (org-id-new)))
+            (insert (format "#+TITLE: %s\n#+ROAM_REFS: cite:%s\n:PROPERTIES:\n:ID: %s\n:NOTER_DOCUMENT: %s\n:END:\n\n* Overview\n\n* Annotations\n\n* Bib Entry\n[cite:@%s]\n"
+                            title key id (or pdf "") key))
+            (save-buffer)))
+        ;; Ensure NOTER_DOCUMENT property present
+        (save-excursion
+          (goto-char (point-min))
+          (unless (re-search-forward ":NOTER_DOCUMENT:" nil t)
+            (when pdf
+              (re-search-forward ":END:" nil t)
+              (insert (format "\n:NOTER_DOCUMENT: %s" pdf))
+              (save-buffer))))
+        ;; Start org-noter session if available
+        (when (and (featurep 'org-noter) pdf)
+          (org-noter))
+        (message "[LOG] Opened paper and note for %s" key)))))
 
 (global-set-key (kbd "C-c i a") #'my/open-paper-and-note)
-
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
