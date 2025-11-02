@@ -1,17 +1,8 @@
-#+SETUPFILE: ${setupfile}
-#+TITLE: ${citekey}
-#+FILETAGS: :bib:
-#+OPTIONS: toc:nil
-#+ROAM_ALIASES: @${citekey}
-#+ROAM_REFS: @${citekey}  ;; Canonical ref for reflinks
-#+CREATED: %U
+#+TITLE: ${title}
+#+ROAM_REFS: cite:${citar-citekey}
+:PROPERTIES:
+:DOI: ${doi}
+:YEAR: ${date}${year}
+:NOTER_DOCUMENT: %^{PDF|${file}}
+:END:
 
-* Overview
-%?  ;; Cursor here for quick summary
-
-* Details
-;; Elaborate, quote, or link to related concepts
-
-* References
-[cite:@${citekey}]
-#+print_bibliography:

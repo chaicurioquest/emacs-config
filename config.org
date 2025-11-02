@@ -28,7 +28,7 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 | Focus on Org sub-hierarchy   | org-tree-to-indirect-buffer       | Built-in Org for narrowing to subtree                                 | All        | C-c C-x b                            |
 | Enhanced search/selection    | vertico, orderless                | Vertical completion and fuzzy matching; Ivy optional in workflows.org (commented) | All    | None (uses Vertico for completion)   |
 | Switching buffers            | ibuffer                           | Improved buffer list management                                       | All        | C-x C-b                              |
-| Inserting date/time-stamps   | my-insert-timestamp(), my-insert-datestamp(), my-insert-org-timestamp() | Custom functions for timestamps (including Org format)              | All        | C-c i t, C-c i d, C-c i o           |
+| Inserting date/time-stamps   | my-insert-timestamp(), my-insert-datestamp(), my-insert-org-timestamp() | Custom functions for timestamps (including Org format)              | All        | C-c i t, C-c i d, C-c i g           |
 | Org to PDF export            | Org mode export via LaTeX (AUCTeX)| Uses auctex, reftex for refs; pdf-tools for viewing; configured in org/orgxtn.org | All/Laptop | C-c C-e l p                          |
 | Passwords                    | org-crypt                         | Encrypt Org sections                                                  | All        | None                                 |
 | Snippet management           | yankpad with yasnippet            | Org-style snippets in yankpad.org, tab-completion                     | All        | C-c y (insert), C-c Y (expand), C-c TAB |
@@ -103,6 +103,15 @@ Skips if no changes; handles errors gracefully without deleting files."
 
 ** Global Variables
 #+BEGIN_SRC emacs-lisp
+;; Define paths early for global reuse (absolute/resolved for reliability)
+(defvar bib-path
+  (expand-file-name "bib/references.bib" (file-name-directory default-directory))
+   "Absolute path to BibTeX file")
+
+(defvar my-citar-library-paths
+  (list "/wspace/src/zotero-kbase/storage")
+  "List of absolute paths to Citar libraries (e.g., Zotero storage).")
+
 (defvar setupfile
   (expand-file-name "latex/setup-latex.org" default-directory)
   "Path to default Org LaTeX setup file.")
@@ -127,36 +136,57 @@ Skips if no changes; handles errors gracefully without deleting files."
 
 ** Customized Agenda view files on startup excluding roam, build, backup and other directory
 #+BEGIN_SRC emacs-lisp
-;; Use default-directory + "notes/" for the notes directory
+(defvar my/org-notes-dir nil "The root directory for org notes.")
+
 (defun my/update-agenda-files ()
-  "Set `org-agenda-files` to top-level .org notes in `default-directory`."
+  "Set `org-agenda-files` to top-level .org files in `my/org-notes-dir` or `default-directory`,
+plus recursive .org files from the 'roam' subdirectory, excluding unwanted dirs and non-regular files."
   (interactive)
-  (let* ((notes-dir (file-name-as-directory default-directory))
-         (names (when (file-directory-p notes-dir) (directory-files notes-dir nil "^[^.].*"))))
-    (if (not names)
+  (let* ((notes-dir (if my/org-notes-dir
+                        my/org-notes-dir
+                      (file-name-as-directory default-directory)))
+         (roam-dir (expand-file-name "roam/" notes-dir))
+         (excluded-dirs '("build" "ltximg" "images" ".attach" ".autosaves" ".backups" "bib" "latex" ".git"))
+         (dir-predicate (lambda (d)
+                          (let ((dirname (file-name-nondirectory d)))
+                            (not (or (string-prefix-p "." dirname)
+                                     (member dirname excluded-dirs))))))
+         ;; Top-level .org files in root
+         (top-level-files (when (file-directory-p notes-dir)
+                            (directory-files notes-dir t "\\.org\\'")))
+         (top-level-orgs (seq-filter (lambda (f)
+                                       (and (file-regular-p f)
+                                            (not (string-match-p "/\\.#" f))))
+                                     top-level-files))
+         ;; Recursive .org files in roam
+         (roam-files (when (file-directory-p roam-dir)
+                       (directory-files-recursively roam-dir "\\.org\\'" nil dir-predicate)))
+         (roam-orgs (seq-filter (lambda (f)
+                                  (and (file-regular-p f)
+                                       (not (string-match-p "/\\.#" f))))
+                                roam-files))
+         (all-orgs (append top-level-orgs roam-orgs)))
+    (if (not all-orgs)
         (progn
           (setq org-agenda-files nil)
-          (message "my/update-agenda-files: notes dir missing or empty: %s" notes-dir))
-      (setq org-agenda-files
-            (mapcar (lambda (n) (expand-file-name n notes-dir))
-                    (seq-filter (lambda (n)
-                                  (and (string-match-p "\\.org\\'" n)
-                                       (file-regular-p (expand-file-name n notes-dir))))
-                                names)))
-      (message "org-agenda-files set (%d files) from %s" (length org-agenda-files) notes-dir))))
+          (message "my/update-agenda-files: no valid .org files found in %s or roam/" notes-dir))
+      (setq org-agenda-files all-orgs)
+      (message "org-agenda-files set (%d files) from %s and roam/" (length org-agenda-files) notes-dir))
+    (unless my/org-notes-dir
+      (setq my/org-notes-dir notes-dir))))
 
 ;; Initialize once
 (my/update-agenda-files)
 
-;; Rescan only when saving a top-level Org file under the same notes/ derived from default-directory
+;; Rescan only when saving an Org file under the notes dir (including subdirs like roam)
 (add-hook 'after-save-hook
           (lambda ()
             (when (and (derived-mode-p 'org-mode)
-                       buffer-file-name)
-              (let ((notes-dir (file-name-as-directory default-directory))
-                    (bufdir (file-name-as-directory (expand-file-name (file-name-directory buffer-file-name)))))
-                (when (string= notes-dir bufdir)
-                  (my/update-agenda-files))))))
+                       buffer-file-name
+                       my/org-notes-dir  ; Ensure it's set
+                       (file-in-directory-p buffer-file-name my/org-notes-dir))
+              (my/update-agenda-files))))
+
 #+END_SRC
 
 
@@ -175,7 +205,7 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 | org          | Core Org-mode                    | All          | Org-mode keys            | Built-in                 |
 | org-roam     | Zettelkasten note-taking         | All          | C-c r n, r f, r i, r g   | Startup                  |
 | org-roam-bibtex | Zotero/BibTeX citation capture | All          |                          | org-roam-mode hook       |
-| citar        | Bibliography interface           | All          | C-c r c                  | On demand                |
+| citar        | Bibliography interface           | All          | C-c i c                  | On demand                |
 | org-roam-ui  | Graphical note graph (web UI)    | Laptop only  | C-c r g                  | M-x or keybinding        |
 | f            | File/directory manipulation      | All          | None                     | On demand                |
 | ht           | Hash table utilities             | All          | None                     | On demand                |
@@ -365,32 +395,6 @@ Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) f
   ("C-c p" . consult-find)))
 #+END_SRC
 
-** Zotero/Bibliography Integration
-#+BEGIN_SRC emacs-lisp
-(use-package citar
-  :straight t
-  :custom
-  ;; BibTeX file path relative to your Org note directory
-  (citar-bibliography (condition-case nil
-                          (list (expand-file-name "bib/references.bib" (file-name-directory default-directory)))
-                        (error nil)))  ;; Error handling if path missing
-  ;; Path where Zotero stores PDFs
-  (citar-library-paths (list "/wspace/src/zotero-kbase/storage"))
-  ;; Integrate with org-roam-bibtex
-  (citar-open-note-function #'orb-citar-edit-note)
-  ;; Enables inserting citations, following/opening citations and Enables styling and mouse-hover/click interaction
-  (org-cite-insert-processor 'citar)
-  (org-cite-follow-processor 'citar)
-  (org-cite-activate-processor 'citar)
-  :config
-  ;; Allow both roam and general notes
-  (setq citar-notes-paths (list org-roam-directory))
-  (citar-capf-setup)  ;; Completion-at-point for citations
-  :bind
-  ("C-c r c" . citar-open)) ;; Open citation note or resource
-#+END_SRC
-
-
 ** RefTeX for Advanced Citation/Ref Handling.
 If using AUCTeX for LaTeX exports, add reftex package.
 
@@ -419,31 +423,35 @@ If using AUCTeX for LaTeX exports, add reftex package.
   :straight t
   :defer t
   :config
-  ;; Use existing epdfinfo binary in Termux
+  ;; Use existing epdfinfo binary in Termux (if applicable)
   (setq pdf-info-epdfinfo-program
         (expand-file-name "~/.emacs.d/straight/build/pdf-tools/build/epdfinfo"))
   (pdf-tools-install-noverify)
-
   ;; Set display size to fit page
   (setq-default pdf-view-display-size 'fit-page)
-
   ;; Activate annotations automatically
   (setq pdf-annot-activate-created-annotations t)
-
   ;; Set magic mode for PDFs explicitly
   (add-to-list 'magic-mode-alist '("%PDF" . pdf-view-mode))
-
   ;; Suppress pdf-view-mode errors for invalid arguments
   (advice-add 'pdf-view-mode :around
               (lambda (orig-fun &rest args)
                 (ignore-errors (apply orig-fun nil))))
-
   ;; Clear pdf-tools metadata to avoid stale page references
   (add-hook 'pdf-view-mode-hook
             (lambda ()
               (when (buffer-file-name)
-                (pdf-cache-clear-data (buffer-file-name))))))
+                (pdf-cache-clear-data (buffer-file-name)))))
+  (message "✅ PDF-tools ready for viewing."))
+#+END_SRC
 
+** pdf-view-mode
+#+BEGIN_SRC emacs-lisp
+;; === PDF Tools & Viewing Setup ===
+(require 'pdf-tools)
+(pdf-tools-install)  ;; Compile and setup pdf-tools
+(add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode))
+(add-to-list 'magic-mode-alist '("%PDF" . pdf-view-mode))
 #+END_SRC
 
 ** pdf annotation org noter optional dependancies
@@ -452,27 +460,94 @@ If using AUCTeX for LaTeX exports, add reftex package.
 (use-package nov
   :straight t
   :defer t)
+
 (use-package djvu
   :straight t
   :defer t)
 #+END_SRC
 
-
-** pdf annotation using org noter
+** bibtex-completion for bibtex citar implementation
 #+BEGIN_SRC emacs-lisp
-(use-package org-noter
+;; -----------------------------
+;; Marginalia — Rich Annotations (metadata for minibuffer)
+;; -----------------------------
+(use-package marginalia
   :straight t
-  :after (:any org pdf-view)
-  :init
-  ;; Set notes search path using default-directory
-  (setq org-noter-notes-search-path
-        (list (expand-file-name "roam" default-directory)))
+  :init (marginalia-mode)
   :config
-  (setq org-noter-separate-notes-from-heading t
-        org-noter-hide-other nil
-        org-noter-always-create-frame nil
-        org-noter-kill-frame-at-session-end nil))
+  (setq marginalia-align 'right)
+  (message "✅ Marginalia annotations active."))
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp
+;; -----------------------------
+;; Embark — Contextual Actions
+;; -----------------------------
+(use-package embark
+  :straight t
+  :bind (("C-." . embark-act) ;; main action key
+         ("C-;" . embark-dwim)) ;; smart default action
+  :config
+  (setq prefix-help-command #'embark-prefix-help-command)
+  (message "✅ Embark contextual actions active."))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+;; Integrate Embark + Consult (if you have consult; otherwise omit)
+(use-package embark-consult
+  :straight t
+  :after (embark consult)
+  :hook (embark-collect-mode . consult-preview-at-point-mode)
+  :config (message "✅ Embark-Consult integration enabled."))
+#+END_SRC
+
+** Zotero/Bibliography Integration
+#+BEGIN_SRC emacs-lisp
+;; Citar (core citation management)
+(use-package citar
+  :straight t
+  :commands (citar-insert-citation citar-create-note)
+  :custom
+  (citar-bibliography (list bib-path))
+  (citar-library-paths my-citar-library-paths)
+  (citar-notes-paths (list (expand-file-name "literature" org-roam-directory)))  ;; Path to your bib notes dir
+  (citar-file-note-extensions '("org"))  ;; Extensions for note files (e.g., .org for Org-roam)
+  (org-cite-insert-processor 'citar)
+  (org-cite-follow-processor 'citar)
+  (org-cite-activate-processor 'citar)
+  (citar-file-open-function 'find-file)  ; Open PDFs in Emacs
+  :config
+  (citar-capf-setup)
+  (message "✅ Citar ready."))
+
+  ;; Org-local binding (no global collision)
+    (define-key org-mode-map (kbd "C-c b") #'citar-insert-citation)
+#+END_SRC
+
+
+#+BEGIN_SRC emacs-lisp
+(defun my/citar-insert-or-create-note ()
+  "Insert citation if in Org-mode; otherwise, create bib note."
+  (interactive)
+  (if (derived-mode-p 'org-mode)
+      (call-interactively 'citar-insert-citation)  ;; Default behavior in Org
+      (call-interactively 'citar-create-note)))  ;; Create note globally otherwise
+
+;; Rebind your key (override the old one)
+(global-set-key (kbd "C-c i c") 'my/citar-insert-or-create-note)
+#+END_SRC
+
+** Magit is a Git GUI interface for Emacs
+#+BEGIN_SRC emacs-lisp
+(use-package magit
+  :straight t
+  :defer t
+  :commands (magit-status magit-blame)
+  :init
+  (global-set-key (kbd "C-x g") 'magit-status)
+  :config
+  (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1
+        magit-save-repository-buffers 'dontask))
 #+END_SRC
 
 * ACTIVE UI Tweaks
@@ -596,33 +671,16 @@ If using AUCTeX for LaTeX exports, add reftex package.
   (message "✅ config.org tangled")))
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp
-(defun my-tangle-all ()
-  "Tangle all modular Org files."
-  (interactive)
-  (my/tangle-if-needed "org/orgxtn.org" "org/orgxtn.el")
-  (my/tangle-if-needed "org/roam.org" "org/roam.el")
-  (my/tangle-if-needed "org/filetags.org" "org/filetags.el")
-  (my/tangle-if-needed "org/workflow.org" "org/workflow.el")
-  (my/tangle-if-needed "org/latextn.org" "org/latextn.el")
-  (my/tangle-if-needed "org/customxtn.org" "org/customxtn.el")
-    (when (eq my-device 'laptop)
-  (my/tangle-if-needed "org/mail.org" "org/mail.el"))
-  ;; Add more modular files here (e.g., workflows.org when uncommented)
-  (message "[%s] All modular files tangled" (format-time-string "%T")))
-(global-set-key (kbd "C-c T") 'my-tangle-all)
-#+END_SRC
-
 ** Timestamp keybindings
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-c i t") 'my-insert-timestamp)    ;; YYYY-MM-DD HH:MM:SS
 (global-set-key (kbd "C-c i d") 'my-insert-datestamp)    ;; YYYY-MM-DD
-(global-set-key (kbd "C-c i o") 'my-insert-org-timestamp) ;; [YYYY-MM-DD Day HH:MM]
+(global-set-key (kbd "C-c i g") 'my-insert-org-timestamp) ;; [YYYY-MM-DD Day HH:MM]
 #+END_SRC
 
 ** Citar Citation insertion keybinding
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-c i c") 'citar-insert-citation)  ;; Insert citation with Citar
+;;(global-set-key (kbd "C-c i c") 'citar-insert-citation)  ;; Insert citation with Citar
 #+END_SRC
 
 ** Org-mode specific keybinding for toggling items :Added 2025-07-15
@@ -685,49 +743,53 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 #+END_SRC
 
+#+BEGIN_SRC emacs-lisp
+(defun my-tangle-all ()
+  "Tangle all modular Org files."
+  (interactive)
+  (my/tangle-if-needed "org/orgxtn.org" "org/orgxtn.el")
+  (my/tangle-if-needed "org/roam.org" "org/roam.el")
+  (my/tangle-if-needed "org/filetags.org" "org/filetags.el")
+  (my/tangle-if-needed "org/workflow.org" "org/workflow.el")
+  (my/tangle-if-needed "org/latextn.org" "org/latextn.el")
+  (my/tangle-if-needed "org/customxtn.org" "org/customxtn.el")
+    (when (eq my-device 'laptop)
+  (my/tangle-if-needed "org/mail.org" "org/mail.el"))
+  ;; Add more modular files here (e.g., workflows.org when uncommented)
+  (message "[%s] All modular files tangled" (format-time-string "%T")))
+(global-set-key (kbd "C-c T") 'my-tangle-all)
+#+END_SRC
+
+
 * Git enabled org notes sync with repo
 Note: If you are not using git source control for org notes across devices, comment/remove following function
 
 #+BEGIN_SRC emacs-lisp
-(defun my--run-shell-command-async (cmd message-prefix)
-  "Run CMD asynchronously and display output with MESSAGE-PREFIX."
-  (let ((buf (get-buffer-create "*Git Output*")))
-    (with-current-buffer buf
-      (read-only-mode -1)                     ;; make buffer editable
-      (erase-buffer)                          ;; clear old contents
-      (insert (format "%s: Running %s\n\n"    ;; header line
-                      message-prefix cmd)))
-    (async-shell-command cmd buf)))           ;; run command asynchronously, send output here
+;; Magit-based Git for Org notes sync
+;; Assumes repo is on 'main' branch with 'origin' remote; customize as needed
 
-;; Manual pull function
-(defun git-pull-repo ()
-  "Manually pull the Org notes repo asynchronously."
+;; Manual pull function (replaces git-pull-repo)
+(defun magit-pull-org-repo ()
+  "Pull the Org notes repo using Magit (async)."
   (interactive)
-  (let ((repo-dir (file-truename default-directory)))
-    (when repo-dir  ; Ensure default-directory is set
-      (my--run-shell-command-async (format "cd %s && git pull origin main" (shell-quote-argument repo-dir)) "Git pull")
-      (message "Git pull started (check *Git Output*)."))))
+  (magit-pull-from-upstream nil) ; Pulls from origin/main; nil for default args
+  (message "Magit pull started (check Magit process buffer if needed)."))
 
-;; Manual push function
-(defun git-push-repo ()
-  "Stage all changes, commit if needed, then push asynchronously."
+;; Manual push function (replaces git-push-repo)
+(defun magit-push-org-repo ()
+  "Stage modified files, commit if needed (with prompt), then push using Magit (async)."
   (interactive)
-  (let ((repo-dir (file-truename default-directory)))
-    (my--run-shell-command-async
-     (format
-      "cd %s && git add -A && (git diff --cached --quiet || git commit -m 'Update from laptop') && git push origin main"
-      (shell-quote-argument repo-dir))
-     "Git push")
-    (message "Git push started (check *Git Output*).")))
+  (magit-stage-modified) ; Stages only tracked/modified files (safer than git add -A)
+  (when (magit-anything-staged-p) ; Only commit if there are changes
+    (magit-commit-create)) ; Interactive commit with message prompt
+  (magit-push-current-to-upstream nil) ; Pushes to origin/main
+  (message "Magit push started (check Magit process buffer if needed)."))
 
-;; Your prefix map (C-c g p for pull, C-c g u for push)
+;; C-c g p for pull, C-c g u for push
 (defvar git-org-map (make-sparse-keymap) "Keymap for Git Org commands.")
 (define-key global-map (kbd "C-c g") git-org-map)
-(define-key git-org-map (kbd "p") 'git-pull-repo)
-(define-key git-org-map (kbd "u") 'git-push-repo)
-
-;; Async buffer settings
-(setq async-shell-command-buffer 'new-buffer)
+(define-key git-org-map (kbd "p") 'magit-pull-org-repo)
+(define-key git-org-map (kbd "u") 'magit-push-org-repo)
 #+END_SRC
 
 

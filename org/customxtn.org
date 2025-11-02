@@ -167,3 +167,19 @@ This file contains configurations for VLSI-specific Org-mode features, primarily
   (unless process-entry
     (message "Warning: neither pdftoppm nor ImageMagick (magick/convert) found; cannot preview LaTeX.")))
 #+END_SRC
+
+* ACTIVE Mathpix's OCR capabilities
+#+BEGIN_SRC emacs-lisp
+(use-package mathpix
+  :straight (:host github :repo "jethrokuan/mathpix.el")
+  :defer t  ; Load lazily to avoid startup overhead
+  :custom
+  (mathpix-app-id "YOUR_MATHPIX_APP_ID")  ; From mathpix.com dashboard
+  (mathpix-app-key "YOUR_MATHPIX_APP_KEY")
+  (mathpix-screenshot-method "scrot -s %s")  ; Requires scrot installed (sudo apt install scrot on Ubuntu)
+  :bind ("C-c x" . mathpix-screenshot)  ; Distinct from org-noter keys
+  :config
+  ;; Optional: Add a hook to clean up after OCR if needed
+  (add-hook 'mathpix-after-insert-hook (lambda () (org-latex-preview)))  ; Auto-preview inserted LaTeX in Org
+  )
+#+END_SRC

@@ -7,6 +7,8 @@
 # OPTIONS: toc:t num:nil
 #+OPTIONS: toc:nil num:2
 #+PROPERTY: header-args :eval never-export
+#+BIBLIOGRAPHY: ${bib-path}
+#+CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES: 
 #+ROAM_REFS: 
 #+CREATED: %U
@@ -19,5 +21,6 @@
 # LATEX: \printglossaries
 * References
 # LATEX: \printbibliography
+
 
 

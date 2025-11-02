@@ -37,100 +37,100 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 #+END_SRC
 
 * ACTIVE Org-roam Setup
-#+BEGIN_SRC emacs-lisp
 
+** Template preloading
+#+BEGIN_SRC emacs-lisp
 ;; Helper Function for Template Preloading ${setupfile} for setup-latex file path in template
 (defun my/load-template (filename)
-  "Load template FILENAME from user-emacs-directory and replace ${setupfile} with absolute repo path."
+  "Load template FILENAME from `user-emacs-directory` and replace ${setupfile}."
   (let ((template-path (expand-file-name filename user-emacs-directory)))
     (if (file-exists-p template-path)
         (with-temp-buffer
           (insert-file-contents template-path)
           (goto-char (point-min))
+          ;; Point ${setupfile} to <default-directory>/latex/setup-latex.org
           (while (search-forward "${setupfile}" nil t)
-            (replace-match (expand-file-name "latex/setup-latex.org" (expand-file-name "" default-directory)) t t))
+            (replace-match
+             (expand-file-name "latex/setup-latex.org"
+                               (expand-file-name "" default-directory))
+             t t))
           (buffer-string))
       (message "Template %s not found; using fallback." template-path)
       "* Default Note\n:PROPERTIES:\n:ID: %^{id-or-auto}\n:END:\n%?\n- %U")))
+#+END_SRC
 
+** Org roam package installation
+#+BEGIN_SRC emacs-lisp
 (use-package org-roam
   :straight t
+  :defer t  ;; Defer for faster startup
   :init
-
   ;; allow completion/insert everywhere (so you can insert roam nodes in top-level notes)
   (setq org-roam-completion-everywhere t)
-  
   ;; Add Basic Node Display Template for Better Completion UX
   (setq org-roam-node-display-template
-      (concat "${title:*} "
-              (propertize "${tags:10}" 'face 'org-tag)))
-
+        (concat "${title:*} "
+                (propertize "${tags:10}" 'face 'org-tag)))
   ;; Delay autosync slightly to avoid DB race on startup and print
   (run-with-idle-timer 2 nil
     (lambda ()
       (when (require 'org-roam nil 'noerror)
-     (unless (bound-and-true-p my/org-roam-initialized)
-       (setq my/org-roam-initialized t)
-       (org-roam-db-autosync-mode 1)
-       (message "✅ org-roam initialized and DB autosync enabled.")))))
-
-  ;; Debugging paths
+        (unless (bound-and-true-p my/org-roam-initialized)
+          (setq my/org-roam-initialized t)
+          (org-roam-db-autosync-mode 1)
+          (message "✅ org-roam initialized and DB autosync enabled.")))))
+  ;; Debugging paths (move to config if not needed always)
   (message "✅ Org-roam dir: %s" org-roam-directory)
   (message "📅 Dailies dir: %s" org-roam-dailies-directory)
   (message "Default dir: %s" default-directory)
-
-:bind
-    (("C-c r f" . org-roam-node-find)
-     ("C-c r i" . org-roam-node-insert)
-     ("C-c r n" . org-roam-capture)
-     
-     ;; Dailies
-     ("C-c r d" . org-roam-dailies-capture-today)
-     ("C-c r T" . org-roam-dailies-goto-today)
-     ("C-c r P" . org-roam-dailies-goto-previous-note)
-     ("C-c r N" . org-roam-dailies-goto-next-note)
-     ("C-c r D" . org-roam-dailies-goto-date)
-
-     ;; Tag management
-     ("C-c r t" . my-org-roam-tag-add)
-     ("C-c r r" . my-org-roam-tag-remove)
-     
-     ;; Safe rebuild org roam packages for avoiding race condition
-     ("C-c r s" . my/org-roam-safe-rebuild)
-     )
-
+  :bind
+  (("C-c r f" . org-roam-node-find)
+   ("C-c r i" . org-roam-node-insert)
+   ("C-c r n" . org-roam-capture)
+   ;; Dailies (comment if not used)
+   ("C-c r d" . org-roam-dailies-capture-today)
+   ("C-c r T" . org-roam-dailies-goto-today)
+   ("C-c r P" . org-roam-dailies-goto-previous-note)
+   ("C-c r N" . org-roam-dailies-goto-next-note)
+   ("C-c r D" . org-roam-dailies-goto-date)
+   ;; Tag management (comment if not used)
+   ("C-c r t" . my-org-roam-tag-add)
+   ("C-c r r" . my-org-roam-tag-remove)
+   ;; Safe rebuild
+   ("C-c r s" . my/org-roam-safe-rebuild))
   :config
   ;; ensure roam dirs exist (optional but low-cost)
-    (dolist (d (list org-roam-directory org-roam-dailies-directory))
-    (unless (file-directory-p d) (make-directory d t)))
+  (dolist (d (list org-roam-directory org-roam-dailies-directory))
+    (unless (file-directory-p d) (make-directory d t))))
+#+END_SRC
 
-  ;;(org-roam-db-autosync-mode 1)
-  ;;(message "✅ org-roam initialized and DB autosync enabled.")
-  )
- 
-  ;; To avoid org roam DB race condition error "wrong-type-argument sqlitep nil" in Big DB BUG GitHub  834/#2474
-    (defun my/org-roam-safe-rebuild ()
-    "Disable autosync, rebuild org-roam DB, then re-enable autosync (delayed)."
-    (interactive)
+#+BEGIN_SRC emacs-lisp
+** Avoid race condition in roam DB
+(defun my/org-roam-safe-rebuild ()
+  "Disable autosync, rebuild org-roam DB, then re-enable autosync (delayed)."
+  (interactive)
   ;; 1. Disable autosync if running
-     (when (bound-and-true-p org-roam-db-autosync-mode)
-      (org-roam-db-autosync-mode -1)
-      (message "org-roam autosync disabled temporarily"))
+  (when (bound-and-true-p org-roam-db-autosync-mode)
+    (org-roam-db-autosync-mode -1)
+    (message "org-roam autosync disabled temporarily"))
   ;; 2. Rebuild DB
-     (org-roam-db-build-cache t)
-      (message "org-roam DB rebuild complete")
+  (org-roam-db-build-cache t)
+  (message "org-roam DB rebuild complete")
   ;; 3. Re-enable autosync after idle
-     (run-with-idle-timer
-      2 nil
-     (lambda ()
-      (org-roam-db-autosync-mode 1)
-      (message "org-roam autosync re-enabled (delayed)"))))
+  (run-with-idle-timer
+   2 nil
+   (lambda ()
+     (org-roam-db-autosync-mode 1)
+     (message "org-roam autosync re-enabled (delayed)"))))
+#+END_SRC
 
+** Org roam templates
+#+BEGIN_SRC emacs-lisp
 ;; Used eval with progn to evaluate multiple setq forms and resolve stringp error by ensuring paths are strings
 (setq org-roam-capture-templates
       `(("d" "default" plain
          ,(my/load-template "template/roam-default.org")
-         :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")  
+         :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
          :unnarrowed t)
         ("f" "fleeting" entry
          "* %<%H:%M> %^{Title|New Thought}\n:PROPERTIES:\n:CREATED: %U\n:SOURCE: %^{Source|email|article|blog|book|other}\n:END:\n%?"
@@ -139,48 +139,47 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
          :unnarrowed t)
         ("p" "permanent" plain
          ,(my/load-template "template/roam-permanent.org")
-         :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")  
+         :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
          :unnarrowed t)
         ("j" "journal" plain
          ,(my/load-template "template/roam-journal.org")
-         :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")  
-         :unnarrowed t)
-        ("b" "bibliography" plain
-         ,(my/load-template "template/roam-bib.org")
-         :target (file+head "%<%Y%m%d%H%M%S>-${citekey}.org" "")  
-         :unnarrowed t)))
+         :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
+         :unnarrowed t))) 
+
 ;; Daily Templates
 (setq org-roam-dailies-capture-templates
       `(("d" "default" plain
          ,(my/load-template "template/roam-dailies.org")
-         :target (file+head "%<%Y-%m-%d>.org" "")  
+         :target (file+head "%<%Y-%m-%d>.org" "")
          :empty-lines 1
          :prepend t
          :unnarrowed t)))
+;; Bib Note Template
+(add-to-list 'org-roam-capture-templates
+  `("b" "bibliography note" plain
+    "%?"
+    :target (file+head "literature/${citar-citekey}.org"
+      ,(my/load-template "template/roam-bib.org"))
+    :unnarrowed t))
+ 
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-(use-package org-roam-bibtex
+(use-package citar-org-roam
   :straight t
-  :after (org-roam citar)
-  :init
-  (setq org-roam-bibtex-template-key "b")
+  :after (citar org-roam)
   :config
-  (setq orb-bibliography org-cite-global-bibliography
-        orb-preformat-keywords '("title" "url" "author-or-editor" "keywords" "year" "doi" "journal")
-        orb-process-file-keywords t
-        orb-attached-file-extensions '("pdf"))
-
-  (setq orb-templates
-      `(("b" "bibliography" plain
-         ,(my/load-template "template/roam-bib.org")
-         :target (file+head "%<%Y%m%d%H%M%S>-${citekey}.org" "")  ;; Swap
-         :unnarrowed t))) 
-
-  (add-hook 'org-mode-hook #'org-roam-bibtex-mode))
+  (citar-org-roam-mode)
+  (setq citar-org-roam-subdir "literature")
+  (setq citar-org-roam-note-title-template
+        "${author editor} (${year issued date}) - ${title}")
+  (setq citar-org-roam-capture-template-key "b")
+  (message "✅ Citar-Org-Roam integration active."))
 #+END_SRC
 
-* Org-roam UI (Graph)
+
+* ACTIVE Org roam functions
+** Org-roam UI (Graph)
 #+BEGIN_SRC emacs-lisp
 (use-package org-roam-ui
   :if (eq my-device 'laptop)
@@ -193,7 +192,7 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
         org-roam-ui-open-on-start nil))
 #+END_SRC
 
-* Helper: Add Tag via Filetags Completion
+** Helper: Add Tag via Filetags Completion
 #+BEGIN_SRC emacs-lisp
 (defun my-org-roam-tag-add ()
   "Add a tag to the current org-roam node with completion."
@@ -208,6 +207,7 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
       (org-roam-tag-add (list selected-tag)))))
 #+END_SRC
 
+** Helper: Remove Tag via Filetags Completion
 #+BEGIN_SRC emacs-lisp
 (defun my-org-roam-tag-remove ()
   "Remove a tag from the current org-roam node with completion."
@@ -221,3 +221,5 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
     (when selected-tag
       (org-roam-tag-remove (list selected-tag)))))
 #+END_SRC
+
+

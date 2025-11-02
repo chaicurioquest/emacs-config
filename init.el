@@ -90,7 +90,7 @@
    '(("+fleeting" . "df82ceed-3a1c-470c-8703-6fa24823e363")
      ("+meeting" . "d39cd7c9-99bf-483e-b338-4bd08ae6e413")
      ("+task" . "07bb75d6-077e-4ea8-a8a7-f7dc86cb5737")))
- '(warning-suppress-log-types '((emacs))))
+ '(warning-suppress-log-types '((ox-latex) (emacs))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
