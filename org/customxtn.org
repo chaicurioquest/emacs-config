@@ -273,44 +273,46 @@ This file contains configurations for VLSI-specific Org-mode features, primarily
 (defun my/open-paper-and-note ()
   "Open PDF and roam note side-by-side for citation key."
   (interactive)
-  (let* ((key (citar-select-ref))
-         (entry (when key (citar-get-entry key)))
-         (files (ignore-errors (citar-get-files key)))
-         (pdf (let ((p (my/citar-extract-first-path files))) (and p (file-exists-p p) (expand-file-name p))))
-         (title (when entry (or (cdr (assoc "title" entry)) key)))
-         (note-file (expand-file-name (concat key ".org") (expand-file-name "literature" org-roam-directory))))
-    (unless (file-directory-p (file-name-directory note-file)) (make-directory (file-name-directory note-file) t))
-    (delete-other-windows)
-    (find-file note-file)
-    (let ((left-win (selected-window)))
-      (split-window-right)
-      (let ((right-win (next-window left-win)))
-        (select-window right-win)
-        (if pdf
-            (progn
-              (let ((display-buffer-alist nil)) (find-file pdf))
-              (when (fboundp 'pdf-view-fit-page-to-window) (pdf-view-fit-page-to-window)))
-          (switch-to-buffer "*scratch*")
-          (message "[LOG] No PDF found for %s, showing scratch buffer." key))
-        (select-window left-win)
-        ;; Create note template if note doesn't exist
-        (unless (file-exists-p note-file)
-          (let ((id (org-id-new)))
-            (insert (format "#+TITLE: %s\n#+ROAM_REFS: cite:%s\n:PROPERTIES:\n:ID: %s\n:NOTER_DOCUMENT: %s\n:END:\n\n* Overview\n\n* Annotations\n\n* Bib Entry\n[cite:@%s]\n"
-                            title key id (or pdf "") key))
-            (save-buffer)))
-        ;; Ensure NOTER_DOCUMENT property present
-        (save-excursion
-          (goto-char (point-min))
-          (unless (re-search-forward ":NOTER_DOCUMENT:" nil t)
-            (when pdf
-              (re-search-forward ":END:" nil t)
-              (insert (format "\n:NOTER_DOCUMENT: %s" pdf))
-              (save-buffer))))
-        ;; Start org-noter session if available
-        (when (and (featurep 'org-noter) pdf)
-          (org-noter))
-        (message "[LOG] Opened paper and note for %s" key)))))
+  (let* ((key (citar-select-ref)))
+    (unless key (user-error "No citation key selected"))
+    (setq my/last-citar-key key)  ;; <-- This is important to track current citation key
+    (let* ((entry (citar-get-entry key))
+           (files (ignore-errors (citar-get-files key)))
+           (pdf (let ((p (my/citar-extract-first-path files))) (and p (file-exists-p p) (expand-file-name p))))
+           (title (or (cdr (assoc "title" entry)) key))
+           (note-file (expand-file-name (concat key ".org") (expand-file-name "literature" org-roam-directory))))
+      (unless (file-directory-p (file-name-directory note-file)) (make-directory (file-name-directory note-file) t))
+      (delete-other-windows)
+      (find-file note-file)
+      (let ((left-win (selected-window)))
+        (split-window-right)
+        (let ((right-win (next-window left-win)))
+          (select-window right-win)
+          (if pdf
+              (progn
+                (let ((display-buffer-alist nil)) (find-file pdf))
+                (when (fboundp 'pdf-view-fit-page-to-window) (pdf-view-fit-page-to-window)))
+            (switch-to-buffer "*scratch*")
+            (message "[LOG] No PDF found for %s, showing scratch buffer." key))
+          (select-window left-win)
+          ;; Create note template if note doesn't exist
+          (unless (file-exists-p note-file)
+            (let ((id (org-id-new)))
+              (insert (format "#+TITLE: %s\n#+ROAM_REFS: cite:%s\n:PROPERTIES:\n:ID: %s\n:NOTER_DOCUMENT: %s\n:END:\n\n* Overview\n\n* Annotations\n\n* Bib Entry\n[cite:@%s]\n"
+                              title key id (or pdf "") key))
+              (save-buffer)))
+          ;; Ensure NOTER_DOCUMENT property present
+          (save-excursion
+            (goto-char (point-min))
+            (unless (re-search-forward ":NOTER_DOCUMENT:" nil t)
+              (when pdf
+                (re-search-forward ":END:" nil t)
+                (insert (format "\n:NOTER_DOCUMENT: %s" pdf))
+                (save-buffer))))
+          ;; Start org-noter session if available
+          (when (and (featurep 'org-noter) pdf)
+            (org-noter))
+          (message "[LOG] Opened paper and note for %s" key))))))
 
 (global-set-key (kbd "C-c i a") #'my/open-paper-and-note)
 #+END_SRC
@@ -320,17 +322,19 @@ This file contains configurations for VLSI-specific Org-mode features, primarily
 ;; Insert PDF Selection to Note
 ;; -----------------------------
 (defun my/citar-find-note-file-for-key (key)
-  "Return first org-roam note file that matches KEY in citar-notes-paths or org-roam-directory."
-  (let* ((dirs (or (and (boundp 'citar-notes-paths) citar-notes-paths)
-                   (and (boundp 'org-roam-directory) (list org-roam-directory))
-                   (list default-directory)))
-         (pattern (concat (regexp-quote key) ".*\\.org\\'"))
-         (found nil))
-    (dolist (d dirs found)
-      (when (and (stringp d) (file-directory-p d) (not found))
-        (let ((res (ignore-errors (directory-files-recursively d pattern 1))))
-          (when (and res (> (length res) 0))
-            (setq found (car res))))))))
+  "Return first org-roam note file matching KEY or nil."
+  (when (and key (stringp key))
+    (let* ((dirs (or (and (boundp 'citar-notes-paths) citar-notes-paths)
+                     (and (boundp 'org-roam-directory) (list org-roam-directory))
+                     (list default-directory)))
+           (pattern (concat (regexp-quote key) ".*\\.org\\'"))
+           (found nil))
+      (dolist (d dirs found)
+        (when (and (stringp d) (file-directory-p d) (not found))
+          (let ((res (ignore-errors (directory-files-recursively d pattern 1))))
+            (when (and res (> (length res) 0))
+              (setq found (car res)))))))))
+
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -341,12 +345,13 @@ This file contains configurations for VLSI-specific Org-mode features, primarily
   "Insert selected PDF text or note to current bib note under Annotations."
   (interactive)
   (let* ((selection (ignore-errors (pdf-view-active-region-text)))
-         (page (ignore-errors (when (fboundp 'pdf-view-current-page) (pdf-view-current-page))))
+         (page (ignore-errors (when (fboundp 'pdf-view-current-page)
+                                (pdf-view-current-page))))
          (time (format-time-string "%Y-%m-%d %H:%M"))
          (note-buf (my/citar-find-note-file-for-key my/last-citar-key)))
-    (unless (and note-buf (buffer-live-p (get-file-buffer note-buf)))
-      (user-error "Could not find or open a bib note buffer. Run C-c i a first."))
-    (with-current-buffer note-buf
+    (unless note-buf
+      (user-error "Could not find bib note file. Run C-c i a first."))
+    (with-current-buffer (find-file-noselect note-buf)
       (goto-char (point-min))
       (if (re-search-forward "^\\*+ Annotations" nil t)
           (goto-char (match-end 0))
@@ -359,9 +364,9 @@ This file contains configurations for VLSI-specific Org-mode features, primarily
           (insert ":PROPERTIES:\n")
           (insert (format ":NOTER_PAGE: %s\n" page))
           (insert ":END:\n\n"))
-        (when (and selection (not (string-blank-p selection)))
-          (insert (format "%s\n\n" selection))
-          (save-buffer))))
+        ;; Always insert something, show message if selection is missing
+        (insert (format "%s\n\n" (or selection "[No selection captured]")))
+        (save-buffer)))
     (message "Inserted selection into %s (page %s)" note-buf (or page "-"))))
 
 (define-key pdf-view-mode-map (kbd "C-c i p") #'my/pdf-insert-selection-to-note)

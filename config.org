@@ -120,6 +120,11 @@ Skips if no changes; handles errors gracefully without deleting files."
   "Directory for Org-roam notes.")
 
   (defvar my/org-notes-dir nil "The root directory for org notes.")
+   
+   (prefer-coding-system 'utf-8)
+   (setq default-buffer-file-coding-system 'utf-8)
+
+
 #+END_SRC
 
 ** Tag-to-ID mappings for tag-based auto-refile script
