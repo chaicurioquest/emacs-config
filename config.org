@@ -119,8 +119,6 @@ Skips if no changes; handles errors gracefully without deleting files."
   (defvar org-roam-directory (expand-file-name "roam" default-directory)
   "Directory for Org-roam notes.")
 
-  (defvar my/org-notes-dir nil "The root directory for org notes.")
-   
    (prefer-coding-system 'utf-8)
    (setq default-buffer-file-coding-system 'utf-8)
 
@@ -144,14 +142,11 @@ Skips if no changes; handles errors gracefully without deleting files."
 
 ** Customized Agenda view files on startup excluding roam, build, backup and other directory
 #+BEGIN_SRC emacs-lisp
-
 (defun my/update-agenda-files ()
-  "Set `org-agenda-files` to top-level .org files in `my/org-notes-dir` or `default-directory`,
-plus recursive .org files from the 'roam' subdirectory, excluding unwanted dirs and non-regular files."
+  "Set `org-agenda-files` to top-level .org files in `default-directory`,
+plus recursive .org files from the 'roam' subdirectory, excluding unwanted dirs."
   (interactive)
-  (let* ((notes-dir (if my/org-notes-dir
-                        my/org-notes-dir
-                      (file-name-as-directory default-directory)))
+  (let* ((notes-dir (file-name-as-directory default-directory))
          (roam-dir (expand-file-name "roam/" notes-dir))
          (excluded-dirs '("build" "ltximg" "images" ".attach" ".autosaves" ".backups" "bib" "latex" ".git"))
          (dir-predicate (lambda (d)
@@ -178,9 +173,7 @@ plus recursive .org files from the 'roam' subdirectory, excluding unwanted dirs 
           (setq org-agenda-files nil)
           (message "my/update-agenda-files: no valid .org files found in %s or roam/" notes-dir))
       (setq org-agenda-files all-orgs)
-      (message "org-agenda-files set (%d files) from %s and roam/" (length org-agenda-files) notes-dir))
-    (unless my/org-notes-dir
-      (setq my/org-notes-dir notes-dir))))
+      (message "org-agenda-files set (%d files) from %s and roam/" (length org-agenda-files) notes-dir))))
 
 ;; Initialize once
 (my/update-agenda-files)
@@ -190,10 +183,9 @@ plus recursive .org files from the 'roam' subdirectory, excluding unwanted dirs 
           (lambda ()
             (when (and (derived-mode-p 'org-mode)
                        buffer-file-name
-                       my/org-notes-dir  ; Ensure it's set
-                       (file-in-directory-p buffer-file-name my/org-notes-dir))
+                       (string-prefix-p (file-name-as-directory default-directory)
+                                        (file-name-directory (file-truename buffer-file-name))))
               (my/update-agenda-files))))
-
 #+END_SRC
 
 
@@ -231,13 +223,13 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :config
   ;; Core requires
   (require 'oc)
-  (require 'oc-biblatex))
+  (require 'oc-biblatex)
   ;; Enable refiling to any heading in agenda files (incl. roam/notes/mobile)
   (setq org-refile-targets '((org-agenda-files :maxlevel . 5)))
   (setq org-refile-use-outline-path 'file) ;; Show file paths in prompt
   (setq org-outline-path-complete-in-steps nil) ;; Complete in one step (Vertico fuzzy)
   (setq org-refile-allow-creating-parent-nodes 'confirm)
-  (setq org-refile-use-cache t)  ; Cache targets for speed
+  (setq org-refile-use-cache t))  ;; Cache targets for speed
 #+END_SRC
 
 ** Ensure use-package is available.
@@ -361,13 +353,6 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 
 #+END_SRC
 
-** Install the MELPA sqlite3 package
-#+BEGIN_SRC emacs-lisp
-(use-package emacsql-sqlite3
-  :straight t
-  :defer t)
-#+END_SRC
-
 ** Vertico: vertical completion UI Work well with org-roam (and Emacs in general) much faster, more flexible, and user-friendly. 
 #+BEGIN_SRC emacs-lisp
 (use-package vertico
@@ -410,15 +395,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
   :straight t
   :defer t
   :diminish reftex-mode)
-;; Integrate RefTeX with AUCTeX
-(use-package auctex
-  :straight t
-  :defer t
-  :hook (LaTeX-mode . (lambda () (turn-on-reftex) (flyspell-mode)))
-  :config
-  (setq TeX-auto-save t
-        TeX-parse-self t
-        reftex-plug-into-AUCTeX t))  
 #+END_SRC
 
 
@@ -426,40 +402,25 @@ If using AUCTeX for LaTeX exports, add reftex package.
 ;; Use features like highlighting, annotations, or text selection. Work along with org-noter for taking notes synchronized with PDF pages
 ;; Updated on 2025-08-15 for support termux build in android devices.
 #+BEGIN_SRC emacs-lisp
+;; Install and configure PDF Tools as default PDF viewer
 (use-package pdf-tools
   :straight t
-  :defer t
+  :defer t  ; Load on demand
+  :init
+  ;; Only enable on devices where it makes sense (e.g., skip on phone/tablet if performance is an issue)
+  (unless (memq my-device '(phone tablet))
+    (pdf-loader-install))  ; Changed to lazy/on-demand install
   :config
-  ;; Use existing epdfinfo binary in Termux (if applicable)
-  (setq pdf-info-epdfinfo-program
-        (expand-file-name "~/.emacs.d/straight/build/pdf-tools/build/epdfinfo"))
-  (pdf-tools-install-noverify)
-  ;; Set display size to fit page
-  (setq-default pdf-view-display-size 'fit-page)
-  ;; Activate annotations automatically
-  (setq pdf-annot-activate-created-annotations t)
-  ;; Set magic mode for PDFs explicitly
-  (add-to-list 'magic-mode-alist '("%PDF" . pdf-view-mode))
-  ;; Suppress pdf-view-mode errors for invalid arguments
-  (advice-add 'pdf-view-mode :around
-              (lambda (orig-fun &rest args)
-                (ignore-errors (apply orig-fun nil))))
-  ;; Clear pdf-tools metadata to avoid stale page references
-  (add-hook 'pdf-view-mode-hook
-            (lambda ()
-              (when (buffer-file-name)
-                (pdf-cache-clear-data (buffer-file-name)))))
-  (message "✅ PDF-tools ready for viewing."))
+  ;; Optional tweaks for better integration
+  (setq pdf-view-display-size 'fit-page  ; Fit to page by default
+        pdf-view-continuous t)           ; Smooth scrolling
+  ;; Enable Org-Noter integration with PDF Tools
+  (with-eval-after-load 'org-noter
+    (require 'org-noter-pdftools)
+    (add-to-list 'org-noter-notes-window-behavior '(org-noter-pdftools-jump-to-note)))
+  :mode ("\\.pdf\\'" . pdf-view-mode))  ; Override DocView for PDFs
 #+END_SRC
 
-** pdf-view-mode
-#+BEGIN_SRC emacs-lisp
-;; === PDF Tools & Viewing Setup ===
-(require 'pdf-tools)
-(pdf-tools-install)  ;; Compile and setup pdf-tools
-(add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode))
-(add-to-list 'magic-mode-alist '("%PDF" . pdf-view-mode))
-#+END_SRC
 
 ** pdf annotation org noter optional dependancies
 #+BEGIN_SRC emacs-lisp
@@ -529,8 +490,11 @@ If using AUCTeX for LaTeX exports, add reftex package.
   (citar-capf-setup)
   (message "✅ Citar ready."))
 
-  ;; Org-local binding (no global collision)
-    (define-key org-mode-map (kbd "C-c b") #'citar-insert-citation)
+;; Install C-c i c in org buffers only (safe)
+(add-hook 'org-mode-hook
+          (lambda ()
+            ;; prefer local-set-key to avoid overriding global maps
+            (local-set-key (kbd "C-c i c") #'citar-insert-citation)))
 #+END_SRC
 
 
@@ -544,7 +508,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
     (call-interactively 'citar-create-note)))
 
 ;; Rebind your key (override the old one)
-(global-set-key (kbd "C-c i c") 'my/citar-insert-or-create-note)
+;;(global-set-key (kbd "C-c i c") 'my/citar-insert-or-create-note)
 #+END_SRC
 
 ** Org noter + Citar annotation: added 2025-11-02
@@ -559,8 +523,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
         org-noter-highlight-selected-text t
         org-noter-insert-note-no-questions t)
   (setq org-noter-hide-other nil)
-  (define-key pdf-view-mode-map (kbd "i") 'org-noter-insert-note)
-  (define-key pdf-view-mode-map (kbd "I") 'org-noter-insert-precise-note)
   (message "✅ Org-noter ready for PDF annotations."))
 #+END_SRC
 
@@ -568,26 +530,8 @@ If using AUCTeX for LaTeX exports, add reftex package.
 #+BEGIN_SRC emacs-lisp
 (use-package org-noter-pdftools
   :straight t
-  :after (org-noter pdf-tools)
-  :config
-  (with-eval-after-load 'pdf-annot
-    (add-hook 'pdf-annot-activate-handler-functions
-              (lambda ()
-                (run-with-timer 0.1 nil #'org-noter-pdftools-jump-to-note)))))
+  :after (org-noter pdf-tools))
 #+END_SRC
-
-#+BEGIN_SRC emacs-lisp
-;; -----------------------------
-;; Namespace Keybindings for Citar & Org-Noter
-;; -----------------------------
-(define-prefix-command 'my/citar-noter-map)
-(global-set-key (kbd "C-c i") 'my/citar-noter-map)
-
-(define-key my/citar-noter-map (kbd "a") #'my/open-paper-and-note)
-(define-key my/citar-noter-map (kbd "c") #'my/citar-insert-or-create-note)
-(define-key my/citar-noter-map (kbd "p") #'my/pdf-insert-selection-to-note)
-#+END_SRC
-
 
 #+BEGIN_SRC emacs-lisp
 ;; -----------------------------
@@ -602,7 +546,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
   (defvar org-ref-pdf-directory nil)
   (provide 'org-ref))
 #+END_SRC
-
 
 ** Magit is a Git GUI interface for Emacs
 #+BEGIN_SRC emacs-lisp
@@ -712,16 +655,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
 (winner-mode 1)                ;; C-c <left/right> undo/redo window layout
 #+END_SRC
 
-** Force PDFs to open on the right-side window
-#+BEGIN_SRC emacs-lisp
-(add-to-list 'display-buffer-alist
-             '("\\.pdf\\'"
-               (display-buffer-in-side-window)
-               (side . right)
-               (window-width . 0.45)
-               (slot . 1)))
-#+END_SRC
-
 ** ACTIVE Org Attachment File directory
 #+BEGIN_SRC emacs-lisp
 ;; Attachments relative to org file, in `.attach` folder
@@ -752,7 +685,9 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 ** Org-mode specific keybinding for toggling items :Added 2025-07-15
 #+BEGIN_SRC emacs-lisp
-(define-key org-mode-map (kbd "C-c i i") 'org-toggle-item)
+(add-hook 'org-mode-hook
+          (lambda ()
+            (local-set-key (kbd "C-c i i") #'org-toggle-item)))
 #+END_SRC
 
 ** Disble Ctrl+Z key accidental suspend-frame(minimize the window) keybinding to Undo command
@@ -764,7 +699,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 ;; mu4e Email integration quick access
 (global-set-key (kbd "C-c m") 'mu4e)
-
 #+END_SRC
 
 ** Switching windows 
@@ -783,7 +717,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 * ACTIVE Modular Configs
 #+BEGIN_SRC emacs-lisp
-
 (my/tangle-if-needed "org/orgxtn.org" "org/orgxtn.el")
 (load (expand-file-name "org/orgxtn.el" user-emacs-directory) nil 'nomessage)
 
@@ -796,18 +729,21 @@ If using AUCTeX for LaTeX exports, add reftex package.
 (my/tangle-if-needed "org/workflow.org" "org/workflow.el")
 (load (expand-file-name "org/workflow.el" user-emacs-directory) nil 'nomessage)
 
-;; Optional: General LaTeX export configs (requires TeX Live, latexmk)
+;; note and annotation configuaration
+(my/tangle-if-needed "org/reading.org" "org/reading.el")
+(load (expand-file-name "org/reading.el" user-emacs-directory) nil 'nomessage)
+
+;;General LaTeX export configs (requires TeX Live, latexmk)
 (my/tangle-if-needed "org/latextn.org" "org/latextn.el")
 (load (expand-file-name "org/latextn.el" user-emacs-directory) nil 'nomessage)
 
-;; Optional: Engineering-specific configs for TikZ/CircuitTikZ diagrams
-(my/tangle-if-needed "org/customxtn.org" "org/customxtn.el")
-(load (expand-file-name "org/customxtn.el" user-emacs-directory) nil 'nomessage)
+;; Optional: Engineering-specific configs for TikZ/CircuitTikZ diagrams. Comment the engxtn.el if you dont use engineering settings.
+(my/tangle-if-needed "org/engxtn.org" "org/engxtn.el")
+(load (expand-file-name "org/engxtn.el" user-emacs-directory) nil 'nomessage)
 
 (when (eq my-device 'laptop)
 (my/tangle-if-needed "org/mail.org" "org/mail.el")
 (load (expand-file-name "org/mail.el" user-emacs-directory) nil 'nomessage))
-
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -818,9 +754,11 @@ If using AUCTeX for LaTeX exports, add reftex package.
   (my/tangle-if-needed "org/roam.org" "org/roam.el")
   (my/tangle-if-needed "org/filetags.org" "org/filetags.el")
   (my/tangle-if-needed "org/workflow.org" "org/workflow.el")
+  (my/tangle-if-needed "org/reading.org" "org/reading.el")
   (my/tangle-if-needed "org/latextn.org" "org/latextn.el")
-  (my/tangle-if-needed "org/customxtn.org" "org/customxtn.el")
-    (when (eq my-device 'laptop)
+  ;; if dont want engineering specific org extension. comment following engxtn.el
+  (my/tangle-if-needed "org/engxtn.org" "org/engxtn.el")
+      (when (eq my-device 'laptop)
   (my/tangle-if-needed "org/mail.org" "org/mail.el"))
   ;; Add more modular files here (e.g., workflows.org when uncommented)
   (message "[%s] All modular files tangled" (format-time-string "%T")))

@@ -1,15 +1,14 @@
 #+TITLE: %s
 #+ROAM_REFS: cite:%s
 
+* Overview
 :PROPERTIES:
 :DOI: %s
 :YEAR: %s
 :NOTER_DOCUMENT: %s
 :END:
 
-* Overview
-
 * Annotations
 
 * Bib Entry
-[cite:@%s]
+[[cite:@%s]]

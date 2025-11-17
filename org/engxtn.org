@@ -1,0 +1,135 @@
+#+TITLE: Engineering Extensions for Org Mode
+#+AUTHOR: Ram
+#+STARTUP: indent
+#+PROPERTY: header-args:emacs-lisp :tangle yes
+#+DATE: 2025-10-20
+
+This file contains engineering-specific Org extensions:
+- TikZ / CircuitTikZ preview support
+- Custom LaTeX preview preamble
+- pdftoppm → PNG preview pipeline
+- Mathpix OCR integration
+- Export engine tuning
+
+These should be loaded *after* general Org settings.
+
+* Basic LaTeX Preview Settings
+#+BEGIN_SRC emacs-lisp
+(setq org-preview-latex-default-process 'pdftoppm) ;;; fallback if nothing better found
+#+END_SRC
+
+
+* Helper: Construct LaTeX Command
+#+BEGIN_SRC emacs-lisp
+(defun my/org-latex-make-latex-cmd (engine)
+  "Return a LaTeX command for org-preview using ENGINE."
+  (format "%s -interaction=nonstopmode -halt-on-error -output-directory=%%o %%f"
+          (or engine "lualatex")))
+#+END_SRC
+
+
+* Ensure TeX Binaries Available
+#+BEGIN_SRC emacs-lisp
+(dolist (dir '("/usr/local/texlive/2025/bin/x86_64-linux"
+               "/usr/bin"
+               "/usr/local/bin"))
+  (when (file-directory-p dir)
+    (add-to-list 'exec-path dir)))
+
+(setenv "PATH" (concat (mapconcat #'identity exec-path ":") ":" (getenv "PATH")))
+#+END_SRC
+
+
+* Custom LaTeX Preview Header (TikZ + CircuitTikZ)
+#+BEGIN_SRC emacs-lisp
+(setq org-format-latex-header
+"\\documentclass[varwidth=true,border=0pt]{standalone}
+\\usepackage{fontspec}
+\\usepackage{amsmath,mathtools}
+\\usepackage{xcolor}
+\\usepackage{siunitx}
+\\usepackage{tikz}
+\\usepackage[american]{circuitikz}
+\\usepackage[active,tightpage,displaymath,latexmath]{preview}
+
+\\setlength\\PreviewBorder{0pt}
+\\PreviewEnvironment{math}
+\\PreviewEnvironment{displaymath}
+\\PreviewEnvironment{equation}
+\\PreviewEnvironment{align}
+\\PreviewEnvironment{tikzpicture}
+\\PreviewEnvironment{circuitikz}
+
+\\definecolor{orgfg}{rgb}{1,1,1}
+\\definecolor{orgbg}{rgb}{0.2,0.2,0.2}
+\\AtBeginDocument{\\pagecolor{orgbg}\\color{orgfg}}
+
+\\newcommand{\\pv}[1]{\\begin{preview}#1\\end{preview}}
+
+\\mathsurround=0pt
+\\setlength\\abovedisplayskip{0pt}
+\\setlength\\belowdisplayskip{0pt}
+\\setlength\\parindent{0pt}")
+#+END_SRC
+
+
+* Image Conversion Pipeline (pdftoppm → PNG)
+#+BEGIN_SRC emacs-lisp
+(let* ((engine   (or (bound-and-true-p my/org-latex-engine) "lualatex"))
+       (pdftoppm (executable-find "pdftoppm"))
+       (magick   (or (executable-find "magick") (executable-find "convert")))
+       (gs       (executable-find "gs"))
+       entry)
+
+  (cond
+   ;; 1. Best: pdftoppm → super fast, crisp PNGs
+   (pdftoppm
+    (setq entry
+          '(:name "pdftoppm-fast"
+            :programs ("lualatex" "pdftoppm")
+            :description "Fast pdftoppm preview"
+            :image-input-type "pdf"
+            :image-output-type "png"
+            :latex-compiler ("lualatex -interaction=nonstopmode -halt-on-error -output-directory=%o %f")
+            :image-converter ("pdftoppm" "-png" "-r" "300" "%f" "%O"))))
+
+   ;; 2. Fallback: ImageMagick (convert/magick) + Ghostscript
+   ((and magick gs)
+    (setq entry
+          `(:name "imagemagick"
+            :programs (,engine ,(file-name-nondirectory magick))
+            :description "ImageMagick fallback"
+            :image-input-type "pdf"
+            :image-output-type "png"
+            :latex-compiler (,(my/org-latex-make-latex-cmd engine))
+            :image-converter (,magick "-density" "300" "%f" "-trim" "-flatten" "%O")))))
+
+  (when entry
+    (setq org-preview-latex-default-process (if pdftoppm 'pdftoppm-fast 'imagemagick)
+          org-preview-latex-process-alist (list entry))
+    (message "LaTeX preview enabled: %s" (if pdftoppm "pdftoppm (fast)" "ImageMagick"))))
+#+END_SRC
+
+
+* Mathpix OCR Integration
+#+BEGIN_SRC emacs-lisp
+(use-package mathpix
+  :straight (:host github :repo "jethrokuan/mathpix.el")
+  :custom
+  (mathpix-app-id "YOUR_MATHPIX_APP_ID")
+  (mathpix-app-key "YOUR_MATHPIX_APP_KEY")
+  (mathpix-screenshot-method "scrot -s %s")
+  :bind ("C-c x" . mathpix-screenshot)
+  :config
+  (add-hook 'mathpix-after-insert-hook #'org-latex-preview))
+#+END_SRC
+
+
+* Export Settings
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-default-packages-alist
+      (delete '("AUTO" "inputenc" t) org-latex-default-packages-alist))
+
+(setq preview-LaTeX-command
+      '("%`%l -interaction=nonstopmode -halt-on-error -output-directory=%o %t"))
+#+END_SRC

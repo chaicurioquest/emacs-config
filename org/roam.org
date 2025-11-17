@@ -63,65 +63,47 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 #+BEGIN_SRC emacs-lisp
 (use-package org-roam
   :straight t
-  :defer t  ;; Defer for faster startup
+  :defer t
   :init
-  ;; allow completion/insert everywhere (so you can insert roam nodes in top-level notes)
   (setq org-roam-completion-everywhere t)
-  ;; Add Basic Node Display Template for Better Completion UX
   (setq org-roam-node-display-template
         (concat "${title:*} "
                 (propertize "${tags:10}" 'face 'org-tag)))
-  ;; Delay autosync slightly to avoid DB race on startup and print
-  (run-with-idle-timer 2 nil
-    (lambda ()
-      (when (require 'org-roam nil 'noerror)
-        (unless (bound-and-true-p my/org-roam-initialized)
-          (setq my/org-roam-initialized t)
-          (org-roam-db-autosync-mode 1)
-          (message "✅ org-roam initialized and DB autosync enabled.")))))
-  ;; Debugging paths (move to config if not needed always)
-  (message "✅ Org-roam dir: %s" org-roam-directory)
-  (message "📅 Dailies dir: %s" org-roam-dailies-directory)
+
+  ;; Debugging paths
+  (message "Org-roam dir: %s" org-roam-directory)
+  (message "Dailies dir: %s" org-roam-dailies-directory)
   (message "Default dir: %s" default-directory)
+
   :bind
   (("C-c r f" . org-roam-node-find)
    ("C-c r i" . org-roam-node-insert)
    ("C-c r n" . org-roam-capture)
-   ;; Dailies (comment if not used)
    ("C-c r d" . org-roam-dailies-capture-today)
    ("C-c r T" . org-roam-dailies-goto-today)
    ("C-c r P" . org-roam-dailies-goto-previous-note)
    ("C-c r N" . org-roam-dailies-goto-next-note)
    ("C-c r D" . org-roam-dailies-goto-date)
-   ;; Tag management (comment if not used)
    ("C-c r t" . my-org-roam-tag-add)
    ("C-c r r" . my-org-roam-tag-remove)
-   ;; Safe rebuild
    ("C-c r s" . my/org-roam-safe-rebuild))
+
   :config
-  ;; ensure roam dirs exist (optional but low-cost)
+  ;; Ensure directories exist
   (dolist (d (list org-roam-directory org-roam-dailies-directory))
-    (unless (file-directory-p d) (make-directory d t))))
+    (unless (file-directory-p d) (make-directory d t)))
 #+END_SRC
 
+
+
 #+BEGIN_SRC emacs-lisp
-** Avoid race condition in roam DB
-(defun my/org-roam-safe-rebuild ()
-  "Disable autosync, rebuild org-roam DB, then re-enable autosync (delayed)."
-  (interactive)
-  ;; 1. Disable autosync if running
-  (when (bound-and-true-p org-roam-db-autosync-mode)
-    (org-roam-db-autosync-mode -1)
-    (message "org-roam autosync disabled temporarily"))
-  ;; 2. Rebuild DB
-  (org-roam-db-build-cache t)
-  (message "org-roam DB rebuild complete")
-  ;; 3. Re-enable autosync after idle
-  (run-with-idle-timer
-   2 nil
-   (lambda ()
-     (org-roam-db-autosync-mode 1)
-     (message "org-roam autosync re-enabled (delayed)"))))
+(add-hook 'org-roam-mode-hook
+            (lambda ()
+              (unless (bound-and-true-p my/org-roam-initialized)
+                (setq my/org-roam-initialized t)
+                (org-roam-db-autosync-mode 1)
+                (org-roam-db-sync)
+                (message "Org-Roam database fully initialized and ready")))))
 #+END_SRC
 
 ** Org roam templates
@@ -144,9 +126,8 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
         ("j" "journal" plain
          ,(my/load-template "template/roam-journal.org")
          :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "")
-         :unnarrowed t))) 
+         :unnarrowed t)))
 
-;; Daily Templates
 (setq org-roam-dailies-capture-templates
       `(("d" "default" plain
          ,(my/load-template "template/roam-dailies.org")
@@ -213,4 +194,18 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
       (org-roam-tag-remove (list selected-tag)))))
 #+END_SRC
 
+* Ensure Org-Roam DB is ready immediately (prevents citar-org-roam errors)
+#+BEGIN_SRC emacs-lisp
+;; Safe DB rebuild command
+(defun my/org-roam-safe-rebuild ()
+  "Rebuild DB safely without race conditions."
+  (interactive)
+  (when (bound-and-true-p org-roam-db-autosync-mode)
+    (org-roam-db-autosync-mode -1))
+  (org-roam-db-clear-all)
+  (org-roam-db-sync)
+  (org-roam-db-autosync-mode 1)
+  (message "Org-roam DB rebuilt safely"))
 
+(provide 'roam)
+#+END_SRC
