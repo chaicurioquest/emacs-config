@@ -151,7 +151,7 @@ with a unified command set under =C-c i=.
              (file-name-nondirectory note-file))))
 
 ;; ──────────────────────────────────────────────────────────────
-;; C-c i p — 100% working with new Org-noter (no more listp/struct errors)
+;; C-c i p — working with new Org-noter (no more listp/struct errors)
 ;; ──────────────────────────────────────────────────────────────
 (with-eval-after-load 'org-noter-pdftools
   (defun my/org-noter--convert-location (loc)
