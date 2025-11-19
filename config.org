@@ -98,31 +98,29 @@ Skips if no changes; handles errors gracefully without deleting files."
             ((eq my-device 'tablet) (expand-file-name "org/" (getenv "HOME")))
             ((eq my-device 'phone) (expand-file-name "storage/notes" (getenv "HOME")))
             (t (getenv "HOME"))))
-(message "📁 Default directory set to: %s" default-directory)
+
+(unless (file-directory-p default-directory)
+  (make-directory default-directory t))
+    (message "Default directory: %s" default-directory)
 #+END_SRC
 
 ** Global Variables
+
 #+BEGIN_SRC emacs-lisp
 ;; Define paths early for global reuse (absolute/resolved for reliability)
-(defvar bib-path
-  (expand-file-name "bib/references.bib" (file-name-directory default-directory))
-   "Absolute path to BibTeX file")
+(defvar bib-path (expand-file-name "bib/references.bib" default-directory)
+  "Path to BibTeX file.")
+(defvar my-citar-library-paths (list (expand-file-name "src/zotero-kbase/storage" "/wspace/"))
+  "Citar library paths.")
+(defvar setupfile (expand-file-name "latex/setup-latex.org" default-directory)
+  "Org LaTeX setup file.")
+(defvar org-roam-directory (expand-file-name "roam" default-directory)
+  "Org-roam notes directory.")
+(defvar org-roam-dailies-directory (expand-file-name "daily" org-roam-directory)
+  "Org-roam dailies directory.")
 
-(defvar my-citar-library-paths
-  (list "/wspace/src/zotero-kbase/storage")
-  "List of absolute paths to Citar libraries (e.g., Zotero storage).")
-
-(defvar setupfile
-  (expand-file-name "latex/setup-latex.org" default-directory)
-  "Path to default Org LaTeX setup file.")
-
-  (defvar org-roam-directory (expand-file-name "roam" default-directory)
-  "Directory for Org-roam notes.")
-
-   (prefer-coding-system 'utf-8)
-   (setq default-buffer-file-coding-system 'utf-8)
-
-
+(prefer-coding-system 'utf-8)
+(setq default-buffer-file-coding-system 'utf-8)
 #+END_SRC
 
 ** Tag-to-ID mappings for tag-based auto-refile script
@@ -476,9 +474,11 @@ If using AUCTeX for LaTeX exports, add reftex package.
 ;; -----------------------------
 (use-package citar
   :straight t
+  :no-require t
   :commands (citar-insert-citation citar-create-note)
   :custom
-  (citar-bibliography (list bib-path))
+  (org-cite-global-bibliography (list bib-path))
+  (citar-bibliography org-cite-global-bibliography)
   (citar-library-paths my-citar-library-paths)
   (citar-notes-paths (list (expand-file-name "literature" org-roam-directory)))
   (citar-file-note-extensions '("org"))
@@ -486,8 +486,11 @@ If using AUCTeX for LaTeX exports, add reftex package.
   (org-cite-follow-processor 'citar)
   (org-cite-activate-processor 'citar)
   (citar-file-open-function 'find-file)
+  :hook
+  ((org-mode . citar-capf-setup)
+   (LaTeX-mode . citar-capf-setup))
   :config
-  (citar-capf-setup)
+  (require 'citar)  ; Load full package
   (message "✅ Citar ready."))
 
 ;; Install C-c i c in org buffers only (safe)

@@ -1,8 +1,10 @@
 #+TITLE: %s
+#+ROAM_ALIASES: %s
 #+ROAM_REFS: cite:%s
 
 * Overview
 :PROPERTIES:
+:AUTHOR: %s
 :DOI: %s
 :YEAR: %s
 :NOTER_DOCUMENT: %s
@@ -10,5 +12,4 @@
 
 * Annotations
 
-* Bib Entry
-[[cite:@%s]]
+
