@@ -33,7 +33,7 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 | Passwords                    | org-crypt                         | Encrypt Org sections                                                  | All        | None                                 |
 | Snippet management           | yankpad with yasnippet            | Org-style snippets in yankpad.org, tab-completion                     | All        | C-c y (insert), C-c Y (expand), C-c TAB |
 | Spell checking               | flyspell with aspell              | Requires aspell; M-$ for correction                                   | All        | M-$                                  |
-| PDF reading/annotating       | pdf-tools, org-noter              | pdf-tools for viewing/highlighting; org-noter for synced annotations in notes | Laptop/All | None (M-x org-noter for annotations) |
+| PDF notextn/annotating       | pdf-tools, org-noter              | pdf-tools for viewing/highlighting; org-noter for synced annotations in notes | Laptop/All | None (M-x org-noter for annotations) |
 | PDF side preview             | my/org-pdf-vertical-view          | Opens corresponding PDF in right split for quick view; configured in org/orgxtn.org | All | C-c v                                |
 | Record screencasts           | gif-screencast                    | Optional in workflows.org (commented out)                             | Laptop     | C-c g                                |
 | Zettelkasten note-taking     | org-roam                          | In org/roam.org; graph UI on laptop; dailies capture; backlinking with IDs | All   | C-c r n (capture), C-c r f (find), C-c r g (UI), C-c r d (dailies) |
@@ -533,7 +533,15 @@ If using AUCTeX for LaTeX exports, add reftex package.
 #+BEGIN_SRC emacs-lisp
 (use-package org-noter-pdftools
   :straight t
-  :after (org-noter pdf-tools))
+  :after (org-noter pdf-tools)
+  :config
+  ;; Compatibility shim: convert new struct location → old (page . top) cons
+  (defun my/org-noter-pdftools--convert-location (location)
+    "Convert new org-noter-pdftools location struct to old (page . top) format."
+    (if (consp location)
+        location                                      ; already old format
+      (cons (org-noter-pdftools--location-page location)
+            (org-noter-pdftools--location-height location)))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -733,8 +741,8 @@ If using AUCTeX for LaTeX exports, add reftex package.
 (load (expand-file-name "org/workflow.el" user-emacs-directory) nil 'nomessage)
 
 ;; note and annotation configuaration
-(my/tangle-if-needed "org/reading.org" "org/reading.el")
-(load (expand-file-name "org/reading.el" user-emacs-directory) nil 'nomessage)
+(my/tangle-if-needed "org/notextn.org" "org/notextn.el")
+(load (expand-file-name "org/notextn.el" user-emacs-directory) nil 'nomessage)
 
 ;;General LaTeX export configs (requires TeX Live, latexmk)
 (my/tangle-if-needed "org/latextn.org" "org/latextn.el")
@@ -757,7 +765,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
   (my/tangle-if-needed "org/roam.org" "org/roam.el")
   (my/tangle-if-needed "org/filetags.org" "org/filetags.el")
   (my/tangle-if-needed "org/workflow.org" "org/workflow.el")
-  (my/tangle-if-needed "org/reading.org" "org/reading.el")
+  (my/tangle-if-needed "org/notextn.org" "org/notextn.el")
   (my/tangle-if-needed "org/latextn.org" "org/latextn.el")
   ;; if dont want engineering specific org extension. comment following engxtn.el
   (my/tangle-if-needed "org/engxtn.org" "org/engxtn.el")
