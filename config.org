@@ -118,7 +118,9 @@ Skips if no changes; handles errors gracefully without deleting files."
   "Org-roam notes directory.")
 (defvar org-roam-dailies-directory (expand-file-name "daily" org-roam-directory)
   "Org-roam dailies directory.")
-
+(defvar my-calibre-library-dir "/wspace/src/calibre-ebooks"
+  "Absolute path to your main Calibre library root folder.")
+  
 (prefer-coding-system 'utf-8)
 (setq default-buffer-file-coding-system 'utf-8)
 #+END_SRC
@@ -130,12 +132,6 @@ Skips if no changes; handles errors gracefully without deleting files."
   "Tag to target ID mappings."
   :group 'sacha
   :type '(repeat (cons string string)))
-#+END_SRC
-
-** Org Roam dailiies path definition 
-#+BEGIN_SRC emacs-lisp
-(defvar org-roam-dailies-directory (expand-file-name "daily" org-roam-directory)
-  "Directory for Org-roam dailies.")
 #+END_SRC
 
 ** Customized Agenda view files on startup excluding roam, build, backup and other directory
@@ -326,6 +322,17 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :diminish yas-minor-mode)
 #+END_SRC
 
+#+BEGIN_SRC emacs-lisp
+(use-package org-download
+  :straight t
+  :after org
+  :bind ("C-c C-x C-s" . org-download-screenshot)  ;; Capture screen to Org
+  :config
+  (setq org-download-method 'attach  ;; Use org-attach dir
+        org-download-image-dir ".attach/images"  ;; Subdir for organization
+        org-download-screenshot-method "scrot -s %s")  ;; Matches your mathpix
+  (add-hook 'org-mode-hook #'org-download-enable))
+#+END_SRC
 
 ** Yankpad: Org-mode snippet library on top of Yasnippet
 #+BEGIN_SRC emacs-lisp
@@ -348,7 +355,6 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 
   ;; Optional: auto-reload in Org buffers
   (add-hook 'org-mode-hook #'yankpad-reload))
-
 #+END_SRC
 
 ** Vertico: vertical completion UI Work well with org-roam (and Emacs in general) much faster, more flexible, and user-friendly. 
@@ -542,6 +548,38 @@ If using AUCTeX for LaTeX exports, add reftex package.
         location                                      ; already old format
       (cons (org-noter-pdftools--location-page location)
             (org-noter-pdftools--location-height location)))))
+#+END_SRC
+
+** Calibre ebook integration with org
+#+BEGIN_SRC emacs-lisp
+;; ──────────────────────────────────────────────────────────────
+;; Calibre integration – only on laptop
+;; ──────────────────────────────────────────────────────────────
+(when (eq my-device 'laptop)
+  (use-package calibredb
+    :straight (:host github :repo "chenyanming/calibredb.el")
+    :defer t
+    :config
+    (setq calibredb-root-dir "/wspace/src/calibre-ebooks")
+    (setq calibredb-db-dir (expand-file-name "metadata.db" calibredb-root-dir))
+    (setq calibredb-completion-method 'consult)
+    (setq calibredb-search-limit 200)
+    (setq calibredb-order '("title" "author" "tags"))
+    (setq calibredb-virtual-library-alist '(("Engineering Books" . "tag:engineering OR tag:vlsi")
+                                            ("Reference" . "tag:reference")))
+    ;; Patch calibredb-get-cover to handle nil :book-dir gracefully
+    (defun calibredb-get-cover (candidate &optional full-path)
+      "Get cover image path of CANDIDATE.
+If FULL-PATH, return the full path. Handles nil :book-dir."
+      (let* ((id (calibredb-getattr candidate :id))
+             (path (calibredb-getattr candidate :book-dir)))
+        (when path  ; Skip if path is nil
+          (let ((cover (expand-file-name "cover.jpg" path)))
+            (if (file-exists-p cover)
+                (if full-path
+                    cover
+                  (concat "file:" cover))
+              nil)))))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -775,7 +813,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
   (message "[%s] All modular files tangled" (format-time-string "%T")))
 (global-set-key (kbd "C-c T") 'my-tangle-all)
 #+END_SRC
-
 
 * Git enabled org notes sync with repo
 Note: If you are not using git source control for org notes across devices, comment/remove following function

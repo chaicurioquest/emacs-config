@@ -111,17 +111,19 @@ These should be loaded *after* general Org settings.
 #+END_SRC
 
 
-* Mathpix OCR Integration
+* Mathpix OCR Integration 
 #+BEGIN_SRC emacs-lisp
-(use-package mathpix
-  :straight (:host github :repo "jethrokuan/mathpix.el")
-  :custom
-  (mathpix-app-id "YOUR_MATHPIX_APP_ID")
-  (mathpix-app-key "YOUR_MATHPIX_APP_KEY")
-  (mathpix-screenshot-method "scrot -s %s")
-  :bind ("C-c x" . mathpix-screenshot)
-  :config
-  (add-hook 'mathpix-after-insert-hook #'org-latex-preview))
+;; Following is deferred for future enhancement since license & API is not availble for personal use.
+;;(use-package mathpix
+;;  :straight (:host github :repo "jethrokuan/mathpix.el")
+;;  :custom
+;;  (mathpix-app-id "YOUR_MATHPIX_APP_ID")
+;;  (mathpix-app-key "YOUR_MATHPIX_APP_KEY")
+;;  (mathpix-screenshot-method "scrot -s %s")
+;;  :bind ("C-c x" . mathpix-screenshot)
+;;  :config
+;;  (add-hook 'mathpix-after-insert-hook #'org-latex-preview))
+;;  (add-hook 'mathpix-after-insert-hook (lambda () (org-noter-sync-current-note)))  ;; Sync noter after OCR
 #+END_SRC
 
 

@@ -33,7 +33,7 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 
 #+BEGIN_SRC emacs-lisp
 ;; Attachments relative to org file, in `.attach` folder
-(setq org-attach-directory ".attach")
+;;(setq org-attach-directory ".attach")
 
 ;; Smart TAB: Yasnippet (inline) → CDLaTeX (math) → Org-cycle
 (with-eval-after-load 'org

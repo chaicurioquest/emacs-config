@@ -109,6 +109,21 @@ with a unified command set under =C-c i=.
          (id (org-id-new)))
     (format template title citekey citekey author doi year noter-document id)))
 
+;; Select pdf from Org default directory or any folder
+(defun my/select-pdf-project-or-browse ()
+  "Select PDF project-wide (recursive, includes .attach) or browse any location manually."
+  (interactive)
+  (let* ((root (read-directory-name "Project root directory: " default-directory))
+         (find-cmd (format "find %s \\( -type f -o -type l \\) -name '*.pdf'" root))
+         (pdf-list (split-string (shell-command-to-string find-cmd) "\n" t))
+         (choice (completing-read "Select project PDF (or type * for browser): "
+                                  (append pdf-list '("* Browse anywhere...")) nil t)))
+    (if (string= choice "* Browse anywhere...")
+        (read-file-name "Select any file: " nil nil t)
+      choice)))
+
+
+
 ;; ──────────────────────────────────────────────────────────────
 ;; Unified opener
 ;; ──────────────────────────────────────────────────────────────
@@ -120,19 +135,30 @@ with a unified command set under =C-c i=.
          (key (if is-bib
                   (substring (or key-or-pdf (concat "@" (citar-select-ref))) 1)
                 nil))
-         (pdf (if is-bib
-                  (my/citar-extract-first-path (citar-get-files key))
-                (read-file-name "Select PDF: ")))
+         ;; Use robust selector for generic PDFs
+         (pdf-raw (if is-bib
+                      (my/citar-extract-first-path (citar-get-files key))
+                    (my/select-pdf-project-or-browse)))
+         ;; Defensive conversion: buffer or string to path
+         (pdf (cond
+               ((bufferp pdf-raw) (buffer-file-name pdf-raw))
+               ((stringp pdf-raw) pdf-raw)
+               (t (user-error "PDF selection did not yield a valid path or buffer."))))
          (entry (when is-bib (ignore-errors (citar-get-entry key))))
+         ;; Defensive: only use file-name-base if pdf is a string
          (title (or (when entry (cdr (assoc "title" entry)))
-                    (when pdf (file-name-base pdf))
+                    (and (stringp pdf) (file-name-base pdf))
                     "Overview"))
-         (notes-dir (expand-file-name "literature" org-roam-directory))
-         (note-file (expand-file-name
-                     (if is-bib (concat key ".org")
-                       (concat (downcase (replace-regexp-in-string "[^a-z0-9-]" "-" title)) ".org"))
-                     notes-dir)))
-    (make-directory notes-dir t)
+         (suggested-name (downcase (replace-regexp-in-string "[^a-z0-9-]" "-" title)))
+         (note-file (if is-bib
+                        (expand-file-name (concat key ".org")
+                                          (expand-file-name "literature" org-roam-directory))
+                      ;; Prompt to save generic note in default-directory
+                      (let ((default-dir default-directory))
+                        (make-directory default-dir t)
+                        (read-file-name "Save note as: " default-dir nil nil (concat suggested-name ".org"))))))
+    (when (file-directory-p (file-name-directory note-file))
+      (make-directory (file-name-directory note-file) t))
     (unless (file-exists-p note-file)
       (with-temp-file note-file
         (if is-bib
@@ -157,19 +183,17 @@ with a unified command set under =C-c i=.
   (defun my/org-noter--convert-location (loc)
     "Convert any Org-noter location (old list or new struct) to (page . top) cons."
     (cond
-     ((consp loc) loc)  ; old format
+     ((consp loc) loc) ; old format
      ((fboundp 'org-noter-pdftools--location-page)
       (cons (org-noter-pdftools--location-page loc)
             (org-noter-pdftools--location-height loc)))
      (t (cons (or (plist-get loc :page) 1)
               (or (plist-get loc :height) 0.0)))))
-
   (advice-add 'org-noter--pretty-print-location-for-title
               :around
               (lambda (orig loc &rest args)
                 (let ((converted-loc (my/org-noter--convert-location loc)))
                   (apply orig converted-loc args))))
-
   (defun my/pdf-insert-selection-to-note ()
     "Insert selected text as precise Org-noter note (C-c i p)."
     (interactive)
@@ -192,10 +216,39 @@ with a unified command set under =C-c i=.
         (insert "#+BEGIN_QUOTE\n" text "\n#+END_QUOTE\n")
         (save-buffer)
         (message "Inserted note on page %d" page))))
-
   (with-eval-after-load 'pdf-tools
     (define-key pdf-view-mode-map (kbd "C-c i p") #'my/pdf-insert-selection-to-note)))
 
+;; ──────────────────────────────────────────────────────────────
+;; Calibre books – C-c i b (laptop only)
+;; ──────────────────────────────────────────────────────────────
+(when (eq my-device 'laptop)
+  (defun my/open-calibre-book-and-note ()
+    "Open Calibre book PDF + standalone Org note in ~/org/books/."
+    (interactive)
+    (require 'calibredb)
+    (let* ((candidate (calibredb-candidate))
+           (id (calibredb-getattr candidate :id))
+           (title (calibredb-getattr id :title))
+           (author (or (calibredb-getattr id :author) "Unknown"))
+           (pdf-path (calibredb-get-file-path id t))
+           (books-notes-dir (expand-file-name "books" default-directory))
+           (slug (downcase (replace-regexp-in-string "[^a-z0-9 ]" "" (format "%s - %s" author title))))
+           (slug (replace-regexp-in-string " " "-" slug))
+           (note-file (expand-file-name (concat slug ".org") books-notes-dir)))
+      (unless pdf-path (user-error "No PDF for \"%s\"" title))
+      (make-directory books-notes-dir t)
+      (unless (file-exists-p note-file)
+        (with-temp-file note-file
+          (insert (format "#+TITLE: %s – %s\n#+AUTHOR: %s\n#+CREATED: %s\n#+ROAM_TAGS: book\n\n* Overview\n:PROPERTIES:\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n\n* Annotations\n\n"
+                          title author author (format-time-string "%Y-%m-%d") pdf-path (org-id-new)))))
+      (when (fboundp 'my/bibnote-normalize-file)
+        (my/bibnote-normalize-file note-file pdf-path title))
+      (find-file pdf-path)
+      (split-window-right)
+      (find-file note-file)
+      (message "Opened: %s" title))))
+      
 ;; ──────────────────────────────────────────────────────────────
 ;; Keymap
 ;; ──────────────────────────────────────────────────────────────
@@ -205,8 +258,8 @@ with a unified command set under =C-c i=.
 (define-key my/citar-map (kbd "g") (lambda () (interactive) (my/open-pdf-and-note 'generic)))
 (define-key my/citar-map (kbd "n") #'org-noter)
 (define-key my/citar-map (kbd "p") #'my/pdf-insert-selection-to-note)
-(define-key my/citar-map (kbd "A") #'org-noter-pdftools-insert-annotations)
-
+(define-key my/citar-map (kbd "A") #'org-noter-pdftools-insert-annotations
+(define-key my/citar-map (kbd "b") #'my/open-calibre-book-and-note))
 ;; ──────────────────────────────────────────────────────────────
 ;; Org-roam capture template
 ;; ──────────────────────────────────────────────────────────────
@@ -214,6 +267,70 @@ with a unified command set under =C-c i=.
              '("b" "bibliography note" plain #'my/load-roam-bib-template
                :target (file+head "literature/${citar-citekey}.org" "")
                :unnarrowed t :immediate-finish t))
+;; ──────────────────────────────────────────────────────────────
+;; Pix2Text Text only OCR
+;; ──────────────────────────────────────────────────────────────
+;;(defun my-pix2text-ocr (image-file)
+;; "Run Pix2Text on IMAGE-FILE, insert Markdown text to Org buffer."
+;; (interactive "fImage file: ")
+;; (let ((cmd (format "p2t recognize --image %s --models TEXT --output-type markdown" image-file))
+;; (output (shell-command-to-string cmd)))
+;; (insert (format "** OCR'd Text from %s\n#+BEGIN_QUOTE\n%s\n#+END_QUOTE\n" (file-name-base image-file) output))
+;; (message "OCR inserted from %s" image-file)))
+;;(global-set-key (kbd "C-c o t" . my-pix2text-ocr))
+;; ──────────────────────────────────────────────────────────────
+;; Automate Image Capture for Annotations – Common Logic for All Types
+;; ──────────────────────────────────────────────────────────────
+(defun my/get-image-dir-for-note (note-file)
+  "Return an images/ directory next to any org note file, regardless of hierarchy."
+  (let ((dir (file-name-directory note-file)))
+    (expand-file-name "images" dir)))
+
+(defun my/save-pdf-region-to-datestamp (&optional whole-page)
+  "Save PDF region (or WHOLE-PAGE) as PNG with datestamp, insert link to Org note, bullet-proof images/ placement."
+  (interactive "P")
+  (when (derived-mode-p 'pdf-view-mode)
+    (require 'org-noter)
+    (let* ((pdf-file (buffer-file-name))
+           ;; Get the correct org note buffer via org-noter window
+           (note-win (org-noter--get-notes-window))
+           (note-buf (when note-win (window-buffer note-win)))
+           (note-file (when note-buf (buffer-file-name note-buf)))
+           (image-dir (my/get-image-dir-for-note note-file))
+           (timestamp (format-time-string "%Y-%m-%d-%H%M"))
+           (filename (expand-file-name (format "%s.png" timestamp) image-dir))
+           edges)
+      (unless note-file
+        (user-error "No associated Org note window found. Start Org-Noter with C-c i n."))
+      (make-directory image-dir t)
+      (unless whole-page
+        (setq edges
+              (condition-case nil
+                  (pdf-view-active-region)
+                (error nil))))
+      (if whole-page
+          ;; Whole page export via pdftoppm, output to the correct bullet-proof image dir
+          (shell-command
+           (format "pdftoppm -singlefile -png -r 300 -f %d -l %d '%s' '%s'"
+                   (pdf-view-current-page) (pdf-view-current-page)
+                   pdf-file (file-name-sans-extension filename)))
+        ;; Export region image if valid edges exist
+        (if (and edges (consp edges) (cl-every #'numberp edges))
+            (pdf-view-extract-region-image filename)
+          (user-error "No valid region selected. Drag mouse to select or use C-c i S for whole page.")))
+      (with-current-buffer note-buf
+        (goto-char (point-max))
+        (insert (format "[[file:%s]]\n"
+                        (file-relative-name filename (file-name-directory note-file))))
+        (save-buffer))
+      (message "Saved → %s" (file-relative-name filename (file-name-directory note-file)))
+      (switch-to-buffer (current-buffer)))))
+
+
+;; Setup keybindings after pdf-view loads
+(with-eval-after-load 'pdf-view
+  (define-key pdf-view-mode-map (kbd "C-c i s") 'my/save-pdf-region-to-datestamp)  ; Save region
+  (define-key pdf-view-mode-map (kbd "C-c i S") (lambda () (interactive) (my/save-pdf-region-to-datestamp t))))  ; Save whole page
 
 (provide 'notextn)
 ;;; notextn.el ends here
