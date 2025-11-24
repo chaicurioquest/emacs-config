@@ -268,16 +268,22 @@ with a unified command set under =C-c i=.
                :target (file+head "literature/${citar-citekey}.org" "")
                :unnarrowed t :immediate-finish t))
 ;; ──────────────────────────────────────────────────────────────
-;; Pix2Text Text only OCR
+;; Paddle OCR for resonable handwritten image OCR to text: future enhancement. now it is commented.
 ;; ──────────────────────────────────────────────────────────────
-;;(defun my-pix2text-ocr (image-file)
-;; "Run Pix2Text on IMAGE-FILE, insert Markdown text to Org buffer."
-;; (interactive "fImage file: ")
-;; (let ((cmd (format "p2t recognize --image %s --models TEXT --output-type markdown" image-file))
-;; (output (shell-command-to-string cmd)))
-;; (insert (format "** OCR'd Text from %s\n#+BEGIN_QUOTE\n%s\n#+END_QUOTE\n" (file-name-base image-file) output))
-;; (message "OCR inserted from %s" image-file)))
-;;(global-set-key (kbd "C-c o t" . my-pix2text-ocr))
+;;(defun my-paddleocr-ocr (image-file)
+;;  "Run PaddleOCR on IMAGE-FILE and insert recognized text into current Org buffer.
+;;Uses PaddleOCR CLI (paddleocr ocr -i <file> --lang en) and inserts result in a quote block."
+;;  (interactive "fImage file: ")
+;;  (let* ((cmd (format "paddleocr ocr -i '%s' --lang en 2>/dev/null | grep -A 2 'rec_texts'" image-file))
+;;         (output (shell-command-to-string cmd)))
+;;    (if (string-empty-p output)
+;;        (message "No text recognized or PaddleOCR returned no output.")
+;;      (insert (format "** OCR'd Text from %s\n#+BEGIN_QUOTE\n%s\n#+END_QUOTE\n"
+;;                      (file-name-base image-file)
+;;                      (string-trim output)))
+;;      (message "Inserted PaddleOCR text from %s" image-file))))
+;;(global-set-key (kbd "C-c o t") #'my-paddleocr-ocr)
+
 ;; ──────────────────────────────────────────────────────────────
 ;; Automate Image Capture for Annotations – Common Logic for All Types
 ;; ──────────────────────────────────────────────────────────────
