@@ -1,4 +1,3 @@
-```markdown
 # emacs-config
 
 My Emacs Configurations for Laptop and Android Devices
@@ -6,7 +5,6 @@ My Emacs Configurations for Laptop and Android Devices
 ## Overview
 
 This repository contains a modular, portable Emacs configuration optimized for:
-
 - **Multi-device support**: Laptop, Termux (Android), and tablet via device.el.
 - **Fast startup**: Lazy loading, optimized hooks, and straight.el for packages.
 - **Literate programming**: Single `config.org` with tangled .el files for readability.
@@ -76,7 +74,7 @@ For Citar/Org-roam-bibtex:
 
 ### Step 5: Verify Setup
 
-- Check `*Messages*` for "✅ Citar ready." and similar confirmations.
+- Check `*Messages*` for "Device: laptop", "Citar ready", etc.
 - Test: `C-c r n` (new note), `C-c i c` (insert citation), `C-c v` (PDF preview).
 
 ---
@@ -144,4 +142,3 @@ For Citar/Org-roam-bibtex:
 
 Happy hacking! Open issues on GitHub for feedback.  
 License: MIT
-```
