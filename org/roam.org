@@ -63,21 +63,12 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
   :init
   (setq org-roam-completion-everywhere t
         org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
-  :bind
-  (("C-c r f" . org-roam-node-find)
-   ("C-c r i" . org-roam-node-insert)
-   ("C-c r n" . org-roam-capture)
-   ("C-c r d" . org-roam-dailies-capture-today)
-   ("C-c r T" . org-roam-dailies-goto-today)
-   ("C-c r P" . org-roam-dailies-goto-previous-note)
-   ("C-c r N" . org-roam-dailies-goto-next-note)
-   ("C-c r D" . org-roam-dailies-goto-date)
-   ("C-c r t" . my-org-roam-tag-add)
-   ("C-c r r" . my-org-roam-tag-remove)
-   ("C-c r s" . my/org-roam-safe-rebuild))
+  ;; NOTE: all global keybindings for org-roam are in keymaps.el (C-c r prefix).
   :config
   ;; Ensure directories exist
   (dolist (d (list org-roam-directory org-roam-dailies-directory))
+  ;; Set DB location local to notes dir for sync
+  (setq org-roam-db-location (expand-file-name "org-roam.db" org-roam-directory))
     (make-directory d t))
   (add-hook 'org-roam-mode-hook
             (lambda ()
@@ -115,14 +106,12 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
         citar-org-roam-note-title-template "${author editor} (${year issued date}) - ${title}"))
 #+END_SRC
 
-
 * ACTIVE Org roam functions
 ** Org-roam UI (Graph)
 #+BEGIN_SRC emacs-lisp
 (use-package org-roam-ui
   :if (eq my-device 'laptop)
   :straight (:host github :repo "org-roam/org-roam-ui" :branch "main")
-  :bind (("C-c r g" . org-roam-ui-open))
   :config
   (setq org-roam-ui-sync-theme t
         org-roam-ui-follow t
@@ -158,7 +147,7 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 
 * Ensure Org-Roam DB is ready immediately (prevents citar-org-roam errors)
 #+BEGIN_SRC emacs-lisp
-;; Safe DB rebuild command
+;; Safe DB rebuild
 (defun my/org-roam-safe-rebuild ()
   "Rebuild DB safely without race conditions."
   (interactive)

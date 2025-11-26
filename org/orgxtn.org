@@ -151,10 +151,16 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
           (unless (looking-back "\n" nil) (insert "\n"))
           (insert (format "#+LAST_MODIFIED: [%s]\n" (format-time-string "%Y-%m-%d %a %H:%M"))))))))
 
+;; Hook timestamp update separately (cleaner, no bundling with other features)
 (add-hook 'org-mode-hook
           (lambda ()
             ;; buffer-local add (nil t => append, make buffer-local)
             (add-hook 'before-save-hook #'my/org-update-last-modified nil t)))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+;; Enable CDLaTeX separately for math snippets (enhances Smart TAB; toggle if not needed)
+(add-hook 'org-mode-hook #'org-cdlatex-mode)
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp

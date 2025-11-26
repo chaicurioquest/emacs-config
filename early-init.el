@@ -8,6 +8,12 @@
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== EARLY-INIT START ==="))
 
+;; Increase GC threshold early for faster startup
+(setq gc-cons-threshold (* 100 1024 1024))
+
+;; Disable package.el early (use straight.el)
+(setq package-enable-at-startup nil)
+
 ;; Disable GUI elements early to prevent flickering in graphical Emacs.
 (when (display-graphic-p)
   (menu-bar-mode -1)

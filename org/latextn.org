@@ -11,7 +11,7 @@
 ;; ------------------------------
 
 (require 'oc)
-(require 'oc-biblatex)
+(use-package oc-biblatex :after oc)
 
 ;; Prefer LuaLaTeX for export & Babel execution
 ;;(defvar my/org-latex-engine "lualatex"

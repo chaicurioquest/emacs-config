@@ -1,7 +1,6 @@
 #+SETUPFILE: ${setupfile}
 # Enable glossaries only when needed
 #+TITLE: %^{Title}
-#+AUTHOR: Ram
 #+DATE: \today
 #+FILETAGS: ::
 # OPTIONS: toc:t num:nil

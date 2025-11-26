@@ -1,0 +1,95 @@
+#+TITLE: Central Keymaps
+#+TODO: ACTIVE | CANCELLED
+#+STARTUP: indent
+#+PROPERTY: header-args:emacs-lisp :tangle yes
+#+DATE: 2025-10-20
+#+CREATED: %U
+#+LAST_MODIFIED: [%<%Y-%m-%d %a %H:%M>]
+
+* Keymaps and global bindings
+This file centralises prefix maps and global keybindings.
+It assumes the corresponding commands (functions) are defined in other modules
+(e.g. config.el, orgxtn.el, notextn.el, roam.el, etc.).
+
+#+BEGIN_SRC emacs-lisp
+;;; keymaps.el --- Central keymaps and global bindings  -*- lexical-binding: t; -*-
+
+;; --- Prefix maps -----------------------------------------------------------
+(defvar my/citar-map (make-sparse-keymap) "C-c i: Info/Citations/PDF notes/Inserts prefix.")
+(global-set-key (kbd "C-c i") 'my/citar-map)
+
+(defvar my/roam-map (make-sparse-keymap) "C-c r: Org-roam prefix.")
+(global-set-key (kbd "C-c r") 'my/roam-map)
+
+(defvar git-org-map (make-sparse-keymap) "C-c g: Git for Org notes.")
+(global-set-key (kbd "C-c g") git-org-map)
+
+;; --- Global single bindings (centralized) ----------------------------------
+(global-set-key (kbd "C-c t") #'my-tangle-config-org)  ; Tangle main config
+(global-set-key (kbd "C-c T") #'my-tangle-all)        ; Tangle all modules
+(global-set-key (kbd "C-c c") #'org-capture)           ; Org capture
+(global-set-key (kbd "C-c a") #'org-agenda)            ; Org agenda
+(global-set-key (kbd "C-c v") #'my/org-pdf-vertical-view)  ; PDF preview
+(global-set-key (kbd "C-c f t") #'my-org-set-filetags) ; Filetags
+(global-set-key (kbd "C-x g") #'magit-status)          ; Magit
+(global-set-key (kbd "C-c m") #'mu4e)                  ; Mu4e email
+(global-set-key (kbd "C-z") #'undo)                    ; Undo
+
+;; --- Timestamp subkeys under C-c i (avoids conflict; t=time, d=date, o=org) ---
+(define-key my/citar-map (kbd "t") #'my-insert-timestamp)
+(define-key my/citar-map (kbd "d") #'my-insert-datestamp)
+(define-key my/citar-map (kbd "o") #'my-insert-org-timestamp)
+
+;; Git Org bindings
+(define-key git-org-map (kbd "p") #'magit-pull-org-repo)
+(define-key git-org-map (kbd "u") #'magit-push-org-repo)
+
+;; Mode-specific (deferred)
+(with-eval-after-load 'org
+  (define-key org-mode-map (kbd "TAB") #'my/org-smart-tab)
+  (define-key org-mode-map (kbd "C-c i i") #'org-toggle-item))
+
+(with-eval-after-load 'mu4e-view
+  (define-key mu4e-view-mode-map (kbd "C-c C-c") #'mu4e-org-store-and-capture))
+
+(with-eval-after-load 'pdf-view
+  (define-key pdf-view-mode-map [drag-mouse-1] 'ignore)
+  (define-key pdf-view-mode-map (kbd "<down-mouse-1>") 'pdf-view-mouse-set-region)
+  (define-key pdf-view-mode-map (kbd "<S-down-mouse-1>") 'pdf-view-mouse-set-region-rectangle)
+  (define-key pdf-view-mode-map (kbd "C-c i s") 'my/save-pdf-region-to-datestamp)
+  (define-key pdf-view-mode-map (kbd "C-c i S") (lambda () (interactive) (my/save-pdf-region-to-datestamp t))))
+
+(with-eval-after-load 'notextn
+  (define-key my/citar-map (kbd "a") #'my/open-pdf-and-note)
+  (define-key my/citar-map (kbd "g") (lambda () (interactive) (my/open-pdf-and-note 'generic)))
+  (define-key my/citar-map (kbd "n") #'org-noter)
+  (define-key my/citar-map (kbd "p") #'my/pdf-insert-selection-to-note)
+  (define-key my/citar-map (kbd "A") #'org-noter-pdftools-insert-annotations)
+  (when (eq my-device 'laptop)
+    (define-key my/citar-map (kbd "b") #'my/open-calibre-book-and-note)))
+
+(with-eval-after-load 'roam
+  (define-key my/roam-map (kbd "f") #'org-roam-node-find)
+  (define-key my/roam-map (kbd "i") #'org-roam-node-insert)
+  (define-key my/roam-map (kbd "n") #'org-roam-capture)
+  (define-key my/roam-map (kbd "d") #'org-roam-dailies-capture-today)
+  (define-key my/roam-map (kbd "T") #'org-roam-dailies-goto-today)
+  (define-key my/roam-map (kbd "P") #'org-roam-dailies-goto-previous-note)
+  (define-key my/roam-map (kbd "N") #'org-roam-dailies-goto-next-note)
+  (define-key my/roam-map (kbd "D") #'org-roam-dailies-goto-date)
+  (define-key my/roam-map (kbd "t") #'my-org-roam-tag-add)
+  (define-key my/roam-map (kbd "r") #'my-org-roam-tag-remove)
+  (define-key my/roam-map (kbd "s") #'my/org-roam-safe-rebuild)
+  (when (eq my-device 'laptop)
+    (define-key my/roam-map (kbd "g") #'org-roam-ui-open)))
+
+(with-eval-after-load 'ace-window
+  (global-set-key (kbd "M-o") #'ace-window))
+
+;; Citar binding under C-c i prefix (deferred, consistent with citations)
+(with-eval-after-load 'citar
+  (define-key my/citar-map (kbd "c") #'citar-insert-citation))  ; C-c i c for insert citation
+
+(provide 'keymaps)
+;;; keymaps.el ends here
+#+END_SRC

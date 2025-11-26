@@ -1,5 +1,4 @@
 #+TITLE: Engineering Extensions for Org Mode
-#+AUTHOR: Ram
 #+STARTUP: indent
 #+PROPERTY: header-args:emacs-lisp :tangle yes
 #+DATE: 2025-10-20
