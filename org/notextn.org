@@ -264,35 +264,46 @@ with a unified command set under =C-c i=.
            (note-buf (when note-win (window-buffer note-win)))
            (note-file (when note-buf (buffer-file-name note-buf)))
            (image-dir (my/get-image-dir-for-note note-file))
-           (timestamp (format-time-string "%Y-%m-%d-%H%M"))
-           (filename (expand-file-name (format "%s.png" timestamp) image-dir))
-           raw-edges quads)
+           (timestamp (format-time-string "%Y-%m-%d-%H%M%S"))  ; Added %S for seconds
+           (filename (expand-file-name (format "%s.jpg" timestamp) image-dir))  ; Changed to JPG for smaller size
+           (resolution 150)  ; Reduced DPI for smaller file size (adjust as needed, e.g., 100-200)
+           raw-edges quads page-size pixel-width pixel-height crop-x crop-y crop-w crop-h)
       (unless note-file
         (user-error "No associated Org note window found. Start Org-Noter with C-c i n."))
       (make-directory image-dir t)
-      (unless whole-page
-        (setq raw-edges (condition-case nil
-                          (pdf-view-active-region)
-                        (error nil)))
-        (message "Debug: Raw edges = %S | Active? %s" raw-edges (pdf-view-active-region-p))
-        ;; Handle both old format (just quads) and new fork format (page . quads)
-        (setq quads (if (numberp (car-safe raw-edges))
-                        (cdr raw-edges)   ; new fork: drop page number
-                      raw-edges)))        ; old format
       (if whole-page
           (shell-command
-           (format "pdftoppm -singlefile -png -r 300 -f %d -l %d '%s' '%s'"
-                   (pdf-view-current-page) (pdf-view-current-page)
-                   pdf-file (file-name-sans-extension filename)))
+           (format "pdftoppm -jpeg -r %d -f %d -l %d '%s' > '%s'"
+                   resolution (pdf-view-current-page) (pdf-view-current-page)
+                   pdf-file filename))  ; Changed to -jpeg
+        (setq raw-edges (condition-case nil
+                            (pdf-view-active-region)
+                          (error nil)))
+        (message "Debug: Raw edges = %S | Active? %s" raw-edges (pdf-view-active-region-p))
+        (setq quads (if (numberp (car-safe raw-edges))
+                        (cdr raw-edges)   ; new fork: drop page number
+                      raw-edges))
         (if (and quads
                  (listp quads)
-                 (cl-every (lambda (quad)
-                             (and (listp quad)
-                                  (= (length quad) 4)
-                                  (cl-every #'numberp quad)))
-                           quads))
-            (pdf-view-extract-region-image quads filename)  ; quads first, then filename
-          (user-error "No valid region selected. Drag mouse to select or use C-c i S for whole page.")))
+                 (= (length quads) 1)  ; Assume single quad for simplicity; extend if needed
+                 (let ((quad (car quads)))
+                   (and (listp quad)
+                        (= (length quad) 4)
+                        (cl-every #'numberp quad))))
+            (let ((quad (car quads)))
+              (setq page-size (pdf-info-pagesize (pdf-view-current-page))
+                    pixel-width (* (car page-size) (/ resolution 72.0))
+                    pixel-height (* (cdr page-size) (/ resolution 72.0))
+                    crop-x (* (nth 0 quad) pixel-width)
+                    crop-y (* (nth 1 quad) pixel-height)  ; from top, nth 1 is top
+                    crop-w (* (- (nth 2 quad) (nth 0 quad)) pixel-width)
+                    crop-h (* (- (nth 3 quad) (nth 1 quad)) pixel-height))
+              (shell-command
+               (format "pdftoppm -jpeg -r %d -f %d -l %d -x %.0f -y %.0f -W %.0f -H %.0f '%s' > '%s'"
+                       resolution (pdf-view-current-page) (pdf-view-current-page)
+                       crop-x crop-y crop-w crop-h
+                       pdf-file filename)))  ; Changed to -jpeg
+          (user-error "No valid single rectangular region selected. Drag mouse to select or use C-c i S for whole page.")))
       (with-current-buffer note-buf
         (goto-char (point-max))
         (insert (format "[[file:%s]]\n"
@@ -300,7 +311,6 @@ with a unified command set under =C-c i=.
         (save-buffer))
       (message "Saved → %s" (file-relative-name filename (file-name-directory note-file)))
       (switch-to-buffer (current-buffer)))))
-
 
 ;; Mode-local bindings for pdf-view (these are safe — not global prefixes)
 (with-eval-after-load 'pdf-view
