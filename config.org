@@ -203,7 +203,7 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 | org            | Core Org-mode (built-in, essential)                                | Org-mode keys                | Built-in        |
 | org-roam       | Zettelkasten note-taking (graph UI on laptop only)                 | C-c r …                      | Startup         |
 | citar          | Bibliography interface + Zotero integration (all devices)          | C-c i c/n/N/o/O              | On demand       |
-| pdf-tools      | In-buffer PDF viewing & highlighting (laptop preferred)           | —                            | On demand       |
+| pdf-tools      | In-buffer PDF viewing & highlighting (laptop preferred)            | —                            | On demand       |
 | org-noter      | Synced PDF annotations in Org (laptop preferred)                   | M-x org-noter                | On demand       |
 | yasnippet      | Snippet engine (powers yankpad, all devices)                       | TAB, C-c s                   | On demand       |
 | yankpad        | Org-style snippet library (all devices)                            | C-c y / C-c Y                | On demand       |
