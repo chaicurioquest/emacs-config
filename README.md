@@ -1,14 +1,19 @@
+```markdown
 # emacs-config
-My Emacs Configurations on Laptop and Android Devices
 
-# Emacs Configuration Setup
+My Emacs Configurations for Laptop and Android Devices
 
-This repository contains a modular and portable Emacs configuration designed for:
+## Overview
 
-* Multi-device support (laptop, Termux, tablet)
-* Fast startup with optimized hooks and lazy loading
-* Literate config via `config.org`
-* Declarative package management with `straight.el` and `use-package`
+This repository contains a modular, portable Emacs configuration optimized for:
+
+- **Multi-device support**: Laptop, Termux (Android), and tablet via device.el.
+- **Fast startup**: Lazy loading, optimized hooks, and straight.el for packages.
+- **Literate programming**: Single `config.org` with tangled .el files for readability.
+- **Reliable & reproducible**: Declarative packages with use-package; no external dependencies beyond Emacs 30.
+- **Synced workflow**: GitHub + Syncthing for cross-device consistency.
+
+Tested on Emacs 30+ as of November 26, 2025.
 
 ---
 
@@ -16,13 +21,13 @@ This repository contains a modular and portable Emacs configuration designed for
 
 ### Prerequisites
 
-- **Emacs Version**: Emacs 30 or later (tested on 30).
-- **Dependencies**: 
-  - Git for cloning the repo (`sudo apt install git` on Ubuntu).
-  - Aspell for spell-checking (`sudo apt install aspell`).
-  - Zotero with Better BibTeX add-on for bibliography integration (optional, for Citar/Org-roam-bibtex).
-  - For general LaTeX/PDF export: TeX Live (`sudo apt install texlive-full`) and latexmk (`sudo apt install latexmk`).
-  - No Internet for Packages: `straight.el` bootstraps packages, requiring an initial internet connection. Subsequent launches use local copies.
+- **Emacs Version**: 30 or later (tested on 30.0.50+).
+- **Dependencies**:
+  - Git (`sudo apt install git` on Ubuntu).
+  - Hunspell for spell-checking (`sudo apt install hunspell`).
+  - Zotero + Better BibTeX add-on for bibliography (optional, for Citar/Org-roam integration).
+  - TeX Live + latexmk for LaTeX/PDF export (`sudo apt install texlive-full latexmk`).
+  - Initial internet for straight.el bootstrap (subsequent runs use local copies).
 
 ### Step 1: Clone the Repository
 
@@ -30,202 +35,78 @@ This repository contains a modular and portable Emacs configuration designed for
 git clone https://github.com/chaicurioquest/emacs-config.git ~/.emacs.d
 ```
 
-- **Why ~/.emacs.d?**: This is the default Emacs configuration directory. The config is self-contained.
+This places the config in Emacs' default directory for seamless integration.
 
 ### Step 2: Customize device.el
 
-The config uses `device.el` to detect device type (laptop, Termux, tablet) and adjust paths.
+Detects device type for paths/settings. Edit `~/.emacs.d/device.el`:
 
-- Edit `~/.emacs.d/device.el`:
-  ```elisp
-  (defvar my-device-configs
-    (let ((table (make-hash-table :test 'equal)))
-      (puthash "ram" 'laptop table)  ;; Replace "ram" with your laptop's (system-name)
-      (puthash "termux" 'termux table)  ;; For Termux on Android
-      (puthash "tablet-hostname" 'tablet table)  ;; Replace with your tablet's (system-name)
-      table)
-    "Map system names to symbolic device types.")
+```elisp
+(defvar my-device-configs
+  (let ((table (make-hash-table :test 'equal)))
+    (puthash "your-laptop-hostname" 'laptop table)  ; Replace with (system-name)
+    (puthash "termux" 'termux table)                ; For Android Termux
+    (puthash "your-tablet-hostname" 'tablet table)  ; Replace with tablet's (system-name)
+    table)
+  "Map system names to device types.")
 
-  (defvar my-device
-    (or (gethash system-name my-device-configs)
-        (if (string-match "termux" system-configuration) 'termux 'generic))
-    "Current device type.")
-  (provide 'device)
-  ```
+(defvar my-device
+  (or (gethash system-name my-device-configs)
+      (if (string-match "termux" system-configuration) 'termux 'laptop))
+  "Current device type.")
+(provide 'device)
+```
 
-- **Get system-name**: Run `M-: system-name` in Emacs.
-- **Save and Restart**: Restart Emacs to apply changes.
+- Get hostname: `M-: system-name`.
+- Save and restart Emacs.
 
 ### Step 3: Set Up Zotero Integration (Optional)
-For bibliography and citations (Citar, Org-roam-bibtex):
-- Install Zotero and Better BibTeX add-on.
-- Export library as Better BibLaTeX to `~/wspace/org/notes/references.bib` (adjust for other devices).
+
+For Citar/Org-roam-bibtex:
+- Install Zotero + Better BibTeX.
+- Export library as Better BibLaTeX to `/wspace/org/bib/references.bib` (adjust path for devices).
 - Enable automatic export in Zotero: Preferences > Better BibTeX > Automatic Export ("On Change").
-- PDFs: `~/wspace/src/zotero-kbase/storage` (update in `config.org` if needed).
+- PDFs: Store in `/wspace/src/zotero-kbase/storage` (update in `config.org` if needed).
 
 ### Step 4: Install Packages and Tangle Config
-- Start Emacs—`straight.el` auto-installs packages (initial run may take time).
-- Manually tangle: Open `config.org` (`C-x C-f ~/.emacs.d/config.org`), press `C-c t` (or `M-x my-tangle-config-org`).
 
-### Step 5: Customize Templates and Setup Files
-- **Templates**: In `~/.emacs.d/template/` (e.g., `roam-default.org`, `generic-note.org`). Edit to add headers/metadata.
-- **Setup Files**: In `~/wspace/org/notes/latex/` (e.g., `setup-latex.org`, `acronyms.org`). Update `setup-latex.org`:
-  ```org
-  #+LATEX_HEADER: \pdfminorversion=7
-  #+LATEX_CLASS_OPTIONS: [a4paper,12pt,fleqn]
-  #+LATEX_HEADER: \usepackage{amsmath}
-  #+LATEX_HEADER: \usepackage{graphicx}
-  #+LATEX_HEADER: \usepackage{hyperref}
-  #+LATEX_HEADER: \usepackage[acronym]{glossaries}
-  #+LATEX_HEADER: \hypersetup{colorlinks=true, linkcolor=blue}
-  #+LATEX_HEADER: \makeglossaries
-  #+LATEX_HEADER: \usepackage{booktabs}
-  #+LATEX_HEADER: \usepackage{siunitx}
-  #+OPTIONS: toc:2 num:t
-  #+LATEX: \printglossaries
-  #+INCLUDE: "acronyms.org"
-  ```
-- **Acronyms**: Edit `acronyms.org` with terms (e.g., BJT, JFET).
+- Start Emacs — straight.el bootstraps packages (initial run ~1-2 minutes).
+- Open `~/.emacs.d/config.org` (`C-x C-f`).
+- Tangle: `C-c t` (or `M-x my-tangle-config-org`) for config.org only, or `C-c T` for all modular files.
 
-### Step 6: Enable Debug Logs (Optional)
-- Set environment variable: `export MY_DEBUG_DEVICE=1` (add to `.bashrc`).
-- View logs in `*Messages*` buffer.
+### Step 5: Verify Setup
 
-### Step 7: Optional LaTeX Export Support
-For users needing LaTeX/PDF export:
-- Tangle/load `org/latextn.org` to `org/latextn.el` (enabled by default in `config.org`).
-- Dependencies:
-  - TeX Live (`sudo apt install texlive-full`).
-  - latexmk (`sudo apt install latexmk`).
-- Usage: Enables LaTeX export (`C-c C-e l p`) with latexmk, bibliography support, and device-aware paths.
-
-** Following is concise guide how to use latex export
-* 📘 Org-LaTeX Export Quick Guide
-:PROPERTIES:
-:CREATED: [%<%Y-%m-%d %a %H:%M>]
-:END:
-
-** ⚙️ Switch Engine (inside Emacs)
-Run one of these in `M-x`:
-#+BEGIN_SRC emacs-lisp
-(my/org-latex-use-lualatex)   ;; switch to LuaLaTeX (recommended)
-(my/org-latex-use-pdflatex)   ;; switch to pdfLaTeX temporarily
-#+END_SRC
-
-Re-export after switching: `C-c C-e l o`
-
-** 📄 Export to PDF
-- `C-c C-e l o` → Export to **LaTeX → PDF → open**
-- `C-c C-e l p` → Export to **LaTeX → PDF (no open)**
-- `C-c C-e l L` → Export to **LaTeX (.tex file)**
-
-** 🧮 Preview Math / TikZ Inline
-Show preview:
-#+BEGIN_SRC emacs-lisp
-M-x org-latex-preview   ;; or C-c C-x C-l
-#+END_SRC
-
-Remove preview:
-#+BEGIN_SRC emacs-lisp
-C-u C-c C-x C-l
-#+END_SRC
-
-Uses: `lualatex → pdf → ImageMagick (magick/convert) → png`
-
-** 🧱 Debugging
-- Check logs in `build/*.log` or `*Messages*`
-- Look for message:
-  `Org LaTeX configured: engine=lualatex; preview-process=imagemagick`
-- If fonts fail → install with:
-  #+BEGIN_SRC shell
-  sudo tlmgr install collection-fontsrecommended
-  #+END_SRC
-- If preview fails → ensure `magick` or `convert` + `ghostscript` installed.
-
-** 🧩 Per-File Override
-You can override the compiler in any `.org` file:
-#+BEGIN_EXAMPLE
-#+LATEX_COMPILER: pdflatex
-#+END_EXAMPLE
-or revert:
-#+BEGIN_EXAMPLE
-#+LATEX_COMPILER: lualatex
-#+END_EXAMPLE
-
-** 🔄 File Structure
-| File | Purpose |
-|------|----------|
-| `setup-latex.org` | LaTeX headers (fonts, hyperref, tikz, etc.) |
-| `latextn.org` | Export + preview engine configuration |
-| `.latexmkrc` | latexmk build rules (engine, glossaries, biber, etc.) |
-
-** ✅ Summary
-| Task | Command |
-|------|----------|
-| Export to PDF | `C-c C-e l o` |
-| Preview math | `C-c C-x C-l` |
-| Switch to LuaLaTeX | `M-x my/org-latex-use-lualatex` |
-| Switch to pdfLaTeX | `M-x my/org-latex-use-pdflatex` |
-| Check current engine | `M-: my/org-latex-engine RET` |
-
-
-
-### Step 8: Optional VLSI Diagram Support (TikZ/CircuitTikZ)
-For circuit diagrams (e.g., VLSI engineers):
-- Tangle/load `org/customxtn.org` to `org/customxtn.el` by uncommenting lines in `config.org`'s "* ACTIVE Modular Configs".
-- Dependencies:
-  - TeX Live with `tikz` and `circuitikz` (`sudo apt install texlive-full texlive-science`).
-  - ImageMagick (`sudo apt install imagemagick`; enable PDF/PS in `/etc/ImageMagick-6/policy.xml`: change `rights="none"` to `rights="read|write"` for "PDF", "PS", "EPS").
-  - Ghostscript (`sudo apt install ghostscript`).
-  - Ditaa (`sudo apt install ditaa` for `/usr/share/ditaa/ditaa.jar`).
-- Usage: Enables LaTeX and ditaa Babel blocks, previews for TikZ/CircuitTikZ, ditaa output to `images/`.
-
-*NOTE*: ImageMagick-based LaTeX preview for TikZ / CircuitTikZ
-
-Security note (Ubuntu/Debian):
-- Recent ImageMagick packages disable PDF processing by default.
-  To allow PDF→PNG conversion, you must locally enable PDF coder in ImageMagick's policy:
-  Edit /etc/ImageMagick-6/policy.xml or /etc/ImageMagick-7/policy.xml and change:
-    <policy domain="coder" rights="none" pattern="PDF" />
-  to:
-    <policy domain="coder" rights="read|write" pattern="PDF" />
-  (same for "PS"/"EPS" if present). This is a local security decision — enabling PDF processing allows Ghostscript to be invoked and may increase attack surface. Do this only if you trust the LaTeX inputs.
-
-Alternative (safer): install pdftocairo (poppler-utils) and use that instead of ImageMagick — no policy changes required.
+- Check `*Messages*` for "✅ Citar ready." and similar confirmations.
+- Test: `C-c r n` (new note), `C-c i c` (insert citation), `C-c v` (PDF preview).
 
 ---
 
 ## 📦 Configurations
 
 ### General Configurations
-- **Startup Optimizations**: Inhibits startup screen, resets garbage collection, disables UI elements.
-- **Package Management**: `straight.el` for installs; `use-package` for declarations. Packages: Org-roam, Citar, PDF-tools, Org-noter, Vertico, Orderless, Yasnippet, Yankpad, Flyspell, AUCTeX, RefTeX, Ace-Window, Org-agenda.
-- **Keybindings**: `C-c t` (tangle), `C-c i t/d/o` (timestamps), `C-c r n` (Org-roam capture), `C-c a` (Org-agenda), `C-c f t` (tagging).
+- **Startup**: No splash screen, garbage collection reset, UI elements disabled in early-init.el.
+- **Package Management**: straight.el + use-package for declarative installs; lazy/deferred loading for speed.
+- **Keybindings**: Centralized in keymaps.el; prefixes like `C-c i` (citations/notes), `C-c r` (Org-roam), `C-c g` (Git).
+- **Backups**: Device-specific `.backups/` and `.autosaves/` (git-ignored for clean repos).
 
 ### Org-Roam for Note-Taking
-- In `org/roam.org`: Zettelkasten with templates (default, fleeting, permanent, journal, bib).
-- Dailies in `roam/daily/`.
-- Keybindings: `C-c r f` (find), `C-c r n` (capture), `C-c r d` (dailies), `C-c r g` (graph UI, laptop).
-- Backlinking: Manual `:ID:` or auto in templates.
-- Tags: `C-c r t` (add), `C-c r r` (remove) via `.filetags`, `.filetags-org`.
+- In `org/roam.org`: Zettelkasten with templates (default, fleeting, permanent, journal).
+- Dailies: In `roam/daily/`.
+- Keybindings: `C-c r f` (find), `C-c r n` (capture), `C-c r d` (daily), `C-c r g` (UI, laptop only).
+- Backlinks: Auto `:ID:` in templates.
+- Tags: `C-c r t` (add), `C-c r r` (remove) via filetags.
 
 ### Citar for Bibliography/Zotero
-- Bib file: `references.bib` in default-directory.
-- PDFs: `~/wspace/src/zotero-kbase/storage`.
-- Keybindings: `C-c r c` (open note/resource).
-- Integration: Org-roam-bibtex, Org-noter for annotations.
+- Bib: `references.bib` in bib/.
+- PDFs: `/wspace/src/zotero-kbase/storage`.
+- Keybindings: `C-c i c` (insert), `C-c i N` (open note), `C-c i o` (open PDF).
+- Integration: Org-roam for literature notes, Org-noter for annotations.
 
 ### Tags and Snippets
-- Tags: `org/filetags.org`, `C-c f t` to add (uses `.filetags`, `.filetags-org`).
-- Snippets: Yankpad with Yasnippet, `C-c y` to insert (`org/yankpad.org`).
+- Tags: In `org/filetags.org`; `C-c f t` for completion.
+- Snippets: Yankpad + Yasnippet; `C-c y` (insert from yankpad.org).
 
-### UI and General Settings
-- Theme: tsdh-dark.
-- Hooks: Auto-update LAST_MODIFIED; timestamp insertion.
-- Backups: `.backups/`, `.autosaves/` (git-ignored).
-- Git Sync: `C-c g p` (pull), `C-c g u` (push).
-
-### GTD Workflow (org-alert)
+### GTD Workflow
 - In `org/workflow.org`: Device-specific alerts (libnotify on laptop, termux-notification on mobile).
 - Integrates with Org-agenda.
 
@@ -235,33 +116,32 @@ Alternative (safer): install pdftocairo (poppler-utils) and use that instead of 
 - Alerts via mu4e-alert.
 
 ### LaTeX Export
-- In `org/latextn.org`: LaTeX/PDF export with latexmk, bibliography support, device-aware paths.
-- Keybindings: `C-c C-e l p` (export PDF).
+- In `org/latextn.org`: latexmk for PDF, bibliography support.
+- Keybindings: `C-c C-e l p` (export).
 
 ---
 
 ## 🧪 Testing and Troubleshooting
 
 ### Test Setup
-- Check `*Messages*` for "✅ config.el loaded successfully on device: [device]".
+- Check `*Messages*` for "Device: laptop", "Citar ready", etc.
 - Note: `C-c r n`.
 - Citation: `C-c i c`.
 - PDF annotation: `M-x org-noter`.
 - PDF export: `C-c C-e l p`.
-- VLSI test (if enabled): Run CircuitTikZ block with `C-c C-c`, preview with `C-c C-x C-l`.
 
 ### Common Issues
-- **Path Errors**: Verify `default-directory` (`M-: default-directory`) matches device (e.g., "~/wspace/org/notes/"). Fix in `device.el`.
+- **Path Errors**: Verify `M-: default-directory` → fix in device.el.
 - **Packages Not Installed**: `M-x straight-pull-all`.
-- **Org-Roam Db Errors**: Delete `~/.emacs.d/org-roam.db`, run `M-x org-roam-db-sync`.
-- **Debug**: `export MY_DEBUG_DEVICE=1` for logs in `*Messages*`.
-- **LaTeX/VLSI Issues**: Ensure TeX Live, latexmk (`latextn.org`), or additional dependencies (`customxtn.org`) are installed.
+- **Org-Roam Db Errors**: Delete `org-roam.db`, `M-x org-roam-db-sync`.
+- **Debug**: `export MY_DEBUG_DEVICE=1` for logs.
+- **LaTeX Issues**: Ensure TeX Live/latexmk installed.
 
 ### Customization
-- Edit templates in `~/.emacs.d/template/` (e.g., `generic-note.org`).
-- Add capture templates in `orgxtn.org` (e.g., "e" for engineering).
-- Enable Consult/Ivy (commented in `config.org`).
+- Templates: Edit `~/.emacs.d/template/` (e.g., generic-note.org).
+- Capture: Add templates in `org/orgxtn.org`.
+- Enable Consult (uncomment in config.org for advanced search).
 
-Happy hacking! Open an issue on GitHub for questions.
-
-[Download README.md](data:text/markdown;base64,...)
+Happy hacking! Open issues on GitHub for feedback.  
+License: MIT
+```
