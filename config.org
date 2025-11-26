@@ -18,30 +18,29 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 - **Modular**      · All extensions live in org/*.org files.
 
 * My Digital Workflow :workflow:
-| Workflow                     | Solution                          | Notes                                                                 | Device     | Keybindings                          |
-|------------------------------|-----------------------------------|-----------------------------------------------------------------------|------------|--------------------------------------|
-| Installing packages          | use-package with straight.el      | Lazy loading in config.org; workflows.org optional (commented)        | All        | None                                 |
-| Filter Org files             | sparse trees                      | Built-in Org feature for filtering headings                           | All        | C-c /                                |
-| Focus on Org sub-hierarchy   | org-tree-to-indirect-buffer       | Built-in Org for narrowing to subtree                                 | All        | C-c C-x b                            |
-| Enhanced search/selection    | vertico, orderless                | Vertical completion and fuzzy matching; Ivy optional in workflows.org (commented) | All    | None (uses Vertico for completion)   |
-| Switching buffers            | ibuffer                           | Improved buffer list management                                       | All        | C-x C-b                              |
-| Inserting date/time-stamps   | my-insert-timestamp(), my-insert-datestamp(), my-insert-org-timestamp() | Custom functions for timestamps (including Org format)              | All        | C-c i t, C-c i d, C-c i g           |
-| Org to PDF export            | Org mode export via LaTeX (AUCTeX)| Uses auctex, reftex for refs; pdf-tools for viewing; configured in org/orgxtn.org | All/Laptop | C-c C-e l p                          |
-| Passwords                    | org-crypt                         | Encrypt Org sections                                                  | All        | None                                 |
-| Snippet management           | yankpad with yasnippet            | Org-style snippets in yankpad.org, tab-completion                     | All        | C-c y (insert), C-c Y (expand), C-c TAB |
-| Spell checking               | flyspell with aspell              | Requires aspell; M-$ for correction                                   | All        | M-$                                  |
-| PDF notextn/annotating       | pdf-tools, org-noter              | pdf-tools for viewing/highlighting; org-noter for synced annotations in notes | Laptop/All | None (M-x org-noter for annotations) |
-| PDF side preview             | my/org-pdf-vertical-view          | Opens corresponding PDF in right split for quick view; configured in org/orgxtn.org | All | C-c v                                |
-| Record screencasts           | gif-screencast                    | Optional in workflows.org (commented out)                             | Laptop     | C-c g                                |
-| Zettelkasten note-taking     | org-roam                          | In org/roam.org; graph UI on laptop; dailies capture; backlinking with IDs | All   | C-c r n (capture), C-c r f (find), C-c r g (UI), C-c r d (dailies) |
-| Bibliography/Citations       | citar, org-roam-bibtex            | Zotero integration; insert citations; bib notes in roam               | All        | C-c r c (open note/resource)         |
-| Inserting citations          | citar-insert-citation             | Inserts BibTeX citations with Citar                                   | All        | C-c i c                              |
-| Tag Org sections             | .filetags                         | In org/filetags.org; tag completion with Vertico                      | All        | C-c f t                              |
-| Tangling config              | org-babel-tangle, my-tangle-all   | Tangles config.org or all modular files                               | All        | C-c t (single), C-c T (all)          |
-| Org capture                  | org-capture                       | Captures generic notes using template; configured in org/orgxtn.org | All  | C-c c                                |
-| Toggle Org items             | org-toggle-item                   | Converts text to/from list items                                      | All        | C-c i i                              |
-| Window navigation/switching  | windmove, winner-mode, ace-window | Smart movement between windows; undo/redo layouts; fast jumping       | All        | Shift+Arrow (move), C-c left/right (undo/redo), M-o (ace jump) |
-| Executing code blocks        | Org Babel                         | Enables shell and other languages in Org files; configured in org/orgxtn.org | All | C-c C-c (in block)                   |
+| Purpose                         | Solution                              | Notes (device-specific in brackets)                              | Keybindings                          |
+|---------------------------------|---------------------------------------|------------------------------------------------------------------|--------------------------------------|
+| Package management              | use-package + straight.el             | Lazy loading, reproducible installs (all devices)                | —                                    |
+| Filter Org headings             | sparse trees                          | Built-in Org (all devices)                                       | C-c /                                |
+| Focus on subtree                | org-tree-to-indirect-buffer           | Built-in Org (all devices)                                       | C-c C-x b                            |
+| Completion & search             | vertico + orderless                   | Fast, fuzzy, vertical UI (all devices)                           | —                                    |
+| Buffer switching                | ibuffer                               | Better than default list (all devices)                           | C-x C-b                              |
+| Insert timestamps               | custom functions                      | Various formats (all devices)                                    | C-c i t/d/o                          |
+| Export to PDF                   | Org → LaTeX (AUCTeX)                  | pdf-tools for viewing (laptop preferred)                         | C-c C-e l p                          |
+| Encrypt sections                | org-crypt                             | GPG-encrypted headings (all devices)                             | —                                    |
+| Snippet management              | yankpad + yasnippet                   | Org-style snippets (all devices)                                 | C-c y / C-c Y                        |
+| Spell checking                  | flyspell + Hunspell                   | UK English dictionary (all devices)                              | M-$                                  |
+| PDF viewing & annotation        | pdf-tools + org-noter                 | Highlighting & synced notes (laptop preferred)                   | M-x org-noter                        |
+| PDF side-by-side preview        | my/org-pdf-vertical-view              | Quick reference while writing (all devices)                      | C-c v                                |
+| Zettelkasten / note-taking      | org-roam                              | Dailies, backlinks, UI on laptop                                 | C-c r n/f/i/d/T/P/N/D/t/r/s/g        |
+| Bibliography & citations        | citar + org-roam integration          | Zotero sync, literature notes in roam (all devices)              | C-c i c/n/N/o/O                      |
+| File-level tags                 | filetags                              | Vertico-powered tag completion (all devices)                     | C-c f t                              |
+| Config tangling                 | org-babel-tangle + custom helpers     | Single or all files (all devices)                                | C-c t / C-c T                        |
+| Quick capture                   | org-capture                           | Templates for notes/tasks (all devices)                          | C-c c                                |
+| Toggle list items               | org-toggle-item                       | Convert text ↔ list (all devices)                                | C-c i i                              |
+| Window navigation               | windmove + winner-mode + ace-window   | Move, undo/redo, jump (all devices)                              | Shift+Arrow / M-o                    |
+| Execute code blocks             | Org Babel                             | Run shell/LaTeX/Python inline (all devices)                      | C-c C-c                              |
+| Git sync for notes              | Magit                                 | Pull/push repo changes (all devices)                             | C-c g p / u                          |
 
 * ACTIVE Core Setup
 
@@ -199,21 +198,27 @@ plus recursive .org files from the 'roam' subdirectory, excluding unwanted dirs.
 Configure package managers and lightweight, universal packages with lazy loading.
 Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliographic tools in org/roam.org; filetags in org/filetags.org.
 
-| Package      | Purpose                          | Device       | Keybindings              | Loading Trigger          |
-|--------------|----------------------------------|--------------|--------------------------|--------------------------|
-| org          | Core Org-mode                    | All          | Org-mode keys            | Built-in                 |
-| org-roam     | Zettelkasten note-taking         | All          | C-c r n, r f, r i, r g   | Startup                  |
-| org-roam-bibtex | Zotero/BibTeX citation capture | All          |                          | org-roam-mode hook       |
-| citar        | Bibliography interface           | All          | C-c i c                  | On demand                |
-| org-roam-ui  | Graphical note graph (web UI)    | Laptop only  | C-c r g                  | M-x or keybinding        |
-| f            | File/directory manipulation      | All          | None                     | On demand                |
-| ht           | Hash table utilities             | All          | None                     | On demand                |
-| ibuffer      | Buffer management                | All          | C-x C-b                  | C-x C-b                  |
-| org-crypt    | Password encryption              | All          | None                     | org-mode hook            |
-| cdlatex      | Math/equation input              | All          | TAB (contextual)         | TAB                      |
-| yasnippet    | Snippet framework                | All          | TAB (inline yas-expand), C-c s (yas-insert-snippet) | TAB, C-c s            |
-| yankpad      | Org-style snippet library        | All          | C-c y, C-c Y             | C-c y                    |
-| flyspell     | Spell checking                   | All          | M-$                      | M-$                      |
+| Package        | Purpose (device-specific in brackets)                              | Keybindings                  | Loading Trigger |
+|----------------|--------------------------------------------------------------------|------------------------------|-----------------|
+| org            | Core Org-mode (built-in, essential)                                | Org-mode keys                | Built-in        |
+| org-roam       | Zettelkasten note-taking (graph UI on laptop only)                 | C-c r …                      | Startup         |
+| citar          | Bibliography interface + Zotero integration (all devices)          | C-c i c/n/N/o/O              | On demand       |
+| pdf-tools      | In-buffer PDF viewing & highlighting (laptop preferred)           | —                            | On demand       |
+| org-noter      | Synced PDF annotations in Org (laptop preferred)                   | M-x org-noter                | On demand       |
+| yasnippet      | Snippet engine (powers yankpad, all devices)                       | TAB, C-c s                   | On demand       |
+| yankpad        | Org-style snippet library (all devices)                            | C-c y / C-c Y                | On demand       |
+| vertico        | Vertical completion UI (all devices)                               | —                            | Startup         |
+| orderless      | Fuzzy matching for completion (all devices)                        | —                            | Startup         |
+| marginalia     | Rich minibuffer annotations (all devices)                          | —                            | Startup         |
+| embark         | Contextual actions (all devices)                                   | C-. / C-;                    | Startup         |
+| consult        | Enhanced search & navigation (all devices)                         | C-s, C-c h/k/b/p             | On demand       |
+| ibuffer        | Better buffer list (all devices)                                   | C-x C-b                      | C-x C-b         |
+| org-crypt      | Section encryption (all devices)                                   | —                            | org-mode hook   |
+| cdlatex        | Fast math input in Org (all devices)                               | TAB (contextual)             | org-mode hook   |
+| auctex         | LaTeX editing & export (all devices)                               | —                            | On demand       |
+| flyspell       | Spell checking with Hunspell (all devices)                         | M-$                          | On demand       |
+| magit          | Git interface for notes repo (all devices)                         | C-x g, C-c g p/u             | On demand       |
+| ace-window     | Fast window switching (all devices)                                | M-o                          | On demand       |
 
 ** Org Base Configuration
 #+BEGIN_SRC emacs-lisp

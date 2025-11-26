@@ -7,9 +7,61 @@
 #+LAST_MODIFIED: [%<%Y-%m-%d %a %H:%M>]
 
 * Keymaps and global bindings
-This file centralises prefix maps and global keybindings.
-It assumes the corresponding commands (functions) are defined in other modules
+This file centralises prefix maps and global keybindings. It assumes the corresponding commands (functions) are defined in other modules
 (e.g. config.el, orgxtn.el, notextn.el, roam.el, etc.).
+
+* Keymap Reference :keymaps:
+
+| Prefix / Key       | Command                              | Description                                                  | Scope / Notes                     |
+|--------------------|--------------------------------------|--------------------------------------------------------------|-----------------------------------|
+| **C-c i** (prefix) | —                                    | Citations, literature notes, timestamps, PDF tools           | Main bib & note workflow          |
+| C-c i c            | citar-insert-citation                | Insert citation @key                                         | Org-mode                          |
+| C-c i C            | citar-insert-citation                | Same as above (Shift for muscle memory)                      | Org-mode                          |
+| C-c i r            | citar-insert-reference               | Insert formatted reference                                   | Org-mode                          |
+| C-c i k            | citar-insert-keys                    | Insert bare citation keys                                    | Org-mode                          |
+| C-c i n            | citar-create-note                    | Create new blank literature note                             | Any mode                          |
+| C-c i N            | citar-open-note                      | Open/create note for citation at point                       | Any mode                          |
+| C-c i C-n          | citar-open-notes                     | Choose any entry → open its note                             | Any mode                          |
+| C-c i o            | citar-open                           | Open PDF/link/website                                        | Any mode                          |
+| C-c i O            | citar-open-files                     | Open all attached files                                      | Any mode                          |
+| C-c i a            | my/open-pdf-and-note                 | Open PDF + start org-noter session                           | Any mode                          |
+| C-c i g            | my/open-pdf-and-note 'generic        | Same but generic (no special handling)                       | Any mode                          |
+| C-c i p            | my/pdf-insert-selection-to-note      | Insert selected PDF text into note                           | pdf-view-mode                     |
+| C-c i A            | org-noter-pdftools-insert-annotations | Insert PDF annotations into note                           | pdf-view-mode                     |
+| C-c i b            | my/open-calibre-book-and-note        | Open Calibre book + note (laptop only)                       | Laptop only                       |
+| C-c i t            | my-insert-timestamp                  | Insert YYYY-MM-DD HH:MM:SS                                   | Any mode                          |
+| C-c i d            | my-insert-datestamp                  | Insert YYYY-MM-DD                                            | Any mode                          |
+| C-c i o            | my-insert-org-timestamp              | Insert Org timestamp [YYYY-MM-DD Day HH:MM]                  | Any mode                          |
+| **C-c r** (prefix) | —                                    | Pure Org-roam navigation & dailies                           | —                                 |
+| C-c r f            | org-roam-node-find                   | Find node                                                    | Org-mode                          |
+| C-c r i            | org-roam-node-insert                 | Insert node link                                             | Org-mode                          |
+| C-c r n            | org-roam-capture                     | Capture new node                                             | Org-mode                          |
+| C-c r d            | org-roam-dailies-capture-today       | Capture today’s daily                                        | Org-mode                          |
+| C-c r T            | org-roam-dailies-goto-today          | Go to today’s daily                                          | Org-mode                          |
+| C-c r P            | org-roam-dailies-goto-previous-note  | Previous daily                                               | Org-mode                          |
+| C-c r N            | org-roam-dailies-goto-next-note      | Next daily                                                   | Org-mode                          |
+| C-c r D            | org-roam-dailies-goto-date           | Go to specific date                                          | Org-mode                          |
+| C-c r t            | my-org-roam-tag-add                  | Add tag to node                                              | Org-mode                          |
+| C-c r r            | my-org-roam-tag-remove               | Remove tag from node                                         | Org-mode                          |
+| C-c r s            | my/org-roam-safe-rebuild             | Safe DB rebuild                                              | Org-mode                          |
+| C-c r g            | org-roam-ui-open                     | Open graph UI (laptop only)                                  | Laptop only                       |
+| **C-c g** (prefix) | —                                    | Git sync for Org notes                                       | —                                 |
+| C-c g p            | magit-pull-org-repo                  | Pull changes from repo                                       | Any mode                          |
+| C-c g u            | magit-push-org-repo                  | Push changes to repo                                         | Any mode                          |
+| C-c t              | my-tangle-config-org                 | Tangle only config.org                                       | Any mode                          |
+| C-c T              | my-tangle-all                        | Tangle all modular files                                     | Any mode                          |
+| C-c c              | org-capture                          | Quick capture                                                | Any mode                          |
+| C-c a              | org-agenda                           | Agenda view                                                  | Any mode                          |
+| C-c v              | my/org-pdf-vertical-view             | Side-by-side PDF preview                                     | Any mode                          |
+| C-c f t            | my-org-set-filetags                  | Set file-level tags                                          | Org-mode                          |
+| C-x g              | magit-status                         | Full Magit status                                            | Any mode                          |
+| C-c m              | mu4e                                 | Open email (Mu4e)                                            | Any mode                          |
+| C-z                | undo                                 | Undo                                                         | Any mode                          |
+| M-o                | ace-window                           | Fast window switching                                        | Any mode                          |
+| TAB (Org)          | my/org-smart-tab                     | Smart TAB (yasnippet / CDLaTeX / visibility cycling)         | Org-mode                          |
+| C-c i i (Org)      | org-toggle-item                      | Toggle list item                                             | Org-mode                          |
+
+
 
 #+BEGIN_SRC emacs-lisp
 ;;; keymaps.el --- Central keymaps and global bindings  -*- lexical-binding: t; -*-
