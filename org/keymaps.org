@@ -128,9 +128,9 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
   (define-key pdf-view-mode-map (kbd "C-c i s") #'my/save-pdf-region-to-datestamp)
   (define-key pdf-view-mode-map (kbd "C-c i S") (lambda () (interactive) (my/save-pdf-region-to-datestamp t))))
 
+;; Calibre integration (laptop only) — loads calibredb on first use
 (when (eq my-device 'laptop)
-  (with-eval-after-load 'calibredb
-    (define-key my/citar-map (kbd "b") #'my/open-calibre-book-and-note)))
+  (define-key my/citar-map (kbd "b") #'my/open-calibre-book-and-note))
 
 ;; ─────────────────────────────────────────────────────────────
 ;; C-c r → Pure Org-roam navigation (no citar clutter)

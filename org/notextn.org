@@ -218,34 +218,85 @@ with a unified command set under =C-c i=.
 
 ;; ──────────────────────────────────────────────────────────────
 ;; Calibre books – C-c i b (laptop only)
-;; ──────────────────────────────────────────────────────────────
+;; Workflow:
+;; 1. M-x calibredb → opens Calibre library buffer.
+;; 2. / term RET → optional: live-filter by text (title/author/tags).
+;; 3. Move point to book → use n/p or arrow keys.
+;; 4. C-c i b → opens book file left + Org note right in ~/org/books/.
+;; ─────────────
 (when (eq my-device 'laptop)
   (defun my/open-calibre-book-and-note ()
-    "Open Calibre book PDF + standalone Org note in ~/org/books/."
+    "Open Calibre book (PDF/EPUB) and a standalone Org note in ~/org/books/.
+This function integrates Calibredb with Org-mode for note-taking.
+If the Org note for the selected book does not exist, it is created automatically
+with metadata and a NOTER_DOCUMENT property."
     (interactive)
     (require 'calibredb)
-    (let* ((candidate (calibredb-candidate))
-           (id (calibredb-getattr candidate :id))
-           (title (calibredb-getattr id :title))
-           (author (or (calibredb-getattr id :author) "Unknown"))
-           (pdf-path (calibredb-get-file-path id t))
+    (unless (derived-mode-p 'calibredb-search-mode 'calibredb-show-mode)
+      (call-interactively #'calibredb))
+
+    (let* (;; Book entry at point in *calibredb-search* / *calibredb-show*.
+           (candidate (car (calibredb-find-candidate-at-point)))
+           ;; (message "CANDIDATE: %S" candidate) ; Uncomment for debugging.
+           (id      (calibredb-getattr candidate :id))
+           ;; Use calibredb's actual metadata fields.
+           (title   (or (calibredb-getattr candidate :book-title)
+                        (calibredb-getattr candidate :title)))
+           (author  (or (calibredb-getattr candidate :author-sort)
+                        (calibredb-getattr candidate :author)))
+           ;; Full values used inside the note.
+           (title*  (or title "Unknown"))
+           (author* (or author "Unknown"))
+           ;; Short filename: first author + title.
+           (file-author
+            (if (and author*
+                     (string-match "\\`\\([^,&]+\\)" author*))
+                (string-trim (match-string 1 author*))
+              author*))
+           (file-title (or title* "Unknown"))
+           ;; Prefer main file (pdf/epub/etc.) resolved by calibredb.
+           (book-path (or (calibredb-get-file-path candidate t)
+                          (calibredb-get-file-path candidate nil)))
+           ;; Notes directory under your default-directory (~/org/).
            (books-notes-dir (expand-file-name "books" default-directory))
-           (slug (downcase (replace-regexp-in-string "[^a-z0-9 ]" "" (format "%s - %s" author title))))
+           ;; Slug for filename: first-author-title, lowercased and cleaned.
+           (slug (downcase
+                  (replace-regexp-in-string
+                   "[^a-z0-9 ]" ""
+                   (format "%s - %s" file-author file-title))))
            (slug (replace-regexp-in-string " " "-" slug))
            (note-file (expand-file-name (concat slug ".org") books-notes-dir)))
-      (unless pdf-path (user-error "No PDF for \"%s\"" title))
+      
+      (message "ID=%S TITLE=%S AUTHOR=%S FILE=%S" id title author book-path)
+
+      (unless book-path
+        (user-error "No file for \"%s\" (ID: %s)" title* id))
+
+      ;; Ensure notes directory exists.
       (make-directory books-notes-dir t)
+
+      ;; Create note once, with full title/author and NOTER_DOCUMENT.
       (unless (file-exists-p note-file)
         (with-temp-file note-file
-          (insert (format "#+TITLE: %s – %s\n#+AUTHOR: %s\n#+CREATED: %s\n#+ROAM_TAGS: book\n\n* Overview\n:PROPERTIES:\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n\n* Annotations\n\n"
-                          title author author (format-time-string "%Y-%m-%d") pdf-path (org-id-new)))))
-      (when (fboundp 'my/bibnote-normalize-file)
-        (my/bibnote-normalize-file note-file pdf-path title))
-      (find-file pdf-path)
-      (split-window-right)
-      (find-file note-file)
-      (message "Opened: %s" title))))
+          (insert
+           (format
+            "#+TITLE: %s – %s\n#+AUTHOR: %s\n#+CREATED: %s\n#+ROAM_TAGS: book\n\n* Overview\n:PROPERTIES:\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n\n* Annotations\n\n"
+            title* author* author*
+            (format-time-string "%Y-%m-%d")
+            (expand-file-name book-path)
+            (org-id-new)))))
 
+      ;; Optional post-processing of the note.
+      (when (fboundp 'my/bibnote-normalize-file)
+        (my/bibnote-normalize-file note-file (expand-file-name book-path) title*))
+
+      ;; Open book left, note right.
+      (find-file (expand-file-name book-path))
+      (split-window-right)
+      (other-window 1)
+      (find-file note-file)
+      (message "Opened: %s by %s" title* author*))))
+      
 ;; ──────────────────────────────────────────────────────────────
 ;; Automate Image Capture for Annotations – Common Logic for All Types
 ;; ──────────────────────────────────────────────────────────────

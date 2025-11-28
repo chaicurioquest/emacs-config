@@ -742,9 +742,9 @@ If FULL-PATH, return the full path. Handles nil :book-dir."
   "Tangle all modular .org files including config.org."
   (interactive)
   (dolist (f '("config.org"
-               "org/keymaps.org" "org/orgxtn.org" "org/roam.org"
-               "org/filetags.org" "org/workflow.org" "org/notextn.org"
-               "org/latextn.org" "org/engxtn.org" "org/mail.org"))
+               "org/orgxtn.org" "org/roam.org" "org/filetags.org"
+               "org/workflow.org" "org/notextn.org" "org/latextn.org"
+               "org/engxtn.org" "org/mail.org" "org/keymaps.org"))
     (my/tangle-if-needed f (concat (file-name-sans-extension f) ".el")))
   (message "[%s] All files tangled" (format-time-string "%T")))
 #+END_SRC
