@@ -104,5 +104,28 @@
   #+END_QUOTE
 #+END_SRC
 
+** Handwritten
+*** hwnote
+:PROPERTIES:
+:yankpad-trigger: hwn
+:END:
+#+BEGIN_SRC org
+  * ${1:Note Title} :handwritten:${2:Tags}:
+  :PROPERTIES:
+  :ID: %(org-id-new)  ; Auto-ID for linking/refile
+  :NOTER_DOCUMENT: attachment:${3:note.pdf}  ; For noter sync
+  :END:
 
+  #+CAPTION: Handwritten ${4:Diagram}
+  #+ATTR_ORG: :width 500
+  [[attachment:${5:image.png}]]
+
+  ** OCR'd Text
+  #+BEGIN_QUOTE
+  ${6:Insert OCR here}
+  #+END_QUOTE
+
+  ** Annotations
+  ${7:Notes}
+#+END_SRC
 

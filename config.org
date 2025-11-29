@@ -4,79 +4,69 @@
 #+DATE: \today
 #+FILETAGS: ::
 #+OPTIONS: toc:t num:nil
-# OPTIONS: toc:nil num:2
 #+PROPERTY: header-args :eval never-export
 #+CREATED: 2025-07-12
 #+LAST_MODIFIED: [2025-08-12 Tue 16:06]
 
-
 * Purpose
 This Org-mode configuration is the single source for my Emacs 30 setup, designed to be:
-- **Future-proof**: Structured with comments, tables, CANCELLED blocks.
-- **Reliable**: Reproducible packages via straight.el, lazy loading.
-- **Minimal**: Single config.org, minimal hooks/keybindings, early-init.el for GUI, unified tag management.
-- **Portable**: Device-specific settings (laptop, Termux, tablet) via device.el.
-- **Synced**: Via GitHub[](https://github.com/chaicurioquest/emacs-config) and Syncthing.
-- **Modular**: Uses org/ for snippets (yankpad.org), org-extension (orgxtn.org),  workflows (workflows.org), and note-taking (**roam.org**).  **<-- Updated reference for consistency with file rename**
-Tangle with `C-c t` or `M-x my-tangle-config-org`.
+- **Future-proof** · Structured with comments, tables, CANCELLED blocks.
+- **Reliable**     · Reproducible packages via straight.el, lazy loading.
+- **Minimal**      · Single config.org, minimal hooks/keybindings.
+- **Portable**     · Device-specific settings via device.el.
+- **Synced**       · GitHub + Syncthing.
+- **Modular**      · All extensions live in org/*.org files.
 
 * My Digital Workflow :workflow:
-| Workflow                     | Solution                          | Notes                                                                 | Device     | Keybindings                          |
-|------------------------------|-----------------------------------|-----------------------------------------------------------------------|------------|--------------------------------------|
-| Installing packages          | use-package with straight.el      | Lazy loading in config.org; workflows.org optional (commented)        | All        | None                                 |
-| Filter Org files             | sparse trees                      | Built-in Org feature for filtering headings                           | All        | C-c /                                |
-| Focus on Org sub-hierarchy   | org-tree-to-indirect-buffer       | Built-in Org for narrowing to subtree                                 | All        | C-c C-x b                            |
-| Enhanced search/selection    | vertico, orderless                | Vertical completion and fuzzy matching; Ivy optional in workflows.org (commented) | All    | None (uses Vertico for completion)   |
-| Switching buffers            | ibuffer                           | Improved buffer list management                                       | All        | C-x C-b                              |
-| Inserting date/time-stamps   | my-insert-timestamp(), my-insert-datestamp(), my-insert-org-timestamp() | Custom functions for timestamps (including Org format)              | All        | C-c i t, C-c i d, C-c i g           |
-| Org to PDF export            | Org mode export via LaTeX (AUCTeX)| Uses auctex, reftex for refs; pdf-tools for viewing; configured in org/orgxtn.org | All/Laptop | C-c C-e l p                          |
-| Passwords                    | org-crypt                         | Encrypt Org sections                                                  | All        | None                                 |
-| Snippet management           | yankpad with yasnippet            | Org-style snippets in yankpad.org, tab-completion                     | All        | C-c y (insert), C-c Y (expand), C-c TAB |
-| Spell checking               | flyspell with aspell              | Requires aspell; M-$ for correction                                   | All        | M-$                                  |
-| PDF reading/annotating       | pdf-tools, org-noter              | pdf-tools for viewing/highlighting; org-noter for synced annotations in notes | Laptop/All | None (M-x org-noter for annotations) |
-| PDF side preview             | my/org-pdf-vertical-view          | Opens corresponding PDF in right split for quick view; configured in org/orgxtn.org | All | C-c v                                |
-| Record screencasts           | gif-screencast                    | Optional in workflows.org (commented out)                             | Laptop     | C-c g                                |
-| Zettelkasten note-taking     | org-roam                          | In org/roam.org; graph UI on laptop; dailies capture; backlinking with IDs | All   | C-c r n (capture), C-c r f (find), C-c r g (UI), C-c r d (dailies) |
-| Bibliography/Citations       | citar, org-roam-bibtex            | Zotero integration; insert citations; bib notes in roam               | All        | C-c r c (open note/resource)         |
-| Inserting citations          | citar-insert-citation             | Inserts BibTeX citations with Citar                                   | All        | C-c i c                              |
-| Tag Org sections             | .filetags                         | In org/filetags.org; tag completion with Vertico                      | All        | C-c f t                              |
-| Tangling config              | org-babel-tangle, my-tangle-all   | Tangles config.org or all modular files                               | All        | C-c t (single), C-c T (all)          |
-| Org capture                  | org-capture                       | Captures generic notes using template; configured in org/orgxtn.org | All  | C-c c                                |
-| Toggle Org items             | org-toggle-item                   | Converts text to/from list items                                      | All        | C-c i i                              |
-| Window navigation/switching  | windmove, winner-mode, ace-window | Smart movement between windows; undo/redo layouts; fast jumping       | All        | Shift+Arrow (move), C-c left/right (undo/redo), M-o (ace jump) |
-| Executing code blocks        | Org Babel                         | Enables shell and other languages in Org files; configured in org/orgxtn.org | All | C-c C-c (in block)                   |
+| Purpose                         | Solution                              | Notes (device-specific in brackets)                              | Keybindings                          |
+|---------------------------------|---------------------------------------|------------------------------------------------------------------|--------------------------------------|
+| Package management              | use-package + straight.el             | Lazy loading, reproducible installs (all devices)                | —                                    |
+| Filter Org headings             | sparse trees                          | Built-in Org (all devices)                                       | C-c /                                |
+| Focus on subtree                | org-tree-to-indirect-buffer           | Built-in Org (all devices)                                       | C-c C-x b                            |
+| Completion & search             | vertico + orderless                   | Fast, fuzzy, vertical UI (all devices)                           | —                                    |
+| Buffer switching                | ibuffer                               | Better than default list (all devices)                           | C-x C-b                              |
+| Insert timestamps               | custom functions                      | Various formats (all devices)                                    | C-c i t/d/o                          |
+| Export to PDF                   | Org → LaTeX (AUCTeX)                  | pdf-tools for viewing (laptop preferred)                         | C-c C-e l p                          |
+| Encrypt sections                | org-crypt                             | GPG-encrypted headings (all devices)                             | —                                    |
+| Snippet management              | yankpad + yasnippet                   | Org-style snippets (all devices)                                 | C-c y / C-c Y                        |
+| Spell checking                  | flyspell + Hunspell                   | UK English dictionary (all devices)                              | M-$                                  |
+| PDF viewing & annotation        | pdf-tools + org-noter                 | Highlighting & synced notes (laptop preferred)                   | M-x org-noter                        |
+| PDF side-by-side preview        | my/org-pdf-vertical-view              | Quick reference while writing (all devices)                      | C-c v                                |
+| Zettelkasten / note-taking      | org-roam                              | Dailies, backlinks, UI on laptop                                 | C-c r n/f/i/d/T/P/N/D/t/r/s/g        |
+| Bibliography & citations        | citar + org-roam integration          | Zotero sync, literature notes in roam (all devices)              | C-c i c/n/N/o/O                      |
+| File-level tags                 | filetags                              | Vertico-powered tag completion (all devices)                     | C-c f t                              |
+| Config tangling                 | org-babel-tangle + custom helpers     | Single or all files (all devices)                                | C-c t / C-c T                        |
+| Quick capture                   | org-capture                           | Templates for notes/tasks (all devices)                          | C-c c                                |
+| Toggle list items               | org-toggle-item                       | Convert text ↔ list (all devices)                                | C-c i i                              |
+| Window navigation               | windmove + winner-mode + ace-window   | Move, undo/redo, jump (all devices)                              | Shift+Arrow / M-o                    |
+| Execute code blocks             | Org Babel                             | Run shell/LaTeX/Python inline (all devices)                      | C-c C-c                              |
+| Git sync for notes              | Magit                                 | Pull/push repo changes (all devices)                             | C-c g p / u                          |
 
-* ACTIVE Startup Optimizations
-;; modular org files tangle process.Tangling only happens when the .org file is newer than the .el file. Each .el file is loaded once after tangling.
+* ACTIVE Core Setup
 
-#+BEGIN_SRC emacs-lisp
-(defun my/tangle-if-needed (org-file el-file)
-  "Tangle ORG-FILE to EL-FILE if needed, and load EL-FILE.
-Skips if no changes; handles errors gracefully without deleting files."
-  (let* ((org-path (expand-file-name org-file user-emacs-directory))
-         (el-path (expand-file-name el-file user-emacs-directory)))
-    (condition-case err
-        (when (or (not (file-exists-p el-path))
-                  (file-newer-than-file-p org-path el-path))
-          (message "[%s] Tangling %s → %s" (format-time-string "%T") org-path el-path)
-          (require 'org)
-          (org-babel-tangle-file org-path el-path)
-          (message "[%s] Tangled %s" (format-time-string "%T") el-path))
-      (error (message "[%s] Tangling failed for %s: %s" (format-time-string "%T") org-path (error-message-string err))))
-    (when (file-exists-p el-path)
-      (load el-path nil 'nomessage)
-      (message "[%s] Loaded %s" (format-time-string "%T") el-path))))
-#+END_SRC
-
-** Debug startup (toggle with MY_DEBUG_DEVICE environment variable).
+** Debug startup
 #+BEGIN_SRC emacs-lisp
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== STARTING CONFIG ==="))
 #+END_SRC
-** Reset garbage collection threshold to 2MB after startup.
+
+** Garbage collection
 #+BEGIN_SRC emacs-lisp
+;; Fast startup: Temp raise GC, disable file handlers, tune process I/O
+(defvar my--old-gc-cons-threshold gc-cons-threshold
+  "Saved value of `gc-cons-threshold` to restore after init.")
+(defvar my--old-file-name-handler-alist file-name-handler-alist
+  "Saved value of `file-name-handler-alist` to restore after init.")
+
+;; Make init fast
+(setq gc-cons-threshold most-positive-fixnum   ; defer GC during init
+      file-name-handler-alist nil
+      read-process-output-max (* 1024 1024))   ; 1MB for fast subprocesses
+
 (add-hook 'emacs-startup-hook
-  (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
+          (lambda ()
+            (setq gc-cons-threshold (or my--old-gc-cons-threshold (* 16 1024 1024))
+                  file-name-handler-alist my--old-file-name-handler-alist)))
 #+END_SRC
 
 ** Disable startup screen.
@@ -84,11 +74,18 @@ Skips if no changes; handles errors gracefully without deleting files."
 (setq inhibit-startup-screen t)
 #+END_SRC
 
-** Load device detection.
+** Load device detection (with fallback)
 #+BEGIN_SRC emacs-lisp
 (condition-case err
     (load (expand-file-name "device.el" user-emacs-directory))
-  (error (message "❌ Failed to load device.el: %s" (error-message-string err))))
+  (error (message "Failed to load device.el: %S" err)))
+
+;; Fallback if device.el missing or failed
+(unless (boundp 'my-device)
+  (defvar my-device 'laptop)
+  (message "my-device not set → defaulting to 'laptop"))
+
+(message "Device: %s" my-device)
 #+END_SRC
 
 ** Set default directory per device.
@@ -96,36 +93,57 @@ Skips if no changes; handles errors gracefully without deleting files."
 (setq default-directory
       (cond ((eq my-device 'laptop) (expand-file-name "org/" "/wspace/"))
             ((eq my-device 'tablet) (expand-file-name "org/" (getenv "HOME")))
-            ((eq my-device 'phone) (expand-file-name "storage/notes" (getenv "HOME")))
-            (t (getenv "HOME"))))
-(message "📁 Default directory set to: %s" default-directory)
+            ((eq my-device 'phone)  (expand-file-name "storage/notes" (getenv "HOME")))
+            (t (expand-file-name "~/"))))
+
+(unless (file-directory-p default-directory)
+  (make-directory default-directory t))
+(message "Default directory: %s" default-directory)
 #+END_SRC
 
-** Global Variables
+** Global paths — defined very early
+
 #+BEGIN_SRC emacs-lisp
 ;; Define paths early for global reuse (absolute/resolved for reliability)
-(defvar bib-path
-  (expand-file-name "bib/references.bib" (file-name-directory default-directory))
-   "Absolute path to BibTeX file")
+(defvar bib-path (expand-file-name "bib/references.bib" default-directory))
+(defvar my-citar-library-paths '("/wspace/src/zotero-kbase/storage"))
+(defvar setupfile (expand-file-name "latex/setup-latex.org" default-directory))
+(defvar org-roam-directory (expand-file-name "roam" default-directory))
+(defvar org-roam-dailies-directory (expand-file-name "daily" org-roam-directory))
+(defvar my-calibre-library-dir "/wspace/src/calibre-ebooks")
+  
+;; Create roam directories if missing
+(dolist (d (list org-roam-directory org-roam-dailies-directory))
+  (unless (file-directory-p d) (make-directory d t)))
 
-(defvar my-citar-library-paths
-  (list "/wspace/src/zotero-kbase/storage")
-  "List of absolute paths to Citar libraries (e.g., Zotero storage).")
-
-(defvar setupfile
-  (expand-file-name "latex/setup-latex.org" default-directory)
-  "Path to default Org LaTeX setup file.")
-
-  (defvar org-roam-directory (expand-file-name "roam" default-directory)
-  "Directory for Org-roam notes.")
-
-   (prefer-coding-system 'utf-8)
-   (setq default-buffer-file-coding-system 'utf-8)
-
-
+(prefer-coding-system 'utf-8)
+(setq default-buffer-file-coding-system 'utf-8)
 #+END_SRC
 
-** Tag-to-ID mappings for tag-based auto-refile script
+** Tangling utilities
+#+BEGIN_SRC emacs-lisp
+;; modular org files tangle process.Tangling only happens when the .org file is newer than the .el file. 
+(defun my-tangle-config-org ()
+  "Tangle only config.org → config.el (C-c t)."
+  (interactive)
+  (condition-case err
+      (progn
+        (org-babel-tangle-file (expand-file-name "config.org" user-emacs-directory))
+        (message "config.org tangled"))
+    (error (message "Failed to tangle config.org: %S" err))))
+
+(defun my/tangle-if-needed (org-file el-file)
+  "Tangle ORG-FILE to EL-FILE only if ORG-FILE is newer."
+  (let ((org-full (expand-file-name org-file user-emacs-directory))
+        (el-full  (expand-file-name el-file  user-emacs-directory)))
+    (when (or (not (file-exists-p el-full))
+              (file-newer-than-file-p org-full el-full))
+      (require 'org)
+      (org-babel-tangle-file org-full el-full "emacs-lisp")
+      (message "Tangled: %s → %s" org-file el-file))))
+#+END_SRC
+
+** Tag-based refiling
 #+BEGIN_SRC emacs-lisp
 ;; automatically refiling (moving) Org headings based on their tags added on 2025-09-20
 (defcustom my-org-refile-to-ids nil
@@ -134,13 +152,7 @@ Skips if no changes; handles errors gracefully without deleting files."
   :type '(repeat (cons string string)))
 #+END_SRC
 
-** Org Roam dailiies path definition 
-#+BEGIN_SRC emacs-lisp
-(defvar org-roam-dailies-directory (expand-file-name "daily" org-roam-directory)
-  "Directory for Org-roam dailies.")
-#+END_SRC
-
-** Customized Agenda view files on startup excluding roam, build, backup and other directory
+** Smart org-agenda-files (top-level + roam/)
 #+BEGIN_SRC emacs-lisp
 (defun my/update-agenda-files ()
   "Set `org-agenda-files` to top-level .org files in `default-directory`,
@@ -189,31 +201,70 @@ plus recursive .org files from the 'roam' subdirectory, excluding unwanted dirs.
 #+END_SRC
 
 
-** Debug: Confirm startup.
+** Startup finished message
 #+BEGIN_SRC emacs-lisp
 (when (getenv "MY_DEBUG_DEVICE")
-  (message "=== STARTUP OPTIMIZATIONS COMPLETE ==="))
+  (message "=== STARTUP COMPLETE ==="))
 #+END_SRC
 
 * ACTIVE Package Management
 Configure package managers and lightweight, universal packages with lazy loading.
 Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliographic tools in org/roam.org; filetags in org/filetags.org.
 
-| Package      | Purpose                          | Device       | Keybindings              | Loading Trigger          |
-|--------------|----------------------------------|--------------|--------------------------|--------------------------|
-| org          | Core Org-mode                    | All          | Org-mode keys            | Built-in                 |
-| org-roam     | Zettelkasten note-taking         | All          | C-c r n, r f, r i, r g   | Startup                  |
-| org-roam-bibtex | Zotero/BibTeX citation capture | All          |                          | org-roam-mode hook       |
-| citar        | Bibliography interface           | All          | C-c i c                  | On demand                |
-| org-roam-ui  | Graphical note graph (web UI)    | Laptop only  | C-c r g                  | M-x or keybinding        |
-| f            | File/directory manipulation      | All          | None                     | On demand                |
-| ht           | Hash table utilities             | All          | None                     | On demand                |
-| ibuffer      | Buffer management                | All          | C-x C-b                  | C-x C-b                  |
-| org-crypt    | Password encryption              | All          | None                     | org-mode hook            |
-| cdlatex      | Math/equation input              | All          | TAB (contextual)         | TAB                      |
-| yasnippet    | Snippet framework                | All          | TAB (inline yas-expand), C-c s (yas-insert-snippet) | TAB, C-c s            |
-| yankpad      | Org-style snippet library        | All          | C-c y, C-c Y             | C-c y                    |
-| flyspell     | Spell checking                   | All          | M-$                      | M-$                      |
+| Prefix / Key  | Command                               | Description                                          | Scope / Notes            |
+| ------------- | ------------------------------------- | ---------------------------------------------------- | ------------------------ |
+| C-c i(prefix) | —                                     | Citations, literature notes, timestamps, PDF tools   | Main bib & note workflow |
+| C-c i c       | citar-insert-citation                 | Insert citation @key                                 | Org-mode                 |
+| C-c i C       | citar-insert-citation                 | Same as above (Shift for muscle memory)              | Org-mode                 |
+| C-c i r       | citar-insert-reference                | Insert formatted reference                           | Org-mode                 |
+| C-c i k       | citar-insert-keys                     | Insert bare citation keys                            | Org-mode                 |
+| C-c i n       | citar-create-note                     | Create new blank literature note                     | Any mode                 |
+| C-c i N       | citar-open-note                       | Open/create note for citation at point               | Any mode                 |
+| C-c i C-n     | citar-open-notes                      | Choose any entry → open its note                     | Any mode                 |
+| C-c i o       | citar-open                            | Open PDF/link/website                                | Any mode                 |
+| C-c i O       | citar-open-files                      | Open all attached files                              | Any mode                 |
+| C-c i a       | my/open-pdf-and-note                  | Open PDF + start org-noter session                   | Any mode                 |
+| C-c i g       | my/open-pdf-and-note 'generic         | Same but generic (no special handling)               | Any mode                 |
+| C-c i p       | my/pdf-insert-selection-to-note       | Insert selected PDF text into note                   | pdf-view-mode            |
+| C-c i A       | org-noter-pdftools-insert-annotations | Insert PDF annotations into note                     | pdf-view-mode            |
+| C-c i b       | my/open-calibre-book-and-note         | Open Calibre book + note (laptop only)               | Laptop only              |
+| C-c i t       | my-insert-timestamp                   | Insert YYYY-MM-DD HH:MM:SS                           | Any mode                 |
+| C-c i d       | my-insert-datestamp                   | Insert YYYY-MM-DD                                    | Any mode                 |
+| C-c i o       | my-insert-org-timestamp               | Insert Org timestamp [YYYY-MM-DD Day HH:MM]          | Any mode                 |
+| C-c r(prefix) | —                                     | Pure Org-roam navigation & dailies                   | —                        |
+| C-c r f       | org-roam-node-find                    | Find node                                            | Org-mode                 |
+| C-c r i       | org-roam-node-insert                  | Insert node link                                     | Org-mode                 |
+| C-c r n       | org-roam-capture                      | Capture new node                                     | Org-mode                 |
+| C-c r d       | org-roam-dailies-capture-today        | Capture today’s daily                                | Org-mode                 |
+| C-c r T       | org-roam-dailies-goto-today           | Go to today’s daily                                  | Org-mode                 |
+| C-c r P       | org-roam-dailies-goto-previous-note   | Previous daily                                       | Org-mode                 |
+| C-c r N       | org-roam-dailies-goto-next-note       | Next daily                                           | Org-mode                 |
+| C-c r D       | org-roam-dailies-goto-date            | Go to specific date                                  | Org-mode                 |
+| C-c r t       | my-org-roam-tag-add                   | Add tag to node                                      | Org-mode                 |
+| C-c r r       | my-org-roam-tag-remove                | Remove tag from node                                 | Org-mode                 |
+| C-c r s       | my/org-roam-safe-rebuild              | Safe DB rebuild                                      | Org-mode                 |
+| C-c r g       | org-roam-ui-open                      | Open graph UI (laptop only)                          | Laptop only              |
+| C-c g(prefix) | —                                     | Git sync for Org notes                               | —                        |
+| C-c g p       | magit-pull-org-repo                   | Pull changes from repo                               | Any mode                 |
+| C-c g u       | magit-push-org-repo                   | Push changes to repo                                 | Any mode                 |
+| Consult keys  | —                                     | Global keys for enhanced completion and navigation   | Global                   |
+| C-s           | consult-line                          | Search lines                                         | Global                   |
+| C-c h         | consult-org-heading                   | Search org headings                                  | Global                   |
+| C-c k         | consult-ripgrep                       | Search with ripgrep                                  | Global                   |
+| C-c b         | consult-buffer                        | Switch buffer                                        | Global                   |
+| C-c p         | consult-find                          | Find files                                           | Global                   |
+| C-c t         | my-tangle-config-org                  | Tangle only config.org                               | Any mode                 |
+| C-c T         | my-tangle-all                         | Tangle all modular files                             | Any mode                 |
+| C-c c         | org-capture                           | Quick capture                                        | Any mode                 |
+| C-c a         | org-agenda                            | Agenda view                                          | Any mode                 |
+| C-c v         | my/org-pdf-vertical-view              | Side-by-side PDF preview                             | Any mode                 |
+| C-c f t       | my-org-set-filetags                   | Set file-level tags                                  | Org-mode                 |
+| C-x g         | magit-status                          | Full Magit status                                    | Any mode                 |
+| C-c m         | mu4e                                  | Open email (Mu4e)                                    | Any mode                 |
+| C-z           | undo                                  | Undo                                                 | Any mode                 |
+| M-o           | ace-window                            | Fast window switching                                | Any mode                 |
+| TAB (Org)     | my/org-smart-tab                      | Smart TAB (yasnippet / CDLaTeX / visibility cycling) | Org-mode                 |
+| C-c i i (Org) | org-toggle-item                       | Toggle list item                                     | Org-mode                 |
 
 ** Org Base Configuration
 #+BEGIN_SRC emacs-lisp
@@ -267,8 +318,7 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :straight nil                      ;; Do not use straight.el
   :defer t                           ;; Load when needed (on demand)
   :config
-  (setq org-crypt-use-before-save nil) ;; Optional: prevent auto-encryption on save
-  (require 'org-crypt))
+  (setq org-crypt-use-before-save nil))  ;; Optional: prevent auto-encryption on save
 #+END_SRC
 
 ** Flyspell for spell checking (loaded on M-$).
@@ -284,6 +334,7 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
         ispell-local-dictionary-alist
         '(("en_GB" "[[:alpha:]]" "[^[:alpha:]]" "[']" t
            ("-d" "en_GB") nil utf-8)))
+  (unless (executable-find "hunspell") (message "Hunspell not found; spellcheck disabled."))        
   :config
   ;; Enable flyspell everywhere you write text
   (add-hook 'text-mode-hook #'flyspell-mode)
@@ -328,6 +379,23 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :diminish yas-minor-mode)
 #+END_SRC
 
+#+BEGIN_SRC emacs-lisp
+(use-package org-download
+  :straight t
+  :after org
+  :config
+  ;; Configure org-download to integrate with org-attach
+  (setq org-download-method 'attach            ; Use org-attach directory
+        org-download-image-dir ".attach/images" ; Subdirectory for organization
+        org-download-screenshot-method "scrot -s %s") ; Use scrot for screenshots
+
+  ;; Bind screenshot shortcut only if scrot is available
+  (when (executable-find "scrot")
+    (bind-key "C-c C-x C-s" #'org-download-screenshot))
+
+  ;; Enable org-download in org-mode
+  (add-hook 'org-mode-hook #'org-download-enable))
+#+END_SRC
 
 ** Yankpad: Org-mode snippet library on top of Yasnippet
 #+BEGIN_SRC emacs-lisp
@@ -345,28 +413,21 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
     (unless (file-directory-p yankpad-dir)
       (make-directory yankpad-dir t)))
 
-  ;; Load snippets immediately
-  (yankpad-reload)
-
   ;; Optional: auto-reload in Org buffers
   (add-hook 'org-mode-hook #'yankpad-reload))
-
 #+END_SRC
 
 ** Vertico: vertical completion UI Work well with org-roam (and Emacs in general) much faster, more flexible, and user-friendly. 
 #+BEGIN_SRC emacs-lisp
 (use-package vertico
   :straight t
-  :defer t
-  :init
-  (vertico-mode))
+  :init (vertico-mode))
 #+END_SRC
 
 ** Orderless: smart fuzzy matching for completion
 #+BEGIN_SRC emacs-lisp
 (use-package orderless
   :straight t
-  :defer t
   :custom
   (completion-styles '(orderless))
   (completion-category-defaults nil)
@@ -376,15 +437,48 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 ** Future enhancement Consult package: enhanced commands. :future:
 Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) for working with Org-roam and Emacs in general.It can be enabled later for future optimization.
 
+** bibtex-completion for bibtex citar implementation
+#+BEGIN_SRC emacs-lisp
+;; -----------------------------
+;; Marginalia — Rich Annotations (metadata for minibuffer)
+;; -----------------------------
+(use-package marginalia
+  :straight t
+  :after vertico
+  :init (marginalia-mode)
+  :config
+  (setq marginalia-align 'right)
+  (message "✅ Marginalia annotations active."))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+;; -----------------------------
+;; Embark — Contextual Actions
+;; -----------------------------
+(use-package embark
+  :straight t
+  :after vertico
+  :demand t  ; Load immediately after Vertico to resolve deferral for downstream packages like Consult
+  :bind (("C-." . embark-act)
+         ("C-;" . embark-dwim))
+  :config
+  (setq prefix-help-command #'embark-prefix-help-command))
+#+END_SRC
+
 #+BEGIN_SRC emacs-lisp 
 (use-package consult
   :straight t
-  :bind
-  (("C-s" . consult-line)
-  ("C-c h" . consult-org-heading)
-  ("C-c k" . consult-ripgrep)
-  ("C-c b" . consult-buffer)
-  ("C-c p" . consult-find)))
+  :after (vertico embark))  ; Defer config/bindings until dependencies are read
+#+END_SRC
+
+
+#+BEGIN_SRC emacs-lisp
+;; Integrate Embark + Consult (if you have consult; otherwise omit)
+(use-package embark-consult
+  :straight t
+  :after (embark consult)
+  :hook (embark-collect-mode . consult-preview-at-point-mode)
+  :config (message "✅ Embark-Consult integration enabled."))
 #+END_SRC
 
 ** RefTeX for Advanced Citation/Ref Handling.
@@ -397,28 +491,37 @@ If using AUCTeX for LaTeX exports, add reftex package.
   :diminish reftex-mode)
 #+END_SRC
 
-
 ** pdf tools: Enable in-buffer PDF viewing in Emacs (rather than opening PDFs in external viewers)
-;; Use features like highlighting, annotations, or text selection. Work along with org-noter for taking notes synchronized with PDF pages
-;; Updated on 2025-08-15 for support termux build in android devices.
+
 #+BEGIN_SRC emacs-lisp
-;; Install and configure PDF Tools as default PDF viewer
+;; Use features like highlighting, annotations, or text selection. Work along with org-noter for taking notes synchronized with PDF pages
+;; Updated on 2025-11-26 to fix epdfinfo executable error after Poppler upgrade.
+;; ──────────────────────────────────────────────────────────────
+;; PDF Tools + Org-Noter-PDFTools – FINAL WORKING VERSION (2025-11-26)
+;; ──────────────────────────────────────────────────────────────
 (use-package pdf-tools
-  :straight t
-  :defer t  ; Load on demand
+  :straight (:host github :repo "vedang/pdf-tools" :build t)
+  :defer t
+  :commands (pdf-view-mode pdf-tools-install)
+  :mode ("\\.pdf\\'" . pdf-view-mode)
+  :magic ("%PDF" . pdf-view-mode)
   :init
-  ;; Only enable on devices where it makes sense (e.g., skip on phone/tablet if performance is an issue)
-  (unless (memq my-device '(phone tablet))
-    (pdf-loader-install))  ; Changed to lazy/on-demand install
+  (unless (eq my-device 'laptop)
+    (setq pdf-tools-enabled-modes nil)) ; Disable elsewhere
   :config
-  ;; Optional tweaks for better integration
-  (setq pdf-view-display-size 'fit-page  ; Fit to page by default
-        pdf-view-continuous t)           ; Smooth scrolling
-  ;; Enable Org-Noter integration with PDF Tools
-  (with-eval-after-load 'org-noter
-    (require 'org-noter-pdftools)
-    (add-to-list 'org-noter-notes-window-behavior '(org-noter-pdftools-jump-to-note)))
-  :mode ("\\.pdf\\'" . pdf-view-mode))  ; Override DocView for PDFs
+  (setq pdf-info-epdfinfo-program
+        (expand-file-name "build/server/epdfinfo" (straight--build-dir "pdf-tools")))
+  ;; Run installation/build once at startup
+  (unless (file-executable-p pdf-info-epdfinfo-program)
+    (pdf-tools-install :no-query))
+  (setq pdf-view-display-size 'fit-page
+        pdf-view-continuous t
+        pdf-annot-activate-created-annotations t
+        pdf-tools-handle-upgrades nil
+        pdf-view-use-scaling t)
+  ;; Pre-clear PDF cache on view start
+  (add-hook 'pdf-view-mode-hook (lambda () (pdf-cache-clear-data (buffer-file-name))))
+  (message "PDF-Tools ready"))
 #+END_SRC
 
 
@@ -434,39 +537,18 @@ If using AUCTeX for LaTeX exports, add reftex package.
   :defer t)
 #+END_SRC
 
-** bibtex-completion for bibtex citar implementation
 #+BEGIN_SRC emacs-lisp
 ;; -----------------------------
-;; Marginalia — Rich Annotations (metadata for minibuffer)
+;; Disable org-ref to avoid conflicts if installed
 ;; -----------------------------
-(use-package marginalia
-  :straight t
-  :init (marginalia-mode)
-  :config
-  (setq marginalia-align 'right)
-  (message "✅ Marginalia annotations active."))
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
-;; -----------------------------
-;; Embark — Contextual Actions
-;; -----------------------------
-(use-package embark
-  :straight t
-  :bind (("C-." . embark-act) ;; main action key
-         ("C-;" . embark-dwim)) ;; smart default action
-  :config
-  (setq prefix-help-command #'embark-prefix-help-command)
-  (message "✅ Embark contextual actions active."))
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
-;; Integrate Embark + Consult (if you have consult; otherwise omit)
-(use-package embark-consult
-  :straight t
-  :after (embark consult)
-  :hook (embark-collect-mode . consult-preview-at-point-mode)
-  :config (message "✅ Embark-Consult integration enabled."))
+(ignore-errors (unload-feature 'org-ref t))
+(straight-override-recipe '(org-ref :type built-in :local-repo nil :files nil))
+(setq load-path (cl-remove-if (lambda (p) (string-match-p "org-ref" p)) load-path))
+(unless (featurep 'org-ref)
+  (defvar org-ref-bibliography-notes nil)
+  (defvar org-ref-default-bibliography nil)
+  (defvar org-ref-pdf-directory nil)
+  (provide 'org-ref))
 #+END_SRC
 
 ** Zotero/Bibliography Integration
@@ -476,9 +558,11 @@ If using AUCTeX for LaTeX exports, add reftex package.
 ;; -----------------------------
 (use-package citar
   :straight t
+  :no-require t
   :commands (citar-insert-citation citar-create-note)
   :custom
-  (citar-bibliography (list bib-path))
+  (org-cite-global-bibliography (list bib-path))
+  (citar-bibliography org-cite-global-bibliography)
   (citar-library-paths my-citar-library-paths)
   (citar-notes-paths (list (expand-file-name "literature" org-roam-directory)))
   (citar-file-note-extensions '("org"))
@@ -486,8 +570,11 @@ If using AUCTeX for LaTeX exports, add reftex package.
   (org-cite-follow-processor 'citar)
   (org-cite-activate-processor 'citar)
   (citar-file-open-function 'find-file)
+  :hook
+  ((org-mode . citar-capf-setup)
+   (LaTeX-mode . citar-capf-setup))
   :config
-  (citar-capf-setup)
+  (require 'citar)  ; Load full package
   (message "✅ Citar ready."))
 
 ;; Install C-c i c in org buffers only (safe)
@@ -496,7 +583,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
             ;; prefer local-set-key to avoid overriding global maps
             (local-set-key (kbd "C-c i c") #'citar-insert-citation)))
 #+END_SRC
-
 
 #+BEGIN_SRC emacs-lisp
 ;; Helper function to insert or create citation notes
@@ -515,7 +601,9 @@ If using AUCTeX for LaTeX exports, add reftex package.
 #+BEGIN_SRC emacs-lisp
 (use-package org-noter
   :straight t
-  :after (pdf-tools org)
+  :defer t
+  :after org
+  :commands org-noter
   :config
   (setq org-noter-notes-search-path (list (expand-file-name "literature" org-roam-directory)))
   (setq org-noter-auto-save-last-location t
@@ -529,22 +617,49 @@ If using AUCTeX for LaTeX exports, add reftex package.
 ** pdf annotation using org noter
 #+BEGIN_SRC emacs-lisp
 (use-package org-noter-pdftools
-  :straight t
-  :after (org-noter pdf-tools))
+  :straight t  ; Install from MELPA
+  :defer t
+  :after (org-noter pdf-tools)
+  :commands org-noter-pdftools-jump-to-note
+  :config
+  ;; Add this guard: Only load if no errors
+  (condition-case err
+      (progn
+        (add-to-list 'org-noter-notes-window-behavior '(org-noter-pdftools-jump-to-note))
+        (message "org-noter-pdftools loaded successfully"))
+    (error (message "org-noter-pdftools load failed: %S. Disabling." err))))
 #+END_SRC
 
+** Calibre ebook integration with org
 #+BEGIN_SRC emacs-lisp
-;; -----------------------------
-;; Disable org-ref to avoid conflicts if installed
-;; -----------------------------
-(ignore-errors (unload-feature 'org-ref t))
-(straight-override-recipe '(org-ref :type built-in :local-repo nil :files nil))
-(setq load-path (cl-remove-if (lambda (p) (string-match-p "org-ref" p)) load-path))
-(unless (featurep 'org-ref)
-  (defvar org-ref-bibliography-notes nil)
-  (defvar org-ref-default-bibliography nil)
-  (defvar org-ref-pdf-directory nil)
-  (provide 'org-ref))
+;; ──────────────────────────────────────────────────────────────
+;; Calibre integration – only on laptop
+;; ──────────────────────────────────────────────────────────────
+(when (eq my-device 'laptop)
+  (use-package calibredb
+    :straight (:host github :repo "chenyanming/calibredb.el")
+    :defer t
+    :config
+    (setq calibredb-root-dir "/wspace/src/calibre-ebooks")
+    (setq calibredb-db-dir (expand-file-name "metadata.db" calibredb-root-dir))
+    (setq calibredb-completion-method 'consult)
+    (setq calibredb-search-limit 200)
+    (setq calibredb-order '("title" "author" "tags"))
+    (setq calibredb-virtual-library-alist '(("Engineering Books" . "tag:engineering OR tag:vlsi")
+                                            ("Reference" . "tag:reference")))
+    ;; Patch calibredb-get-cover to handle nil :book-dir gracefully
+    (defun calibredb-get-cover (candidate &optional full-path)
+      "Get cover image path of CANDIDATE.
+If FULL-PATH, return the full path. Handles nil :book-dir."
+      (let* ((id (calibredb-getattr candidate :id))
+             (path (calibredb-getattr candidate :book-dir)))
+        (when path  ; Skip if path is nil
+          (let ((cover (expand-file-name "cover.jpg" path)))
+            (if (file-exists-p cover)
+                (if full-path
+                    cover
+                  (concat "file:" cover))
+              nil)))))))
 #+END_SRC
 
 ** Magit is a Git GUI interface for Emacs
@@ -553,14 +668,12 @@ If using AUCTeX for LaTeX exports, add reftex package.
   :straight t
   :defer t
   :commands (magit-status magit-blame)
-  :init
-  (global-set-key (kbd "C-x g") 'magit-status)
   :config
   (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1
         magit-save-repository-buffers 'dontask))
 #+END_SRC
 
-* ACTIVE UI Tweaks
+* ACTIVE UI & General Settings
 #+BEGIN_SRC emacs-lisp
 (when (eq my-device 'termux)
   (when (fboundp 'set-fringe-mode)
@@ -585,40 +698,23 @@ If using AUCTeX for LaTeX exports, add reftex package.
 (setq-default cursor-type 'bar) ;;Changes the default cursor shape to a vertical bar (instead of the default box).
 #+END_SRC
 
-** Device-specific backup directory under default-directory
+
+** Backups & autosaves
 #+BEGIN_SRC emacs-lisp
-(defvar my-backup-dir (expand-file-name ".backups/" default-directory)
-  "Directory to store Emacs backup (~) files.")
+(let ((backup-dir  (expand-file-name ".backups/" default-directory))
+      (autosave-dir (expand-file-name ".autosaves/" default-directory)))
+  (dolist (d (list backup-dir autosave-dir))
+    (unless (file-directory-p d) (make-directory d t)))
+  (setq backup-directory-alist `((".*" . ,backup-dir))
+        auto-save-file-name-transforms `((".*" ,autosave-dir t))
+        auto-save-default t
+        version-control nil
+        delete-old-versions t
+        make-backup-files t
+        backup-by-copying t))
 #+END_SRC
 
-** Create backup directory if it doesn't exist
-#+BEGIN_SRC emacs-lisp
-(unless (file-exists-p my-backup-dir)
-  (make-directory my-backup-dir t))
-(setq backup-directory-alist `((".*" . ,my-backup-dir))
-      version-control nil
-      delete-old-versions t
-      make-backup-files t
-      backup-by-copying t)
-
-(defvar my-autosave-dir (expand-file-name ".autosaves/" default-directory)
-  "Directory to store Emacs auto-save files.")
-#+END_SRC
-
-** Create autosave directory if missing
-#+BEGIN_SRC emacs-lisp
-(unless (file-exists-p my-autosave-dir)
-  (make-directory my-autosave-dir t))
-#+END_SRC
-
-** Redirect auto-save files to device-specific location
-#+BEGIN_SRC emacs-lisp
-(setq auto-save-file-name-transforms
-      `((".*" ,my-autosave-dir t))
-      auto-save-default t)
-#+END_SRC
-
-** Other general settings
+** Miscellenous 
 #+BEGIN_SRC emacs-lisp
 ;; Calendar: Monday as start of week
 (setq-default calendar-week-start-day 1)
@@ -631,6 +727,16 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 ;; Read-only files in view mode
 (setq view-read-only t)
+
+;; Added 2025-07-15: Allow alphabetical list continuation (1.a, 1.b, 1.c., ...)
+(setq org-list-allow-alphabetical t)
+
+;; Attachments relative to org file, in `.attach` folder
+(setq org-attach-directory ".attach")
+
+;; Enable smart window navigation
+(windmove-default-keybindings) ;; Shift + Arrow
+(winner-mode 1)                ;; C-c <left/right> undo/redo window layout
 
 ;; Timestamp functions
 (defun my-insert-timestamp ()
@@ -645,43 +751,9 @@ If using AUCTeX for LaTeX exports, add reftex package.
   "Insert a timestamp in Org-mode format [YYYY-MM-DD Day HH:MM]"
   (interactive)
   (insert (format-time-string "[%Y-%m-%d %a %H:%M]")))
-
-;; Added 2025-07-15: Allow alphabetical list continuation (1.a, 1.b, 1.c., ...)
-(setq org-list-allow-alphabetical t)
-
-;; Configure navigation between windows and automatic vertical preview for PDF.
-;; Enable smart window navigation
-(windmove-default-keybindings) ;; Shift + Arrow
-(winner-mode 1)                ;; C-c <left/right> undo/redo window layout
-#+END_SRC
-
-** ACTIVE Org Attachment File directory
-#+BEGIN_SRC emacs-lisp
-;; Attachments relative to org file, in `.attach` folder
-(setq org-attach-directory ".attach")
 #+END_SRC
 
 * ACTIVE Keybindings
-
-** Tangle shortcut
-#+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-c t") (lambda ()
-  (interactive)
-  (org-babel-tangle-file (expand-file-name "config.org" user-emacs-directory))
-  (message "✅ config.org tangled")))
-#+END_SRC
-
-** Timestamp keybindings
-#+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-c i t") 'my-insert-timestamp)    ;; YYYY-MM-DD HH:MM:SS
-(global-set-key (kbd "C-c i d") 'my-insert-datestamp)    ;; YYYY-MM-DD
-(global-set-key (kbd "C-c i g") 'my-insert-org-timestamp) ;; [YYYY-MM-DD Day HH:MM]
-#+END_SRC
-
-** Citar Citation insertion keybinding
-#+BEGIN_SRC emacs-lisp
-;;(global-set-key (kbd "C-c i c") 'citar-insert-citation)  ;; Insert citation with Citar
-#+END_SRC
 
 ** Org-mode specific keybinding for toggling items :Added 2025-07-15
 #+BEGIN_SRC emacs-lisp
@@ -690,83 +762,50 @@ If using AUCTeX for LaTeX exports, add reftex package.
             (local-set-key (kbd "C-c i i") #'org-toggle-item)))
 #+END_SRC
 
-** Disble Ctrl+Z key accidental suspend-frame(minimize the window) keybinding to Undo command
-#+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-z") 'undo)
-
-;; Org capture template
-(global-set-key (kbd "C-c c") 'org-capture)
-
-;; mu4e Email integration quick access
-(global-set-key (kbd "C-c m") 'mu4e)
-#+END_SRC
-
 ** Switching windows 
 #+BEGIN_SRC emacs-lisp
-;; Ace Window for fast jumping (M-o)
+;; Ace Window for fast jumping (M-o) — key bound in org/keymaps.org
 (use-package ace-window
-  :bind (("M-o" . ace-window)))
+  :straight t 
+  :defer t)
 #+END_SRC
 
-** ORG Agenda keybinding
-#+BEGIN_SRC emacs-lisp
-;;[2025-08-10] Added to ensure org-agenda is loaded and keybinding works
-(require 'org-agenda)
-(global-set-key (kbd "C-c a") 'org-agenda)
-#+END_SRC
-
-* ACTIVE Modular Configs
-#+BEGIN_SRC emacs-lisp
-(my/tangle-if-needed "org/orgxtn.org" "org/orgxtn.el")
-(load (expand-file-name "org/orgxtn.el" user-emacs-directory) nil 'nomessage)
-
-(my/tangle-if-needed "org/roam.org" "org/roam.el")
-(load (expand-file-name "org/roam.el" user-emacs-directory) nil 'nomessage)
-
-(my/tangle-if-needed "org/filetags.org" "org/filetags.el")
-(load (expand-file-name "org/filetags.el" user-emacs-directory) nil 'nomessage)
-
-(my/tangle-if-needed "org/workflow.org" "org/workflow.el")
-(load (expand-file-name "org/workflow.el" user-emacs-directory) nil 'nomessage)
-
-;; note and annotation configuaration
-(my/tangle-if-needed "org/reading.org" "org/reading.el")
-(load (expand-file-name "org/reading.el" user-emacs-directory) nil 'nomessage)
-
-;;General LaTeX export configs (requires TeX Live, latexmk)
-(my/tangle-if-needed "org/latextn.org" "org/latextn.el")
-(load (expand-file-name "org/latextn.el" user-emacs-directory) nil 'nomessage)
-
-;; Optional: Engineering-specific configs for TikZ/CircuitTikZ diagrams. Comment the engxtn.el if you dont use engineering settings.
-(my/tangle-if-needed "org/engxtn.org" "org/engxtn.el")
-(load (expand-file-name "org/engxtn.el" user-emacs-directory) nil 'nomessage)
-
-(when (eq my-device 'laptop)
-(my/tangle-if-needed "org/mail.org" "org/mail.el")
-(load (expand-file-name "org/mail.el" user-emacs-directory) nil 'nomessage))
-#+END_SRC
-
+** Tangle everything (C-c T)
 #+BEGIN_SRC emacs-lisp
 (defun my-tangle-all ()
-  "Tangle all modular Org files."
+  "Tangle all modular .org files including config.org."
   (interactive)
-  (my/tangle-if-needed "org/orgxtn.org" "org/orgxtn.el")
-  (my/tangle-if-needed "org/roam.org" "org/roam.el")
-  (my/tangle-if-needed "org/filetags.org" "org/filetags.el")
-  (my/tangle-if-needed "org/workflow.org" "org/workflow.el")
-  (my/tangle-if-needed "org/reading.org" "org/reading.el")
-  (my/tangle-if-needed "org/latextn.org" "org/latextn.el")
-  ;; if dont want engineering specific org extension. comment following engxtn.el
-  (my/tangle-if-needed "org/engxtn.org" "org/engxtn.el")
-      (when (eq my-device 'laptop)
-  (my/tangle-if-needed "org/mail.org" "org/mail.el"))
-  ;; Add more modular files here (e.g., workflows.org when uncommented)
-  (message "[%s] All modular files tangled" (format-time-string "%T")))
-(global-set-key (kbd "C-c T") 'my-tangle-all)
+  (dolist (f '("config.org"
+               "org/orgxtn.org" "org/roam.org" "org/filetags.org"
+               "org/workflow.org" "org/notextn.org" "org/latextn.org"
+               "org/engxtn.org" "org/mail.org" "org/keymaps.org"))
+    (my/tangle-if-needed f (concat (file-name-sans-extension f) ".el")))
+  (message "[%s] All files tangled" (format-time-string "%T")))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+(dolist (pair '(("org/orgxtn.org"   . "org/orgxtn.el")
+                ("org/roam.org"     . "org/roam.el")
+                ("org/filetags.org" . "org/filetags.el")
+                ("org/workflow.org" . "org/workflow.el")
+                ("org/notextn.org"  . "org/notextn.el")
+                ("org/latextn.org"  . "org/latextn.el")
+                ("org/engxtn.org"   . "org/engxtn.el")
+                ("org/mail.org"     . "org/mail.el")
+                ("org/keymaps.org"  . "org/keymaps.el")))
+  (let ((org (car pair)) (el (cdr pair)))
+    (when (or (not (string-match-p "mail" org))
+              (eq my-device 'laptop))
+      (my/tangle-if-needed org el)
+      (condition-case err
+          (load (expand-file-name el user-emacs-directory) nil t)
+        (error (message "Failed loading %s: %S" el err))))))
+
+(provide 'config)
 #+END_SRC
 
 
-* Git enabled org notes sync with repo
+* Git sync for Org notes
 Note: If you are not using git source control for org notes across devices, comment/remove following function
 
 #+BEGIN_SRC emacs-lisp
@@ -777,26 +816,22 @@ Note: If you are not using git source control for org notes across devices, comm
 (defun magit-pull-org-repo ()
   "Pull the Org notes repo using Magit (async)."
   (interactive)
-  (magit-pull-from-upstream nil) ; Pulls from origin/main; nil for default args
-  (message "Magit pull started (check Magit process buffer if needed)."))
+  (if (fboundp 'magit-pull-from-upstream)
+      (magit-pull-from-upstream nil)
+    (magit-pull-current-branch))  ; Fallback to stable API
+  (message "Magit pull started."))
 
 ;; Manual push function (replaces git-push-repo)
 (defun magit-push-org-repo ()
   "Stage modified files, commit if needed (with prompt), then push using Magit (async)."
   (interactive)
-  (magit-stage-modified) ; Stages only tracked/modified files (safer than git add -A)
-  (when (magit-anything-staged-p) ; Only commit if there are changes
-    (magit-commit-create)) ; Interactive commit with message prompt
-  (magit-push-current-to-upstream nil) ; Pushes to origin/main
-  (message "Magit push started (check Magit process buffer if needed)."))
-
-;; C-c g p for pull, C-c g u for push
-(defvar git-org-map (make-sparse-keymap) "Keymap for Git Org commands.")
-(define-key global-map (kbd "C-c g") git-org-map)
-(define-key git-org-map (kbd "p") 'magit-pull-org-repo)
-(define-key git-org-map (kbd "u") 'magit-push-org-repo)
-#+END_SRC
-
+  (magit-stage-modified)
+  (when (and (fboundp 'magit-anything-staged-p) (magit-anything-staged-p))
+    (magit-commit-create))
+  (if (fboundp 'magit-push-current-to-upstream)
+      (magit-push-current-to-upstream nil)
+    (magit-push-current-branch))  ; Fallback
+  (message "Magit push started."))
 
 * CANCELLED Deprecated Settings
 #+BEGIN_SRC emacs-lisp
