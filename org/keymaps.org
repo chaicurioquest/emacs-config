@@ -106,22 +106,19 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
 ;; Core Citar actions
 (with-eval-after-load 'citar
   (define-key my/citar-map (kbd "c")   #'citar-insert-citation)   ; C-c i c
-  (define-key my/citar-map (kbd "C")   #'citar-insert-citation)   ; same with Shift
+  (define-key my/citar-map (kbd "C")   #'citar-insert-citation)   ; Shift variant
   (define-key my/citar-map (kbd "r")   #'citar-insert-reference)
   (define-key my/citar-map (kbd "k")   #'citar-insert-keys)
-
-  ;; Literature notes workflow — now lives under C-c i 
-  (define-key my/citar-map (kbd "n")   #'citar-create-note)      ; C-c i n → new blank note
-  (define-key my/citar-map (kbd "N")   #'citar-open-note)        ; C-c i N → open/create note at point
-  (define-key my/citar-map (kbd "C-n") #'citar-open-notes)       ; C-c i C-n → pick any entry → open note
-  (define-key my/citar-map (kbd "o")   #'citar-open)             ; C-c i o → open PDF/link/etc.
-  (define-key my/citar-map (kbd "O")   #'citar-open-files))      ; C-c i O → open all files
+  (define-key my/citar-map (kbd "n")   #'citar-create-note)       ; New note
+  (define-key my/citar-map (kbd "N")   #'citar-open-note)         ; Open/create note at point
+  (define-key my/citar-map (kbd "C-n") #'citar-open-notes)        ; Pick entry → open note
+  (define-key my/citar-map (kbd "o")   #'citar-open)              ; Open PDF/link/etc.
+  (define-key my/citar-map (kbd "O")   #'citar-open-files))       ; Open all files
 
 ;; PDF annotation helpers (Custom functions)
 (with-eval-after-load 'org-noter
   (define-key my/citar-map (kbd "a") #'my/open-pdf-and-note)
   (define-key my/citar-map (kbd "g") (lambda () (interactive) (my/open-pdf-and-note 'generic)))
-  (define-key my/citar-map (kbd "p") #'my/pdf-insert-selection-to-note)
   (define-key my/citar-map (kbd "A") #'org-noter-pdftools-insert-annotations))
 
 (with-eval-after-load 'pdf-view
@@ -166,6 +163,16 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
 
 (with-eval-after-load 'mu4e-view
   (define-key mu4e-view-mode-map (kbd "C-c C-c") #'mu4e-org-store-and-capture))
+
+;; ─────────────────────────────────────────────────────────────
+;; Consult keybindings (moved here from use-package in config.el)
+;; ─────────────────────────────────────────────────────────────
+(with-eval-after-load 'consult
+  (global-set-key (kbd "C-s") #'consult-line)
+  (global-set-key (kbd "C-c h") #'consult-org-heading)
+  (global-set-key (kbd "C-c k") #'consult-ripgrep)
+  (global-set-key (kbd "C-c b") #'consult-buffer)
+  (global-set-key (kbd "C-c p") #'consult-find))
 
 (provide 'keymaps)
 ;;; keymaps.el ends here

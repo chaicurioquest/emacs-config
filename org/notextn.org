@@ -19,11 +19,59 @@ with a unified command set under =C-c i=.
 #+BEGIN_SRC emacs-lisp
 ;;; notextn.el --- Org-noter + Citar + PDF Tools integration     -*- lexical-binding: t; -*-
 
+;; Required packages
 (require 'org)
 (require 'org-id)
 (require 'org-noter)
+
+;; Function to check if a list is proper (used for sanitization)
+(defun my/proper-list-p (obj)
+  "Return t if OBJ is a proper list (nil-terminated, no cycles or dots)."
+  (and (listp obj)
+       (catch 'improper
+         (while (consp obj)
+           (setq obj (cdr obj))
+           (unless (or (consp obj) (null obj))
+             (throw 'improper nil)))
+         (null obj))))
+
+;; Advice to sanitize window properties before Org-noter location calls
+(defadvice org-noter--doc-approx-location (around sanitize-image-winprops activate)
+  "Sanitize image-mode-winprops-alist before call to avoid improper list errors."
+  (let ((doc-win (org-noter--get-doc-window)))
+    (when doc-win
+      (with-selected-window doc-win
+        (let ((winprops (window-parameter nil 'image-mode-winprops-alist)))
+          (unless (my/proper-list-p winprops)
+            (message "Sanitizing image-mode-winprops-alist (was %S)" winprops)
+            (set-window-parameter nil 'image-mode-winprops-alist nil))))))
+  ad-do-it)
+
+;; Load Org-noter PDFtools integration
 (require 'org-noter-pdftools)
+
+;; Hook to sanitize winprops in PDF view mode
+(add-hook 'pdf-view-mode-hook
+          (lambda ()
+            (let ((winprops (window-parameter nil 'image-mode-winprops-alist)))
+              (unless (my/proper-list-p winprops)
+                (message "PDF hook: Sanitizing image-mode-winprops-alist (was %S)" winprops)
+                (set-window-parameter nil 'image-mode-winprops-alist nil)))))
+
+;; Hook to sanitize winprops in image mode
+(add-hook 'image-mode-hook
+          (lambda ()
+            (let ((winprops (window-parameter nil 'image-mode-winprops-alist)))
+              (unless (my/proper-list-p winprops)
+                (message "Image hook: Sanitizing image-mode-winprops-alist (was %S)" winprops)
+                (set-window-parameter nil 'image-mode-winprops-alist nil)))))
+
+;; Load PDF Tools (optional, no error if missing)
 (require 'pdf-tools nil t)
+
+;; Remove and reactivate advice for Org-noter location
+(ad-remove-advice 'org-noter--doc-approx-location 'around 'sanitize-image-winprops)
+(ad-activate 'org-noter--doc-approx-location)
 
 ;; ──────────────────────────────────────────────────────────────
 ;; Org-noter settings
@@ -78,227 +126,86 @@ with a unified command set under =C-c i=.
   note-file)
 
 ;; ──────────────────────────────────────────────────────────────
-;; Templates & helpers(no dead Bib Entry)
+;; Open PDF and associated note
 ;; ──────────────────────────────────────────────────────────────
-(defun my/load-template (filename)
-  "Load template or return clean fallback."
-  (let ((path (expand-file-name filename (expand-file-name "template" user-emacs-directory))))
-    (if (file-exists-p path)
-        (with-temp-buffer (insert-file-contents path) (buffer-string))
-      (message "Template %s not found; using fallback." path)
-      "#+TITLE: %s\n#+ROAM_ALIASES: %s\n#+ROAM_REFS: cite:%s\n* Overview\n:PROPERTIES:\n:AUTHOR: %s\n:DOI: %s\n:YEAR: %s\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n* Annotations\n")))
-
-;; ──────────────────────────────────────────────────────────────
-;; Bibliography note template
-;; ──────────────────────────────────────────────────────────────
-(defun my/load-roam-bib-template (&optional citekey title)
-  "Generate bibliography note from Citar entry."
-  (let* ((template (my/load-template "roam-bib.org"))
-         (citekey (or citekey (plist-get org-roam-capture--info 'citar-citekey) ""))
-         (entry (ignore-errors (when citekey (citar-get-entry citekey))))
-         (title (or title (plist-get org-roam-capture--info 'title)
-                    (and entry (cdr (assoc "title" entry))) "Untitled"))
-         (author (or (and entry (cdr (assoc "author" entry))) ""))
-         (doi (or (and entry (cdr (assoc "doi" entry))) ""))
-         (date (or (and entry (cdr (assoc "date" entry))) ""))
-         (year (or (and entry (cdr (assoc "year" entry)))
-                   (and (> (length date) 3) (substring date 0 4)) ""))
-         (file (or (ignore-errors (my/citar-extract-first-path (citar-get-files citekey))) ""))
-         (noter-document (if (string-empty-p file) "" file))
-         (id (org-id-new)))
-    (format template title citekey citekey author doi year noter-document id)))
-
-;; Select pdf from Org default directory or any folder
-(defun my/select-pdf-project-or-browse ()
-  "Select PDF project-wide (recursive, includes .attach) or browse any location manually."
-  (interactive)
-  (let* ((root (read-directory-name "Project root directory: " default-directory))
-         (find-cmd (format "find %s \\( -type f -o -type l \\) -name '*.pdf'" root))
-         (pdf-list (split-string (shell-command-to-string find-cmd) "\n" t))
-         (choice (completing-read "Select project PDF (or type * for browser): "
-                                  (append pdf-list '("* Browse anywhere...")) nil t)))
-    (if (string= choice "* Browse anywhere...")
-        (read-file-name "Select any file: " nil nil t)
-      choice)))
-
-;; ──────────────────────────────────────────────────────────────
-;; Unified opener
-;; ──────────────────────────────────────────────────────────────
-(defun my/open-pdf-and-note (&optional key-or-pdf)
-  "Open PDF and note. Use 'generic for non-bib files."
-  (interactive)
-  (require 'citar nil t)
-  (let* ((is-bib (not (eq key-or-pdf 'generic)))
-         (key (if is-bib
-                  (substring (or key-or-pdf (concat "@" (citar-select-ref))) 1)
-                nil))
-         ;; Use robust selector for generic PDFs
-         (pdf-raw (if is-bib
-                      (my/citar-extract-first-path (citar-get-files key))
-                    (my/select-pdf-project-or-browse)))
-         ;; Defensive conversion: buffer or string to path
-         (pdf (cond
-               ((bufferp pdf-raw) (buffer-file-name pdf-raw))
-               ((stringp pdf-raw) pdf-raw)
-               (t (user-error "PDF selection did not yield a valid path or buffer."))))
-         (entry (when is-bib (ignore-errors (citar-get-entry key))))
-         ;; Defensive: only use file-name-base if pdf is a string
-         (title (or (when entry (cdr (assoc "title" entry)))
-                    (and (stringp pdf) (file-name-base pdf))
-                    "Overview"))
-         (suggested-name (downcase (replace-regexp-in-string "[^a-z0-9-]" "-" title)))
-         (note-file (if is-bib
-                        (expand-file-name (concat key ".org")
-                                          (expand-file-name "literature" org-roam-directory))
-                      ;; Prompt to save generic note in default-directory
-                      (let ((default-dir default-directory))
-                        (make-directory default-dir t)
-                        (read-file-name "Save note as: " default-dir nil nil (concat suggested-name ".org"))))))
-    (when (file-directory-p (file-name-directory note-file))
-      (make-directory (file-name-directory note-file) t))
-    (unless (file-exists-p note-file)
-      (with-temp-file note-file
-        (if is-bib
-            (insert (my/load-roam-bib-template key title))
-          (insert (format "#+TITLE: %s\n* Overview\n:PROPERTIES:\n:ID: %s\n:NOTER_DOCUMENT: %s\n:END:\n* Annotations\n"
-                          title (org-id-new) (or pdf "")))))
-      (my/bibnote-normalize-file note-file pdf title))
-    (find-file pdf)
-    (split-window-right)
-    (find-file note-file)
-    (goto-char (point-min))
-    (re-search-forward "^\\* ")
-    (condition-case err (org-noter) (error (message "Org-noter failed: %s" err)))
-    (message "Opened %s note → %s"
-             (if is-bib "bibliography" "generic")
-             (file-name-nondirectory note-file))))
-
-;; ──────────────────────────────────────────────────────────────
-;;  Org-noter helpers and PDF selection insertion
-;; ──────────────────────────────────────────────────────────────
-(with-eval-after-load 'org-noter-pdftools
-  (defun my/org-noter--convert-location (loc)
-    "Convert any Org-noter location (old list or new struct) to (page . top) cons."
-    (cond
-     ((consp loc) loc) ; old format
-     ((fboundp 'org-noter-pdftools--location-page)
-      (cons (org-noter-pdftools--location-page loc)
-            (org-noter-pdftools--location-height loc)))
-     (t (cons (or (plist-get loc :page) 1)
-              (or (plist-get loc :height) 0.0)))))
-  (advice-add 'org-noter--pretty-print-location-for-title
-              :around
-              (lambda (orig loc &rest args)
-                (let ((converted-loc (my/org-noter--convert-location loc)))
-                  (apply orig converted-loc args))))
-  (defun my/pdf-insert-selection-to-note ()
-    "Insert selected text as precise Org-noter note (C-c i p)."
-    (interactive)
-    (unless (bound-and-true-p org-noter--session)
-      (if (y-or-n-p "No session. Start Org-noter? ") (org-noter) (user-error "Aborted")))
-    (let* ((text (and (pdf-view-active-region-p)
-                      (string-trim (mapconcat #'identity (pdf-view-active-region-text) "\n"))))
-           (page (pdf-view-current-page))
-           (timestamp (format-time-string "%Y-%m-%d %H:%M"))
-           (raw-loc (condition-case nil
-                        (org-noter--get-precise-location)
-                      (void-function (cons page 0.0))))
-           (loc (my/org-noter--convert-location raw-loc)))
-      (when text
-        (org-noter-insert-note loc)
-        (goto-char (point-max))
-        (unless (looking-back "^\\*\\*.*\n" nil)
-          (insert "\n** Page " (number-to-string page) " — " timestamp "\n")
-          (insert ":PROPERTIES:\n:NOTER_PAGE: " (number-to-string page) "\n:END:\n\n"))
-        (insert "#+BEGIN_QUOTE\n" text "\n#+END_QUOTE\n")
-        (save-buffer)
-        (message "Inserted note on page %d" page))))
-  (with-eval-after-load 'pdf-tools
-    (define-key pdf-view-mode-map (kbd "C-c i p") #'my/pdf-insert-selection-to-note)))
-
-;; ──────────────────────────────────────────────────────────────
-;; Calibre books – C-c i b (laptop only)
-;; Workflow:
-;; 1. M-x calibredb → opens Calibre library buffer.
-;; 2. / term RET → optional: live-filter by text (title/author/tags).
-;; 3. Move point to book → use n/p or arrow keys.
-;; 4. C-c i b → opens book file left + Org note right in ~/org/books/.
-;; ─────────────
-(when (eq my-device 'laptop)
-  (defun my/open-calibre-book-and-note ()
-    "Open Calibre book (PDF/EPUB) and a standalone Org note in ~/org/books/.
-This function integrates Calibredb with Org-mode for note-taking.
-If the Org note for the selected book does not exist, it is created automatically
-with metadata and a NOTER_DOCUMENT property."
-    (interactive)
-    (require 'calibredb)
-    (unless (derived-mode-p 'calibredb-search-mode 'calibredb-show-mode)
-      (call-interactively #'calibredb))
-
-    (let* (;; Book entry at point in *calibredb-search* / *calibredb-show*.
-           (candidate (car (calibredb-find-candidate-at-point)))
-           ;; (message "CANDIDATE: %S" candidate) ; Uncomment for debugging.
-           (id      (calibredb-getattr candidate :id))
-           ;; Use calibredb's actual metadata fields.
-           (title   (or (calibredb-getattr candidate :book-title)
-                        (calibredb-getattr candidate :title)))
-           (author  (or (calibredb-getattr candidate :author-sort)
-                        (calibredb-getattr candidate :author)))
-           ;; Full values used inside the note.
-           (title*  (or title "Unknown"))
-           (author* (or author "Unknown"))
-           ;; Short filename: first author + title.
-           (file-author
-            (if (and author*
-                     (string-match "\\`\\([^,&]+\\)" author*))
-                (string-trim (match-string 1 author*))
-              author*))
-           (file-title (or title* "Unknown"))
-           ;; Prefer main file (pdf/epub/etc.) resolved by calibredb.
-           (book-path (or (calibredb-get-file-path candidate t)
-                          (calibredb-get-file-path candidate nil)))
-           ;; Notes directory under your default-directory (~/org/).
-           (books-notes-dir (expand-file-name "books" default-directory))
-           ;; Slug for filename: first-author-title, lowercased and cleaned.
-           (slug (downcase
-                  (replace-regexp-in-string
-                   "[^a-z0-9 ]" ""
-                   (format "%s - %s" file-author file-title))))
-           (slug (replace-regexp-in-string " " "-" slug))
-           (note-file (expand-file-name (concat slug ".org") books-notes-dir)))
-      
-      (message "ID=%S TITLE=%S AUTHOR=%S FILE=%S" id title author book-path)
-
-      (unless book-path
-        (user-error "No file for \"%s\" (ID: %s)" title* id))
-
-      ;; Ensure notes directory exists.
-      (make-directory books-notes-dir t)
-
-      ;; Create note once, with full title/author and NOTER_DOCUMENT.
-      (unless (file-exists-p note-file)
+(defun my/open-pdf-and-note (&optional generic)
+  "Open PDF (via Citar or generic) and associated Org note in split view."
+  (interactive "P")
+  (let* ((citekey (unless generic (citar-select-ref)))
+         (entry (unless generic (citar-get-entry citekey)))
+         (pdf (or (when entry (my/citar-extract-first-path (gethash "file" entry)))
+                  (read-file-name "Select PDF: ")))
+         (title (or (when entry (gethash "title" entry)) (file-name-base pdf)))
+         (note-file (if generic
+                        (read-file-name "Select Org note: " org-roam-directory)
+                      (citar-org-roam--get-note-path citekey entry))))
+    (unless (file-exists-p pdf) (user-error "PDF not found: %s" pdf))
+    (when (not (file-exists-p note-file))
+      (when (y-or-n-p (format "Create note for %s? " title))
         (with-temp-file note-file
-          (insert
-           (format
-            "#+TITLE: %s – %s\n#+AUTHOR: %s\n#+CREATED: %s\n#+ROAM_TAGS: book\n\n* Overview\n:PROPERTIES:\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n\n* Annotations\n\n"
-            title* author* author*
-            (format-time-string "%Y-%m-%d")
-            (expand-file-name book-path)
-            (org-id-new)))))
+          (insert (format "* %s\n:PROPERTIES:\n:ID: %s\n:END:\n\n* Annotations\n" title (org-id-new))))
+        (message "Created %s" note-file)))
+    (my/bibnote-normalize-file note-file pdf title)
+    (find-file pdf)
+    (pdf-view-mode)
+    (split-window-right)
+    (other-window 1)
+    (find-file note-file)
+    (org-noter)))
 
-      ;; Optional post-processing of the note.
-      (when (fboundp 'my/bibnote-normalize-file)
-        (my/bibnote-normalize-file note-file (expand-file-name book-path) title*))
-
-      ;; Open book left, note right.
-      (find-file (expand-file-name book-path))
-      (split-window-right)
-      (other-window 1)
-      (find-file note-file)
-      (message "Opened: %s by %s" title* author*))))
-      
 ;; ──────────────────────────────────────────────────────────────
-;; Automate Image Capture for Annotations – Common Logic for All Types
+;; Compatibility for org-noter-pdftools location formats
+;; ──────────────────────────────────────────────────────────────
+(defun my/org-noter--convert-location (loc)
+  "Convert any Org-noter location (old list or new struct) to (page . top) cons."
+  (cond
+   ((consp loc) loc)  ; Old format
+   ((fboundp 'org-noter-pdftools--location-page)
+    (cons (org-noter-pdftools--location-page loc)
+          (org-noter-pdftools--location-height loc)))
+   (t (cons (or (plist-get loc :page) 1)
+            (or (plist-get loc :height) 0.0)))))
+
+(advice-add 'org-noter--pretty-print-location-for-title
+            :around
+            (lambda (orig loc &rest args)
+              (let ((converted-loc (my/org-noter--convert-location loc)))
+                (apply orig converted-loc args))))
+
+;; ──────────────────────────────────────────────────────────────
+;; Text Annotation Insertion
+;; ──────────────────────────────────────────────────────────────
+(defun my/pdf-insert-selection-to-note ()
+  "Insert selected PDF text as quoted note under * Annotations (C-c i p)."
+  (interactive)
+  (unless (bound-and-true-p org-noter--session)
+    (if (y-or-n-p "No Org-noter session. Start one? ")
+        (org-noter)
+      (user-error "Aborted – no active session.")))
+  (let* ((sel (and (pdf-view-active-region-p)
+                   (string-trim (mapconcat #'identity (pdf-view-active-region-text) "\n"))))
+         (page (pdf-view-current-page))
+         (page-str (number-to-string page))
+         (timestamp (format-time-string "%Y-%m-%d %H:%M"))
+         (loc (my/org-noter--convert-location (org-noter--get-precise-location)))  ; Use conversion
+         (note-buf (org-noter--get-notes-buffer)))
+    (if (and sel note-buf)
+        (with-current-buffer note-buf
+          (save-excursion
+            (goto-char (point-min))
+            (unless (re-search-forward "^\\*+\\s-+Annotations\\b" nil t)
+              (goto-char (point-max))
+              (insert "\n* Annotations\n\n"))
+            (goto-char (point-max))
+            (insert (format "** Page %s — %s\n" page-str timestamp))
+            (insert ":PROPERTIES:\n:NOTER_PAGE: " page-str "\n:END:\n\n")
+            (insert "#+BEGIN_QUOTE\n" sel "\n#+END_QUOTE\n\n")
+            (save-buffer))
+          (message "Inserted note on page %s" page-str))
+      (message "No selection or note buffer; aborted."))))
+
+;; ──────────────────────────────────────────────────────────────
+;; Automate Image Capture for Annotations
 ;; ──────────────────────────────────────────────────────────────
 (defun my/get-image-dir-for-note (note-file)
   "Return an images/ directory next to any org note file, regardless of hierarchy."
@@ -311,50 +218,32 @@ with metadata and a NOTER_DOCUMENT property."
   (when (derived-mode-p 'pdf-view-mode)
     (require 'org-noter)
     (let* ((pdf-file (buffer-file-name))
+           ;; Get the correct org note buffer via org-noter window
            (note-win (org-noter--get-notes-window))
            (note-buf (when note-win (window-buffer note-win)))
            (note-file (when note-buf (buffer-file-name note-buf)))
            (image-dir (my/get-image-dir-for-note note-file))
-           (timestamp (format-time-string "%Y-%m-%d-%H%M%S"))  ; Added %S for seconds
-           (filename (expand-file-name (format "%s.jpg" timestamp) image-dir))  ; Changed to JPG for smaller size
-           (resolution 150)  ; Reduced DPI for smaller file size (adjust as needed, e.g., 100-200)
-           raw-edges quads page-size pixel-width pixel-height crop-x crop-y crop-w crop-h)
+           (timestamp (format-time-string "%Y-%m-%d-%H%M"))
+           (filename (expand-file-name (format "%s.png" timestamp) image-dir))
+           edges)
       (unless note-file
         (user-error "No associated Org note window found. Start Org-Noter with C-c i n."))
       (make-directory image-dir t)
+      (unless whole-page
+        (setq edges
+              (condition-case nil
+                  (pdf-view-active-region)
+                (error nil))))
       (if whole-page
+          ;; Whole page export via pdftoppm, output to the correct bullet-proof image dir
           (shell-command
-           (format "pdftoppm -jpeg -r %d -f %d -l %d '%s' > '%s'"
-                   resolution (pdf-view-current-page) (pdf-view-current-page)
-                   pdf-file filename))  ; Changed to -jpeg
-        (setq raw-edges (condition-case nil
-                            (pdf-view-active-region)
-                          (error nil)))
-        (message "Debug: Raw edges = %S | Active? %s" raw-edges (pdf-view-active-region-p))
-        (setq quads (if (numberp (car-safe raw-edges))
-                        (cdr raw-edges)   ; new fork: drop page number
-                      raw-edges))
-        (if (and quads
-                 (listp quads)
-                 (= (length quads) 1)  ; Assume single quad for simplicity; extend if needed
-                 (let ((quad (car quads)))
-                   (and (listp quad)
-                        (= (length quad) 4)
-                        (cl-every #'numberp quad))))
-            (let ((quad (car quads)))
-              (setq page-size (pdf-info-pagesize (pdf-view-current-page))
-                    pixel-width (* (car page-size) (/ resolution 72.0))
-                    pixel-height (* (cdr page-size) (/ resolution 72.0))
-                    crop-x (* (nth 0 quad) pixel-width)
-                    crop-y (* (nth 1 quad) pixel-height)  ; from top, nth 1 is top
-                    crop-w (* (- (nth 2 quad) (nth 0 quad)) pixel-width)
-                    crop-h (* (- (nth 3 quad) (nth 1 quad)) pixel-height))
-              (shell-command
-               (format "pdftoppm -jpeg -r %d -f %d -l %d -x %.0f -y %.0f -W %.0f -H %.0f '%s' > '%s'"
-                       resolution (pdf-view-current-page) (pdf-view-current-page)
-                       crop-x crop-y crop-w crop-h
-                       pdf-file filename)))  ; Changed to -jpeg
-          (user-error "No valid single rectangular region selected. Drag mouse to select or use C-c i S for whole page.")))
+           (format "pdftoppm -singlefile -png -r 300 -f %d -l %d '%s' '%s'"
+                   (pdf-view-current-page) (pdf-view-current-page)
+                   pdf-file (file-name-sans-extension filename)))
+        ;; Export region image if valid edges exist
+        (if (and edges (consp edges) (cl-every #'numberp edges))
+            (pdf-view-extract-region-image filename)
+          (user-error "No valid region selected. Drag mouse to select or use C-c i S for whole page.")))
       (with-current-buffer note-buf
         (goto-char (point-max))
         (insert (format "[[file:%s]]\n"
@@ -363,16 +252,22 @@ with metadata and a NOTER_DOCUMENT property."
       (message "Saved → %s" (file-relative-name filename (file-name-directory note-file)))
       (switch-to-buffer (current-buffer)))))
 
-;; Mode-local bindings for pdf-view (these are safe — not global prefixes)
-(with-eval-after-load 'pdf-view
-  ;; Bind drag event to ignore to block global override and let pdf-tools handle via down-mouse
-  (define-key pdf-view-mode-map [drag-mouse-1] 'ignore)
-  ;; Bind plain left-drag for standard region (reinforce default if needed)
-  (define-key pdf-view-mode-map (kbd "<down-mouse-1>") 'pdf-view-mouse-set-region)
-  ;; Bind Shift + left-drag for rectangular region (ideal for images/diagrams)
-  (define-key pdf-view-mode-map (kbd "<S-down-mouse-1>") 'pdf-view-mouse-set-region-rectangle)
-  (define-key pdf-view-mode-map (kbd "C-c i s") 'my/save-pdf-region-to-datestamp)
-  (define-key pdf-view-mode-map (kbd "C-c i S") (lambda () (interactive) (my/save-pdf-region-to-datestamp t))))
+;; ──────────────────────────────────────────────────────────────
+;; Keymap
+;; ──────────────────────────────────────────────────────────────
+(unless (boundp 'my/citar-map) (define-prefix-command 'my/citar-map))
+(global-set-key (kbd "C-c i") 'my/citar-map)
+(define-key my/citar-map (kbd "a") #'my/open-pdf-and-note)
+(define-key my/citar-map (kbd "g") (lambda () (interactive) (my/open-pdf-and-note 'generic)))
+(define-key my/citar-map (kbd "n") #'org-noter)
+(define-key my/citar-map (kbd "p") #'my/pdf-insert-selection-to-note)
+(define-key my/citar-map (kbd "A") #'org-noter-pdftools-insert-annotations)
+
+;; Setup keybindings after pdf-view loads
+(with-eval-after-load 'pdf-tools
+  (define-key pdf-view-mode-map (kbd "C-c i p") #'my/pdf-insert-selection-to-note)
+  (define-key pdf-view-mode-map (kbd "C-c i s") #'my/save-pdf-region-to-datestamp)  ; Save region
+  (define-key pdf-view-mode-map (kbd "C-c i S") (lambda () (interactive) (my/save-pdf-region-to-datestamp t))))  ; Save whole page
 
 ;; ──────────────────────────────────────────────────────────────
 ;; Org-roam capture template
@@ -381,22 +276,6 @@ with metadata and a NOTER_DOCUMENT property."
              '("b" "bibliography note" plain #'my/load-roam-bib-template
                :target (file+head "literature/${citar-citekey}.org" "")
                :unnarrowed t :immediate-finish t))
-;; ──────────────────────────────────────────────────────────────
-;; Paddle OCR for resonable handwritten image OCR to text: future enhancement. now it is commented.
-;; ──────────────────────────────────────────────────────────────
-;;(defun my-paddleocr-ocr (image-file)
-;;  "Run PaddleOCR on IMAGE-FILE and insert recognized text into current Org buffer.
-;;Uses PaddleOCR CLI (paddleocr ocr -i <file> --lang en) and inserts result in a quote block."
-;;  (interactive "fImage file: ")
-;;  (let* ((cmd (format "paddleocr ocr -i '%s' --lang en 2>/dev/null | grep -A 2 'rec_texts'" image-file))
-;;         (output (shell-command-to-string cmd)))
-;;    (if (string-empty-p output)
-;;        (message "No text recognized or PaddleOCR returned no output.")
-;;      (insert (format "** OCR'd Text from %s\n#+BEGIN_QUOTE\n%s\n#+END_QUOTE\n"
-;;                      (file-name-base image-file)
-;;                      (string-trim output)))
-;;      (message "Inserted PaddleOCR text from %s" image-file))))
-;;(global-set-key (kbd "C-c o t") #'my-paddleocr-ocr)
 
 ;; Add warning for epdfinfo if not executable (for PDF troubleshooting)
 (when (not (file-executable-p (expand-file-name "straight/build/pdf-tools/epdfinfo" user-emacs-directory)))
