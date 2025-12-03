@@ -494,36 +494,39 @@ If using AUCTeX for LaTeX exports, add reftex package.
 ** pdf tools: Enable in-buffer PDF viewing in Emacs (rather than opening PDFs in external viewers)
 
 #+BEGIN_SRC emacs-lisp
+;; Fix the pdf-cache-clear-data Call
+(defun my/pdf-clear-cache-safely ()
+  "Clear PDF cache without arguments, only if buffer is a PDF."
+  (when (and buffer-file-name (string-match-p "\\.pdf\\'" buffer-file-name))
+    (pdf-cache-clear-data))) ; No argument!
+
+
 ;; Use features like highlighting, annotations, or text selection. Work along with org-noter for taking notes synchronized with PDF pages
 ;; Updated on 2025-11-26 to fix epdfinfo executable error after Poppler upgrade.
 ;; ──────────────────────────────────────────────────────────────
 ;; PDF Tools + Org-Noter-PDFTools – FINAL WORKING VERSION (2025-11-26)
 ;; ──────────────────────────────────────────────────────────────
-(use-package pdf-tools
-  :straight (:host github :repo "vedang/pdf-tools" :build t)
-  :defer t
-  :commands (pdf-view-mode pdf-tools-install)
-  :mode ("\\.pdf\\'" . pdf-view-mode)
-  :magic ("%PDF" . pdf-view-mode)
-  :init
-  (unless (eq my-device 'laptop)
-    (setq pdf-tools-enabled-modes nil)) ; Disable elsewhere
-  :config
-  (setq pdf-info-epdfinfo-program
-        (expand-file-name "build/server/epdfinfo" (straight--build-dir "pdf-tools")))
-  ;; Run installation/build once at startup
-  (unless (file-executable-p pdf-info-epdfinfo-program)
-    (pdf-tools-install :no-query))
-  (setq pdf-view-display-size 'fit-page
-        pdf-view-continuous t
-        pdf-annot-activate-created-annotations t
-        pdf-tools-handle-upgrades nil
-        pdf-view-use-scaling t)
-  ;; Pre-clear PDF cache on view start
-  (add-hook 'pdf-view-mode-hook (lambda () (pdf-cache-clear-data (buffer-file-name))))
-  (message "PDF-Tools ready"))
+;; Org-Noter + PDF-Tools for Note Annotation
+(when (eq my-device 'laptop) ; Skip heavy PDF on mobile
+  (use-package pdf-tools
+    :straight (:host github :repo "vedang/pdf-tools" :build t)
+    :demand t ; Load early to avoid session failures
+    :mode ("\\.pdf\\'" . pdf-view-mode)
+    :magic ("%PDF" . pdf-view-mode)
+    :config
+    (setq pdf-info-epdfinfo-program
+          (expand-file-name "build/server/epdfinfo" (straight--build-dir "pdf-tools")))
+    (condition-case nil
+        (unless (file-executable-p pdf-info-epdfinfo-program)
+          (pdf-tools-install :no-query))
+      (error (message "PDF-Tools install failed; check Poppler deps")))
+    (setq pdf-view-display-size 'fit-page
+          pdf-view-continuous t
+          pdf-annot-activate-created-annotations nil
+          pdf-tools-handle-upgrades nil
+          pdf-view-use-scaling t)
+    (add-hook 'pdf-view-mode-hook #'my/pdf-clear-cache-safely)))
 #+END_SRC
-
 
 ** pdf annotation org noter optional dependancies
 #+BEGIN_SRC emacs-lisp
@@ -592,42 +595,45 @@ If using AUCTeX for LaTeX exports, add reftex package.
   (if (derived-mode-p 'org-mode)
       (call-interactively 'citar-insert-citation)
     (call-interactively 'citar-create-note)))
-
-;; Rebind your key (override the old one)
-;;(global-set-key (kbd "C-c i c") 'my/citar-insert-or-create-note)
 #+END_SRC
 
 ** Org noter + Citar annotation: added 2025-11-02
 #+BEGIN_SRC emacs-lisp
 (use-package org-noter
   :straight t
-  :defer t
-  :after org
-  :commands org-noter
+  :after (org pdf-tools)
+  :demand t  ; Ensure ready for bindings
   :config
-  (setq org-noter-notes-search-path (list (expand-file-name "literature" org-roam-directory)))
-  (setq org-noter-auto-save-last-location t
-        org-noter-always-create-frame nil
+  (setq org-noter-notes-search-path (list (expand-file-name "literature" org-roam-directory))
+        org-noter-default-notes-file-names '("notes.org" "annotations.org")
+        org-noter-auto-save-last-location t
         org-noter-highlight-selected-text t
-        org-noter-insert-note-no-questions t)
-  (setq org-noter-hide-other nil)
-  (message "✅ Org-noter ready for PDF annotations."))
+        org-noter-insert-note-no-questions t
+        org-noter-hide-other nil))
 #+END_SRC
 
 ** pdf annotation using org noter
 #+BEGIN_SRC emacs-lisp
-(use-package org-noter-pdftools
-  :straight t  ; Install from MELPA
-  :defer t
-  :after (org-noter pdf-tools)
-  :commands org-noter-pdftools-jump-to-note
-  :config
-  ;; Add this guard: Only load if no errors
-  (condition-case err
-      (progn
+;; ──────────────────────────────────────────────────────────────
+;; Org-pdftools (includes org-noter-pdftools integration)
+;; ──────────────────────────────────────────────────────────────
+(when (eq my-device 'laptop)
+  (use-package org-pdftools
+    :straight (org-pdftools :type git :host github :repo "fuxialexander/org-pdftools"
+                            :files ("*.el"))  ; Includes both org-pdftools.el and org-noter-pdftools.el
+    :after (org-noter pdf-tools)
+    :demand t
+    :config
+    ;; Require the bundled org-noter-pdftools
+    (require 'org-noter-pdftools)
+    ;; Add behavior for jumping to notes
+    (condition-case nil
         (add-to-list 'org-noter-notes-window-behavior '(org-noter-pdftools-jump-to-note))
-        (message "org-noter-pdftools loaded successfully"))
-    (error (message "org-noter-pdftools load failed: %S. Disabling." err))))
+      (error (message "Org-noter-pdftools integration failed")))
+    ;; Optional: Customize icons/colors for annotations (from org-noter-pdftools)
+    (setq org-noter-pdftools-free-pointer-icon "PencilTip"
+          org-noter-pdftools-free-pointer-color "DodgerBlue"
+          org-noter-pdftools-markup-pointer-color "DarkOrange")))
 #+END_SRC
 
 ** Calibre ebook integration with org

@@ -151,11 +151,11 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
 (defun my/org-roam-safe-rebuild ()
   "Rebuild DB safely without race conditions."
   (interactive)
-  (when (bound-and-true-p org-roam-db-autosync-mode) (org-roam-db-autosync-mode -1))
-  (org-roam-db-clear-all)
-  (org-roam-db-sync)
-  (org-roam-db-autosync-mode 1)
-  (message "Org-roam DB rebuilt safely"))
-
+  (unless (get-buffer-window "*Org PDF*")  ; Skip if PDF open
+    (when (bound-and-true-p org-roam-db-autosync-mode) (org-roam-db-autosync-mode -1))
+    (org-roam-db-clear-all)
+    (org-roam-db-sync)
+    (org-roam-db-autosync-mode 1)
+    (message "Org-roam DB rebuilt safely")))
 (provide 'roam)
 #+END_SRC
