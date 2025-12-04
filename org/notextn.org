@@ -117,10 +117,10 @@ with a unified command set under =C-c i=.
         (when pdf
           (org-entry-put (point) "NOTER_DOCUMENT" (expand-file-name pdf)))
         (goto-char (point-min))
-        (unless (re-search-forward "^\\*+\\s-+Annotations\\b" nil t)
+        (unless (re-search-forward "^\\*+\\s-+Analysis and Inference\\b" nil t)
           (goto-char (point-max))
           (unless (bolp) (insert "\n"))
-          (insert "* Annotations\n\n")))
+          (insert "* Analysis and Inference\n\n")))
       (when (buffer-modified-p) (save-buffer))))
   note-file)
 #+END_SRC
@@ -135,7 +135,7 @@ with a unified command set under =C-c i=.
     (if (file-exists-p path)
         (with-temp-buffer (insert-file-contents path) (buffer-string))
       (message "Template %s not found; using fallback." path)
-      "#+TITLE: %s\n#+ROAM_ALIASES: %s\n#+ROAM_REFS: cite:%s\n* Overview\n:PROPERTIES:\n:AUTHOR: %s\n:DOI: %s\n:YEAR: %s\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n* Annotations\n")))
+      "#+TITLE: %s\n#+ROAM_ALIASES: %s\n#+ROAM_REFS: cite:%s\n* Overview\n:PROPERTIES:\n:AUTHOR: %s\n:DOI: %s\n:YEAR: %s\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n* Analysis and Inference\n")))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -215,7 +215,7 @@ with a unified command set under =C-c i=.
       (with-temp-file note-file
         (if is-bib
             (insert (my/load-roam-bib-template key title))
-          (insert (format "#+TITLE: %s\n* Overview\n:PROPERTIES:\n:ID: %s\n:NOTER_DOCUMENT: %s\n:END:\n* Annotations\n"
+          (insert (format "#+TITLE: %s\n* Overview\n:PROPERTIES:\n:ID: %s\n:NOTER_DOCUMENT: %s\n:END:\n* Analysis and Inference\n"
                           title (org-id-new) (or pdf "")))))
       (my/bibnote-normalize-file note-file pdf title))
     (find-file pdf)
@@ -294,7 +294,7 @@ with metadata and a NOTER_DOCUMENT property."
         (with-temp-file note-file
           (insert
            (format
-            "#+TITLE: %s – %s\n#+AUTHOR: %s\n#+CREATED: %s\n#+ROAM_TAGS: book\n\n* Overview\n:PROPERTIES:\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n\n* Annotations\n\n"
+            "#+TITLE: %s – %s\n#+AUTHOR: %s\n#+CREATED: %s\n#+ROAM_TAGS: book\n\n* Overview\n:PROPERTIES:\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n\n* Analysis and Inference\n\n"
             title* author* author*
             (format-time-string "%Y-%m-%d")
             (expand-file-name book-path)
@@ -425,6 +425,24 @@ with metadata and a NOTER_DOCUMENT property."
                :target (file+head "literature/${citar-citekey}.org" "")
                :unnarrowed t :immediate-finish t))
 #+END_SRC
+
+** Clipboard Copy for Inserted Annotations
+#+BEGIN_SRC emacs-lisp
+(with-eval-after-load 'org-noter
+  (defun my/org-noter-copy-quoted-text-to-clipboard (orig &rest args)
+    "Advice to copy quoted text from org-noter-insert-note to clipboard."
+    (let ((start (point))  ; Mark position before insertion
+          result)
+      (setq result (apply orig args))  ; Run original function
+      (when (and (stringp result) (string-match "#\\+BEGIN_QUOTE\\(.*\\)#\\+END_QUOTE" result))
+        (let ((quoted-text (match-string 1 result)))
+          (kill-new quoted-text)  ; Copy to clipboard
+          (message "Copied quoted annotation to clipboard: %s" (truncate-string-to-width quoted-text 50)))))
+    result)
+
+  (advice-add 'org-noter-insert-note :around #'my/org-noter-copy-quoted-text-to-clipboard))
+#+END_SRC
+
 
 #+BEGIN_SRC emacs-lisp
 (defun my/sanitize-image-winprops-in-pdf-window (&rest _args)
