@@ -17,7 +17,7 @@ with a unified command set under =C-c i=.
 
 * Core Functions
 #+BEGIN_SRC emacs-lisp
-;; notextn.el --- Org-noter + Citar + PDF Tools integration     -*- lexical-binding: t; -*-
+;;; notextn.el --- Org-noter + Citar + PDF Tools integration -*- lexical-binding: t; -*-
 ;; Required packages
 (require 'org)
 (require 'org-id)
@@ -55,12 +55,11 @@ with a unified command set under =C-c i=.
   (defun my/org-noter-convert-location-to-cons (loc)
     "Convert LOC (struct or cons) to (page . top) cons."
     (cond
-     ((consp loc) loc)  ; Already cons
+     ((consp loc) loc) ; Already cons
      ((org-noter-pdftools--location-p loc)
       (cons (org-noter-pdftools--location-page loc)
             (org-noter-pdftools--location-height loc)))
      (t (error "Invalid location type: %S" (type-of loc)))))
-
   (advice-add 'org-noter--pretty-print-location-for-title :around
               (lambda (orig loc &rest args)
                 (let ((converted-loc (my/org-noter-convert-location-to-cons loc)))
@@ -430,16 +429,23 @@ with metadata and a NOTER_DOCUMENT property."
 #+BEGIN_SRC emacs-lisp
 (with-eval-after-load 'org-noter
   (defun my/org-noter-copy-quoted-text-to-clipboard (orig &rest args)
-    "Advice to copy quoted text from org-noter-insert-note to clipboard."
-    (let ((start (point))  ; Mark position before insertion
-          result)
-      (setq result (apply orig args))  ; Run original function
-      (when (and (stringp result) (string-match "#\\+BEGIN_QUOTE\\(.*\\)#\\+END_QUOTE" result))
-        (let ((quoted-text (match-string 1 result)))
-          (kill-new quoted-text)  ; Copy to clipboard
-          (message "Copied quoted annotation to clipboard: %s" (truncate-string-to-width quoted-text 50)))))
-    result)
+    "Copy the quoted text (inside #+BEGIN_QUOTE … #+END_QUOTE) to the clipboard after inserting a note."
+    (let ((result (apply orig args)))
+      (when (bound-and-true-p org-noter--session)
+        (with-current-buffer (org-noter--session-notes-buffer org-noter--session)
+          (save-excursion
+            (goto-char (point-min))
+            (when (re-search-forward "#\\+BEGIN_QUOTE" nil t)
+              (let ((quote-start (point)))
+                (when (re-search-forward "#\\+END_QUOTE" nil t)
+                  (let ((quoted-text (string-trim (buffer-substring-no-properties quote-start (match-beginning 0)))))
+                    (unless (string-empty-p quoted-text)
+                      (kill-new quoted-text)
+                      (message "Copied quoted annotation to clipboard: %s"
+                               (truncate-string-to-width quoted-text 60))))))))))
+      result))
 
+  ;; Apply the advice
   (advice-add 'org-noter-insert-note :around #'my/org-noter-copy-quoted-text-to-clipboard))
 #+END_SRC
 
@@ -454,8 +460,6 @@ with metadata and a NOTER_DOCUMENT property."
           (unless (listp props)
             (set-window-parameter nil 'image-mode-winprops-alist nil))))))
   t) ;; return non-nil to signal advice success (optional)
-
-
 (advice-add 'org-noter-insert-note :before #'my/sanitize-image-winprops-in-pdf-window)
 
 (provide 'notextn)
