@@ -67,6 +67,17 @@ with a unified command set under =C-c i=.
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
+(use-package org-pdfview
+  :straight t
+  :after (org pdf-view)
+  :config
+  (add-to-list 'org-modules 'org-pdfview)
+  (org-link-set-parameters "pdf"
+                           :follow #'org-pdfview-open
+                           :export #'org-pdfview-export))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
 ;; Org-noter settings
 ;; ──────────────────────────────────────────────────────────────
@@ -429,7 +440,7 @@ with metadata and a NOTER_DOCUMENT property."
 #+BEGIN_SRC emacs-lisp
 (with-eval-after-load 'org-noter
   (defun my/org-noter-copy-quoted-text-to-clipboard (orig &rest args)
-    "Copy the quoted text (inside #+BEGIN_QUOTE … #+END_QUOTE) to the clipboard after inserting a note."
+    "Copy a simplified quoted note template (with essential properties) to clipboard after insertion."
     (let ((result (apply orig args)))
       (when (bound-and-true-p org-noter--session)
         (with-current-buffer (org-noter--session-notes-buffer org-noter--session)
@@ -438,15 +449,68 @@ with metadata and a NOTER_DOCUMENT property."
             (when (re-search-forward "#\\+BEGIN_QUOTE" nil t)
               (let ((quote-start (point)))
                 (when (re-search-forward "#\\+END_QUOTE" nil t)
-                  (let ((quoted-text (string-trim (buffer-substring-no-properties quote-start (match-beginning 0)))))
-                    (unless (string-empty-p quoted-text)
-                      (kill-new quoted-text)
-                      (message "Copied quoted annotation to clipboard: %s"
-                               (truncate-string-to-width quoted-text 60))))))))))
+                  (let* ((quoted-text (string-trim
+                                       (buffer-substring-no-properties
+                                        quote-start (match-beginning 0))))
+                         (keywords (org-collect-keywords '("TITLE" "AUTHOR")))
+                         (source (or (cadr (assoc "TITLE" keywords)) ""))
+                         (author (or (cadr (assoc "AUTHOR" keywords)) ""))
+                         (noter-page (org-entry-get nil "NOTER_PAGE" t))
+                         (noter-doc (org-entry-get-with-inheritance "NOTER_DOCUMENT"))
+                         (page (when (and noter-page
+                                          (string-match "::\\([0-9]+\\)" noter-page))
+                                 (match-string 1 noter-page)))
+                         (pdf-link (or noter-page
+                                       (when (and noter-doc page)
+                                         (format "pdf:%s::%s" noter-doc page))))
+                         (sentences (split-string quoted-text "\\. " t))
+                         (first-sentences (mapconcat 'identity
+                                                     (seq-take sentences 3) ". "))
+                         (first-sentences-clean (string-trim first-sentences))
+                         (short-title (if (> (length first-sentences-clean) 70)
+                                          (concat (substring first-sentences-clean 0 67) "…")
+                                        first-sentences-clean))
+                         ;; First author (swap Last, First -> First Last)
+                         (first-author-raw (car (split-string (or author "") " & ")))
+                         (author-parts (split-string first-author-raw ", "))
+                         (first-author (if (= (length author-parts) 2)
+                                           (format "%s %s"
+                                                   (cadr author-parts)
+                                                   (car author-parts))
+                                         first-author-raw))
+                         ;; Title → main part before colon / dash
+                         (title-parts (split-string source " – "))
+                         (title (car title-parts))
+                         (short-title-desc (mapconcat 'identity
+                                                      (seq-take (split-string title ":") 1) ":"))
+                         ;; add ", p. 13" if page exists
+                         (page-suffix (if page
+                                          (format ", p. %s" page)
+                                        ""))
+                         ;; Final link text
+                         (link-desc (format "%s, %s%s"
+                                            first-author short-title-desc page-suffix))
+                         (pdf-link-file (when noter-doc
+                                          (expand-file-name noter-doc)))
+                         (pdf-link-file-formatted
+                          (if pdf-link-file
+                              (format "[[%s][%s]]" pdf-link-file link-desc)
+                            ""))
+                         (template
+                          (format "* %s :ignore:\n:PROPERTIES:\n:AUTHOR: %s\n:PAGE: %s\n:PDF_LINK: %s\n:END:\n\n#+BEGIN_QUOTE\n%s\n#+END_QUOTE\n#+LATEX: \\begin{flushright}\n— %s\n#+LATEX: \\end{flushright}\n"
+                                  short-title
+                                  (or author "")
+                                  (or page "")
+                                  pdf-link
+                                  quoted-text
+                                  pdf-link-file-formatted)))
+                    (kill-new template)
+                    (message "Copied simplified quoted note template to clipboard."))))))))
       result))
 
-  ;; Apply the advice
-  (advice-add 'org-noter-insert-note :around #'my/org-noter-copy-quoted-text-to-clipboard))
+  (advice-add 'org-noter-insert-note :around
+              #'my/org-noter-copy-quoted-text-to-clipboard))
+
 #+END_SRC
 
 

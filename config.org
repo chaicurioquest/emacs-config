@@ -106,6 +106,7 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 #+BEGIN_SRC emacs-lisp
 ;; Define paths early for global reuse (absolute/resolved for reliability)
 (defvar bib-path (expand-file-name "bib/references.bib" default-directory))
+(defvar books-bib-path (expand-file-name "bib/books-references.bib" default-directory))
 (defvar my-citar-library-paths '("/wspace/src/zotero-kbase/storage"))
 (defvar setupfile (expand-file-name "latex/setup-latex.org" default-directory))
 (defvar org-roam-directory (expand-file-name "roam" default-directory))
@@ -564,7 +565,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
   :no-require t
   :commands (citar-insert-citation citar-create-note)
   :custom
-  (org-cite-global-bibliography (list bib-path))
+  (org-cite-global-bibliography (list bib-path books-bib-path))
   (citar-bibliography org-cite-global-bibliography)
   (citar-library-paths my-citar-library-paths)
   (citar-notes-paths (list (expand-file-name "literature" org-roam-directory)))
