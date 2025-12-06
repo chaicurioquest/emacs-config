@@ -53,7 +53,7 @@
         `(,(format "latexmk -lualatex -r %s -f %%f" latexmkrc)
           "cp build/%b.pdf %b.pdf"
           "find build -type f ! -name '*.log' -delete")))
-
+ 
 ;; Warn if setup-latex.org is missing
 (let ((setup-file setupfile))
   (unless (file-exists-p setup-file)

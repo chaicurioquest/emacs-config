@@ -276,6 +276,13 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   ;; Core requires
   (require 'oc)
   (require 'oc-biblatex)
+  
+ ;; Org-cite export processors: use biblatex for LaTeX
+ ;;(setq org-cite-export-processors
+ ;;       '((latex biblatex)
+ ;;         (html csl)
+ ;;         (t csl)))
+
   ;; Enable refiling to any heading in agenda files (incl. roam/notes/mobile)
   (setq org-refile-targets '((org-agenda-files :maxlevel . 5)))
   (setq org-refile-use-outline-path 'file) ;; Show file paths in prompt
@@ -647,26 +654,48 @@ If using AUCTeX for LaTeX exports, add reftex package.
     :straight (:host github :repo "chenyanming/calibredb.el")
     :defer t
     :config
+    ;; Core calibredb paths
     (setq calibredb-root-dir "/wspace/src/calibre-ebooks")
     (setq calibredb-db-dir (expand-file-name "metadata.db" calibredb-root-dir))
-    (setq calibredb-completion-method 'consult)
-    (setq calibredb-search-limit 200)
-    (setq calibredb-order '("title" "author" "tags"))
-    (setq calibredb-virtual-library-alist '(("Engineering Books" . "tag:engineering OR tag:vlsi")
-                                            ("Reference" . "tag:reference")))
-    ;; Patch calibredb-get-cover to handle nil :book-dir gracefully
+
+    ;; UI/behaviour
+    (setq calibredb-completion-method 'consult
+          calibredb-search-limit      200
+          calibredb-order             '("title" "author" "tags")
+          calibredb-virtual-library-alist
+          '(("Engineering Books" . "tag:engineering OR tag:vlsi")
+            ("Reference"         . "tag:reference")))
+
+    ;; Robust cover lookup (handle nil :book-dir)
     (defun calibredb-get-cover (candidate &optional full-path)
       "Get cover image path of CANDIDATE.
 If FULL-PATH, return the full path. Handles nil :book-dir."
-      (let* ((id (calibredb-getattr candidate :id))
-             (path (calibredb-getattr candidate :book-dir)))
-        (when path  ; Skip if path is nil
+      (let* ((path (calibredb-getattr candidate :book-dir)))
+        (when path
           (let ((cover (expand-file-name "cover.jpg" path)))
-            (if (file-exists-p cover)
-                (if full-path
-                    cover
-                  (concat "file:" cover))
-              nil)))))))
+            (when (file-exists-p cover)
+              (if full-path
+                  cover
+                (concat "file:" cover)))))))
+
+    ;; ------------------------------------------------------------------
+    ;; Export books BibTeX catalog for Org/Citar (uses relative org paths)
+    ;; ------------------------------------------------------------------
+    (defun my/calibredb-export-books-bib ()
+      "Regenerate `books-bib-path` from the Calibre library (laptop only)."
+      (interactive)
+      (let* ((bib-file (expand-file-name books-bib-path))
+             (lib-dir  (expand-file-name calibredb-root-dir))
+             (cmd (format
+                   "calibredb catalog \"%s\" --with-library \"%s\" --fields %s"
+                   bib-file
+                   lib-dir
+                   "title,authors,author_sort,publisher,pubdate,isbn,id")))
+        (message "Running: %s" cmd)
+        (let ((exit-code (shell-command cmd "*calibredb-bib*" "*calibredb-bib*")))
+          (if (zerop exit-code)
+              (message "Updated %s" bib-file)
+            (message "calibredb failed; see *calibredb-bib* buffer")))))))
 #+END_SRC
 
 ** Magit is a Git GUI interface for Emacs

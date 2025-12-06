@@ -497,7 +497,7 @@ with metadata and a NOTER_DOCUMENT property."
                               (format "[[%s][%s]]" pdf-link-file link-desc)
                             ""))
                          (template
-                          (format "* %s :ignore:\n:PROPERTIES:\n:AUTHOR: %s\n:PAGE: %s\n:PDF_LINK: %s\n:END:\n\n#+BEGIN_QUOTE\n%s\n#+END_QUOTE\n#+LATEX: \\begin{flushright}\n— %s\n#+LATEX: \\end{flushright}\n"
+                          (format "*** %s :ignore:\n:PROPERTIES:\n:AUTHOR: %s\n:PAGE: %s\n:PDF_LINK: %s\n:END:\n\n#+BEGIN_QUOTE\n\"%s\"\n#+END_QUOTE\n#+LATEX: \\begin{flushright}\n— %s\n#+LATEX: \\end{flushright}\n"
                                   short-title
                                   (or author "")
                                   (or page "")
