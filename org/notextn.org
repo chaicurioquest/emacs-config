@@ -28,15 +28,15 @@ with a unified command set under =C-c i=.
 ;; ──────────────────────────────────────────────────────────────
 ;; Fix "wrong-type-argument listp t" from image-mode-winprops
 ;; ──────────────────────────────────────────────────────────────
-(defun my/proper-list-p (obj)
-  "Return t if OBJ is a proper list (nil-terminated, no cycles or dots)."
-  (and (listp obj)
-       (catch 'improper
-         (while (consp obj)
-           (setq obj (cdr obj))
-           (unless (or (consp obj) (null obj))
-             (throw 'improper nil)))
-         (null obj))))
+;;(defun my/proper-list-p (obj)
+;;  "Return t if OBJ is a proper list (nil-terminated, no cycles or dots)."
+;;  (and (listp obj)
+;;       (catch 'improper
+;;         (while (consp obj)
+;;           (setq obj (cdr obj))
+;;           (unless (or (consp obj) (null obj))
+;;            (throw 'improper nil)))
+;;         (null obj))))
 (defun my/sanitize-image-winprops-in-doc-window (orig &rest args)
   "Initialize image-mode-winprops-alist in the Org-noter document window before calling ORIG."
   (let ((doc-win (org-noter--get-doc-window)))
@@ -44,22 +44,25 @@ with a unified command set under =C-c i=.
       (with-selected-window doc-win
         (image-mode-setup-winprops))))
   (apply orig args))
+
 (with-eval-after-load 'org-noter
   (advice-add 'org-noter--doc-approx-location :around #'my/sanitize-image-winprops-in-doc-window))
 (add-hook 'pdf-view-mode-hook #'image-mode-setup-winprops)
 (add-hook 'image-mode-hook #'image-mode-setup-winprops)
+
 ;; ──────────────────────────────────────────────────────────────
 ;; Fix "wrong-type-argument listp #s(org-noter-pdftools--location ...)"
 ;; ──────────────────────────────────────────────────────────────
 (with-eval-after-load 'org-noter-pdftools
   (defun my/org-noter-convert-location-to-cons (loc)
-    "Convert LOC (struct or cons) to (page . top) cons."
+    "Convert org-noter-pdftools location struct to (page . top) cons."
     (cond
-     ((consp loc) loc) ; Already cons
+     ((consp loc) loc) ;; Already cons
      ((org-noter-pdftools--location-p loc)
       (cons (org-noter-pdftools--location-page loc)
             (org-noter-pdftools--location-height loc)))
-     (t (error "Invalid location type: %S" (type-of loc)))))
+     (t (error "Invalid location: %S" (type-of loc)))))
+
   (advice-add 'org-noter--pretty-print-location-for-title :around
               (lambda (orig loc &rest args)
                 (let ((converted-loc (my/org-noter-convert-location-to-cons loc)))
@@ -79,15 +82,15 @@ with a unified command set under =C-c i=.
 
 #+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
-;; Org-noter settings
+;; Use relative paths whenever possible (portability++)
 ;; ──────────────────────────────────────────────────────────────
-(setq org-noter-notes-search-path
-      (list (expand-file-name "literature" org-roam-directory))
-      org-noter-default-notes-file-names '("notes.org" "annotations.org")
-      org-noter-auto-save-last-location t
-      org-noter-highlight-selected-text nil
-      org-noter-insert-note-no-questions t
-      org-noter-hide-other nil)
+(advice-add 'org-noter--add-doc :around
+            (lambda (orig doc-file &rest args)
+              (let ((rel (and (buffer-file-name)
+                              (file-relative-name doc-file
+                                                  (file-name-directory (buffer-file-name))))))
+                (apply orig (if (and rel (not (string-prefix-p "../" rel))) rel doc-file)
+                       args))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -436,84 +439,6 @@ with metadata and a NOTER_DOCUMENT property."
                :unnarrowed t :immediate-finish t))
 #+END_SRC
 
-** Clipboard Copy for Inserted Annotations
-#+BEGIN_SRC emacs-lisp
-(with-eval-after-load 'org-noter
-  (defun my/org-noter-copy-quoted-text-to-clipboard (orig &rest args)
-    "Copy a simplified quoted note template (with essential properties) to clipboard after insertion."
-    (let ((result (apply orig args)))
-      (when (bound-and-true-p org-noter--session)
-        (with-current-buffer (org-noter--session-notes-buffer org-noter--session)
-          (save-excursion
-            (goto-char (point-min))
-            (when (re-search-forward "#\\+BEGIN_QUOTE" nil t)
-              (let ((quote-start (point)))
-                (when (re-search-forward "#\\+END_QUOTE" nil t)
-                  (let* ((quoted-text (string-trim
-                                       (buffer-substring-no-properties
-                                        quote-start (match-beginning 0))))
-                         (keywords (org-collect-keywords '("TITLE" "AUTHOR")))
-                         (source (or (cadr (assoc "TITLE" keywords)) ""))
-                         (author (or (cadr (assoc "AUTHOR" keywords)) ""))
-                         (noter-page (org-entry-get nil "NOTER_PAGE" t))
-                         (noter-doc (org-entry-get-with-inheritance "NOTER_DOCUMENT"))
-                         (page (when (and noter-page
-                                          (string-match "::\\([0-9]+\\)" noter-page))
-                                 (match-string 1 noter-page)))
-                         (pdf-link (or noter-page
-                                       (when (and noter-doc page)
-                                         (format "pdf:%s::%s" noter-doc page))))
-                         (sentences (split-string quoted-text "\\. " t))
-                         (first-sentences (mapconcat 'identity
-                                                     (seq-take sentences 3) ". "))
-                         (first-sentences-clean (string-trim first-sentences))
-                         (short-title (if (> (length first-sentences-clean) 70)
-                                          (concat (substring first-sentences-clean 0 67) "…")
-                                        first-sentences-clean))
-                         ;; First author (swap Last, First -> First Last)
-                         (first-author-raw (car (split-string (or author "") " & ")))
-                         (author-parts (split-string first-author-raw ", "))
-                         (first-author (if (= (length author-parts) 2)
-                                           (format "%s %s"
-                                                   (cadr author-parts)
-                                                   (car author-parts))
-                                         first-author-raw))
-                         ;; Title → main part before colon / dash
-                         (title-parts (split-string source " – "))
-                         (title (car title-parts))
-                         (short-title-desc (mapconcat 'identity
-                                                      (seq-take (split-string title ":") 1) ":"))
-                         ;; add ", p. 13" if page exists
-                         (page-suffix (if page
-                                          (format ", p. %s" page)
-                                        ""))
-                         ;; Final link text
-                         (link-desc (format "%s, %s%s"
-                                            first-author short-title-desc page-suffix))
-                         (pdf-link-file (when noter-doc
-                                          (expand-file-name noter-doc)))
-                         (pdf-link-file-formatted
-                          (if pdf-link-file
-                              (format "[[%s][%s]]" pdf-link-file link-desc)
-                            ""))
-                         (template
-                          (format "*** %s :ignore:\n:PROPERTIES:\n:AUTHOR: %s\n:PAGE: %s\n:PDF_LINK: %s\n:END:\n\n#+BEGIN_QUOTE\n\"%s\"\n#+END_QUOTE\n#+LATEX: \\begin{flushright}\n— %s\n#+LATEX: \\end{flushright}\n"
-                                  short-title
-                                  (or author "")
-                                  (or page "")
-                                  pdf-link
-                                  quoted-text
-                                  pdf-link-file-formatted)))
-                    (kill-new template)
-                    (message "Copied simplified quoted note template to clipboard."))))))))
-      result))
-
-  (advice-add 'org-noter-insert-note :around
-              #'my/org-noter-copy-quoted-text-to-clipboard))
-
-#+END_SRC
-
-
 #+BEGIN_SRC emacs-lisp
 (defun my/sanitize-image-winprops-in-pdf-window (&rest _args)
   "Reset broken `image-mode-winprops-alist` in PDF view before annotations."
@@ -525,6 +450,10 @@ with metadata and a NOTER_DOCUMENT property."
             (set-window-parameter nil 'image-mode-winprops-alist nil))))))
   t) ;; return non-nil to signal advice success (optional)
 (advice-add 'org-noter-insert-note :before #'my/sanitize-image-winprops-in-pdf-window)
+
+;; During many quotes Reduce bloat by skipping drawers
+(with-eval-after-load 'org-transclusion
+  (setq org-transclusion-exclude-elements '(property-drawer))) 
 
 (provide 'notextn)
 ;;; notextn.el ends here
