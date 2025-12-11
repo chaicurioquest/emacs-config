@@ -338,6 +338,38 @@ with metadata and a NOTER_DOCUMENT property."
     (expand-file-name "images" base-dir)))
 #+END_SRC
 
+
+#+BEGIN_SRC emacs-lisp
+;; org annotation into quote block with author name
+(defun my/org-get-front-matter-author (file)
+  "Return AUTHOR from the first heading in FILE, or nil."
+  (when (and file (file-exists-p file))
+    (with-current-buffer (find-file-noselect file)
+      (save-excursion
+        (goto-char (point-min))
+        (when (re-search-forward org-heading-regexp nil t)
+          (org-entry-get nil "AUTHOR" 'selective))))))
+
+(defun my/org-insert-transclude-from-id-with-front-author (&optional id)
+  "Insert #+transclude + LaTeX attribution using ID.
+
+If ID is nil, prompt with completion over all Org IDs."
+  (interactive)
+  (let* ((id (or id
+                 ;; Simple ID prompt; type or paste any ID
+                 (read-string "Transclude annotation ID: ")))
+         (m (org-id-find id 'marker)))
+    (unless m
+      (user-error "ID not found: %s" id))
+    (let* ((src-file (buffer-file-name (marker-buffer m)))
+           (author   (my/org-get-front-matter-author src-file)))
+      (insert (format "#+transclude: [[id:%s]] :only-contents\n\n" id))
+      (when (and author (not (string-empty-p author)))
+        (insert "#+LATEX: \\begin{flushright}\n")
+        (insert (format "-- %s\n" author))
+        (insert "#+LATEX: \\end{flushright}\n")))))
+#+END_SRC
+
 #+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
 ;; Automate Image Capture for Annotations – Common Logic for All Types

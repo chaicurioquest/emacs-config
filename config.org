@@ -647,11 +647,24 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 **  Content inclusion from other Org Mode file
 #+BEGIN_SRC emacs-lisp
+;; Define and localize the indent variable once
+(defvar org-transclusion-indent-mode nil
+  "Non-nil means org-transclusion indents transcluded contents.")
+
+(with-eval-after-load 'org-transclusion
+  (make-variable-buffer-local 'org-transclusion-indent-mode))
+
 (use-package org-transclusion
   :straight t
   :after org
   :config
-  (add-hook 'org-mode-hook #'org-transclusion-mode))
+  (add-hook 'org-mode-hook #'org-transclusion-mode)
+  ;; Optional: actually enable indentation in Org buffers
+  (add-hook 'org-mode-hook
+             (lambda ()
+               (setq-local org-transclusion-indent-mode t)))
+  )
+
 #+END_SRC
 
 ** Calibre ebook integration with org
