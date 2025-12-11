@@ -307,8 +307,8 @@ with metadata and a NOTER_DOCUMENT property."
         (with-temp-file note-file
           (insert
            (format
-            "#+TITLE: %s – %s\n#+AUTHOR: %s\n#+CREATED: %s\n#+ROAM_TAGS: book\n\n* Overview\n:PROPERTIES:\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n\n* Analysis and Inference\n\n"
-            title* author* author*
+            "#+TITLE: %s\n#+AUTHOR: %s\n#+CREATED: %s\n#+ROAM_TAGS: book\n\n* Overview\n:PROPERTIES:\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n\n* Analysis and Inference\n\n"
+            title* author* 
             (format-time-string "%Y-%m-%d")
             (expand-file-name book-path)
             (org-id-new)))))
@@ -340,35 +340,111 @@ with metadata and a NOTER_DOCUMENT property."
 
 
 #+BEGIN_SRC emacs-lisp
-;; org annotation into quote block with author name
-(defun my/org-get-front-matter-author (file)
-  "Return AUTHOR from the first heading in FILE, or nil."
+(defun my/org-get-front-matter-prop (file prop)
+  "Return PROP from FILE-level keywords or the first heading in FILE."
   (when (and file (file-exists-p file))
     (with-current-buffer (find-file-noselect file)
       (save-excursion
         (goto-char (point-min))
-        (when (re-search-forward org-heading-regexp nil t)
-          (org-entry-get nil "AUTHOR" 'selective))))))
+        (let* ((kw (org-collect-keywords (list prop)))
+               (val (cadr (assoc-string prop kw t))))
+          (or val
+              (progn
+                (goto-char (point-min))
+                (when (re-search-forward org-heading-regexp nil t)
+                  (org-entry-get nil prop)))))))))
+
+(defun my/org-get-annot-page (marker)
+  "Extract page number from NOTER_PAGE of heading at MARKER."
+  (with-current-buffer (marker-buffer marker)
+    (save-excursion
+      (goto-char marker)
+      (let ((np (org-entry-get nil "NOTER_PAGE")))
+        (when (and np (not (string-empty-p np)))
+          (when (string-match "::\\([0-9]+\\)" np)
+            (match-string 1 np)))))))
+
+(defun my/org-short-author (author)
+  "Return short form of AUTHOR, e.g. \"Surname, First et al.\"."
+  (when (and author (not (string-empty-p author)))
+    (let* ((parts (split-string author "[&]\\| and " t "[ \t\n]+"))
+           (first (string-trim (car parts))))
+      (if (> (length parts) 1)
+          (format "%s et al." first)
+        first))))
+
+(defun my/org-build-id-candidates-from-files (files)
+  "Return completion candidates from all annotation IDs in FILES.
+Only IDs containing \"annot\" are included."
+  (let ((idx (org-id-update-id-locations files 'silent))
+        result)
+    (cond
+     ((hash-table-p idx)
+      (maphash
+       (lambda (id file)
+         (when (and (stringp id)
+                    (string-match-p "annot" id))
+           (push (cons (format "%s  (%s)"
+                               id (file-name-nondirectory file))
+                       id)
+                 result)))
+       idx)
+      (nreverse result))
+     ((listp idx)
+      (dolist (pair idx)
+        (let ((id   (car pair))
+              (file (cdr pair)))
+          (when (and (stringp id)
+                     (string-match-p "annot" id))
+            (push (cons (format "%s  (%s)"
+                                id (file-name-nondirectory file))
+                        id)
+                  result))))
+      (nreverse result))
+     (t
+      (user-error "Unexpected org-id index type: %S" (type-of idx))))))
+
 
 (defun my/org-insert-transclude-from-id-with-front-author (&optional id)
-  "Insert #+transclude + LaTeX attribution using ID.
-
-If ID is nil, prompt with completion over all Org IDs."
+  "Insert #+transclude line and LaTeX attribution using ID."
   (interactive)
-  (let* ((id (or id
-                 ;; Simple ID prompt; type or paste any ID
-                 (read-string "Transclude annotation ID: ")))
-         (m (org-id-find id 'marker)))
+  (let* ((file (read-file-name
+                "Annotation Org file: "
+                "/wspace/org/" nil t nil
+                (lambda (f) (string-match-p "\\.org\\'" f))))
+         (files (list file))
+         (cands (my/org-build-id-candidates-from-files files))
+         (id (or id
+                 (if (null cands)
+                     (user-error "No IDs found in %s" file)
+                   (cdr (assoc (completing-read "Transclude annotation ID: "
+                                                cands nil t)
+                               cands)))))
+         (m  (org-id-find id 'marker)))
     (unless m
-      (user-error "ID not found: %s" id))
+      (user-error "ID not found in %s: %s" file id))
     (let* ((src-file (buffer-file-name (marker-buffer m)))
-           (author   (my/org-get-front-matter-author src-file)))
+           (raw-author (my/org-get-front-matter-prop src-file "AUTHOR"))
+           (author     (my/org-short-author raw-author))
+           (title      (my/org-get-front-matter-prop src-file "TITLE"))
+           (page       (my/org-get-annot-page m)))
       (insert (format "#+transclude: [[id:%s]] :only-contents\n\n" id))
-      (when (and author (not (string-empty-p author)))
+      (when (or author title page)
         (insert "#+LATEX: \\begin{flushright}\n")
-        (insert (format "-- %s\n" author))
-        (insert "#+LATEX: \\end{flushright}\n")))))
+        (insert "-- ")
+        (when author
+          (insert author))
+        (when title
+          (if author
+              (insert (format ", %s" title))
+            (insert title)))
+        (when page
+          (if (or author title)
+              (insert (format ", Pg No: %s" page))
+            (insert (format "Pg No: %s" page))))
+        (insert "\n#+LATEX: \\end{flushright}\n")))))
 #+END_SRC
+
 
 #+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
@@ -482,7 +558,9 @@ If ID is nil, prompt with completion over all Org IDs."
             (set-window-parameter nil 'image-mode-winprops-alist nil))))))
   t) ;; return non-nil to signal advice success (optional)
 (advice-add 'org-noter-insert-note :before #'my/sanitize-image-winprops-in-pdf-window)
+#+END_SRC
 
+#+BEGIN_SRC emacs-lisp
 ;; During many quotes Reduce bloat by skipping drawers
 (with-eval-after-load 'org-transclusion
   (setq org-transclusion-exclude-elements '(property-drawer))) 
