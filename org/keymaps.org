@@ -123,7 +123,12 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
 (with-eval-after-load 'pdf-view
   (define-key pdf-view-mode-map (kbd "C-c i p") #'my/pdf-insert-selection-to-note)  ; Insert text quote
   (define-key pdf-view-mode-map (kbd "C-c i s") #'my/save-pdf-region-to-datestamp)
-  (define-key pdf-view-mode-map (kbd "C-c i S") (lambda () (interactive) (my/save-pdf-region-to-datestamp t))))
+  (define-key pdf-view-mode-map (kbd "C-c i S") 
+        (lambda () (interactive) (my/save-pdf-region-to-datestamp t)))
+  
+;; PDF text search
+  (define-key pdf-view-mode-map (kbd "C-s") #'isearch-forward)
+  (define-key pdf-view-mode-map (kbd "C-r") #'isearch-backward))
 
 ;; Calibre integration (laptop only) — loads calibredb on first use
 (when (eq my-device 'laptop)

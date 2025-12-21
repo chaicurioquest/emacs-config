@@ -373,69 +373,25 @@ with metadata and a NOTER_DOCUMENT property."
           (format "%s et al." first)
         first))))
 
-(defun my/org-build-id-candidates-from-files (files)
-  "Return completion candidates from all annotation IDs in FILES.
-Only IDs containing \"annot\" are included."
-  (let ((idx (org-id-update-id-locations files 'silent))
-        result)
-    (cond
-     ((hash-table-p idx)
-      (maphash
-       (lambda (id file)
-         (when (and (stringp id)
-                    (string-match-p "annot" id))
-           (push (cons (format "%s  (%s)"
-                               id (file-name-nondirectory file))
-                       id)
-                 result)))
-       idx)
-      (nreverse result))
-     ((listp idx)
-      (dolist (pair idx)
-        (let ((id   (car pair))
-              (file (cdr pair)))
-          (when (and (stringp id)
-                     (string-match-p "annot" id))
-            (push (cons (format "%s  (%s)"
-                                id (file-name-nondirectory file))
-                        id)
-                  result))))
-      (nreverse result))
-     (t
-      (user-error "Unexpected org-id index type: %S" (type-of idx))))))
-
-
 (defun my/org-insert-transclude-from-id-with-front-author (&optional id)
-  "Insert #+transclude line and LaTeX attribution using ID."
-  (interactive)
-  (let* ((file (read-file-name
-                "Annotation Org file: "
-                "/wspace/org/" nil t nil
-                (lambda (f) (string-match-p "\\.org\\'" f))))
-         (files (list file))
-         (cands (my/org-build-id-candidates-from-files files))
-         (id (or id
-                 (if (null cands)
-                     (user-error "No IDs found in %s" file)
-                   (cdr (assoc (completing-read "Transclude annotation ID: "
-                                                cands nil t)
-                               cands)))))
-         (m  (org-id-find id 'marker)))
+  "Insert #+transclude line and LaTeX attribution using ID.
+If ID is nil, offer completion over all IDs in currently open Org buffers."
+  (interactive (list (org-id-get-with-outline-path-completion)))
+  (let ((m (org-id-find id 'marker)))
     (unless m
-      (user-error "ID not found in %s: %s" file id))
+      (user-error "ID not found in open Org buffers: %s" id))
     (let* ((src-file (buffer-file-name (marker-buffer m)))
            (raw-author (my/org-get-front-matter-prop src-file "AUTHOR"))
-           (author     (my/org-short-author raw-author))
-           (title      (my/org-get-front-matter-prop src-file "TITLE"))
-           (page       (my/org-get-annot-page m)))
+           (author (my/org-short-author raw-author))
+           (title (my/org-get-front-matter-prop src-file "TITLE"))
+           (page (my/org-get-annot-page m)))
       (insert (format "#+transclude: [[id:%s]] :only-contents\n\n" id))
       (when (or author title page)
         (insert "#+LATEX: \\begin{flushright}\n")
         (insert "-- ")
-        (when author
-          (insert author))
-        (when title
-          (if author
+        (when author (insert author))
+        (when title 
+          (if author 
               (insert (format ", %s" title))
             (insert title)))
         (when page

@@ -1,0 +1,12 @@
+# -*- mode: snippet -*-
+# name: hugo-post-subtree
+# key: hpost
+# --
+* ${1:Post Title}
+:PROPERTIES:
+:EXPORT_FILE_NAME: ${2:${1:$(yas-choose-value '("post-slug" "unique-name"))}}  ; Unique slug for URL/file
+:EXPORT_HUGO_SECTION: ${3:$(yas-choose-value '("blog" "thinkbits" "posts"))}  ; Choose section
+:EXPORT_DATE: `(format-time-string "%Y-%m-%d")`  ; Auto-insert current date
+:EXPORT_HUGO_TAGS: ${4:tag1 tag2}  ; Space-separated tags
+:END:
+$0
