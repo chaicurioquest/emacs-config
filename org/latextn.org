@@ -36,6 +36,12 @@
 ;; (setq org-format-latex-options
 ;;      (plist-put org-format-latex-options :scale 1.1)) ;; 1.0–1.3 typical
 
+;; Tweak preview scale and other options
+(setq org-format-latex-options (plist-put org-format-latex-options :scale 1.5)) 
+
+;; Customize preview image directory to use temp dir
+(setq org-preview-latex-image-directory (concat temporary-file-directory "ltximg/"))
+
 ;; Set TEXINPUTS to include subdirs under root for LaTeX inputs
 (setenv "TEXINPUTS" (concat
                      (file-name-as-directory default-directory) "latex:"
