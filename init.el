@@ -45,6 +45,7 @@
 (org-babel-load-file my-config-org)
 
 ;; Load private tweaks if present (won't error if missing)
+;; user files specific setting goes here 
 (let ((private-file (expand-file-name "private.el" user-emacs-directory)))
   (when (file-exists-p private-file)
     (load-file private-file)))

@@ -19,7 +19,7 @@
 (use-package org-alert
   :straight t
   :after (org alert)
-  :defer t
+  :defer nil
   :config
   ;; my flag for single enable per session
   (defvar my-org-alert-enabled nil
@@ -80,4 +80,7 @@
            (if (boundp 'my-device) my-device 'unknown)
            org-alert-interval
            org-alert-notify-cutoff))
+
+  ;; Never alert on cancelled tasks
+  (setq org-alert-excluded-todo-states '("CANCELLED"))
 #+END_SRC
