@@ -45,6 +45,9 @@
 ;; In cdlatex: Auto-generate labels for equations, figures, and tables without prompting (prompt only for sections)
 (setq reftex-insert-label-flags '("s" "s"))
 
+;; Prefer custom #+NAME labels in LaTeX export
+(setq org-latex-prefer-user-labels t)
+
 ;; Custom function in native org reference. Auto-generate labels for equations, figures, and tables
 (defun org-auto-label (prefix)
   "Generate a unique label with PREFIX and an incrementing number.
