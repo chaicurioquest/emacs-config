@@ -71,6 +71,9 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 ;; enable auto-revert when entering org buffers
 (add-hook 'org-mode-hook (lambda () (auto-revert-mode 1)))
 
+;; Prevent org files exporting tags
+(setq org-export-with-tags nil)
+
 ;; prefer file-notify (less polling) when available
 (setq auto-revert-use-notify t)
 #+END_SRC
