@@ -42,6 +42,22 @@
 ;; Customize preview image directory to use temp dir
 (setq org-preview-latex-image-directory (concat temporary-file-directory "ltximg/"))
 
+;; In cdlatex: Auto-generate labels for equations, figures, and tables without prompting (prompt only for sections)
+(setq reftex-insert-label-flags '("s" "s"))
+
+;; Custom function in native org reference. Auto-generate labels for equations, figures, and tables
+(defun org-auto-label (prefix)
+  "Generate a unique label with PREFIX and an incrementing number.
+Scans the buffer for existing #+NAME: lines with the prefix and a numeric suffix."
+  (save-excursion
+    (goto-char (point-min))
+    (let ((max-num 0))
+      (while (re-search-forward (format "#\\+NAME:[ \t]*%s:\\([0-9]+\\)" (regexp-quote prefix)) nil t)
+        (let ((num (string-to-number (match-string 1))))
+          (when (> num max-num)
+            (setq max-num num))))
+      (format "%s:%d" prefix (1+ max-num)))))
+
 ;; Set TEXINPUTS to include subdirs under root for LaTeX inputs
 (setenv "TEXINPUTS" (concat
                      (file-name-as-directory default-directory) "latex:"

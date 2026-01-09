@@ -8,13 +8,13 @@
   \centering
   \begin{subfigure}[b]{0.48\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{images/${1:wavefun3d.jpg}}
+    \includegraphics[width=\linewidth]{`(file-relative-name (read-file-name "Select first image: " (file-name-directory (buffer-file-name))) (file-name-directory (buffer-file-name)))`}
   \end{subfigure}\hfill
   \begin{subfigure}[b]{0.48\textwidth}
     \centering
-    \includegraphics[width=\linewidth]{images/${2:wavefun3d.jpg}}
+    \includegraphics[width=\linewidth]{`(file-relative-name (read-file-name "Select second image: " (file-name-directory (buffer-file-name))) (file-name-directory (buffer-file-name)))`}
   \end{subfigure}
-  \caption{${3:Combined view}}
-  \label{fig:${4:wave}}
+  \caption{${1:Combined view}}
+  \label{`(org-auto-label "fig")`}
 \end{figure}
 #+END_EXPORT

@@ -384,8 +384,6 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   (yas-global-mode 1)
   (setq yas-indent-line 'fixed)  ;; Preserves indentation
   (add-to-list 'yas-snippet-dirs (expand-file-name "snippets" user-emacs-directory))
-  (add-to-list 'yas-snippet-dirs (expand-file-name "snippets/org-mode" 
-                   (expand-file-name "org" default-directory)))
   (yas-reload-all)
   (add-hook 'org-mode-hook #'yas-minor-mode)
   :diminish yas-minor-mode)
@@ -816,6 +814,9 @@ If FULL-PATH, return the full path. Handles nil :book-dir."
 ;; Enable smart window navigation
 (windmove-default-keybindings) ;; Shift + Arrow
 (winner-mode 1)                ;; C-c <left/right> undo/redo window layout
+
+;; Enable smart quotes while exporting to pdf
+(setq org-export-with-smart-quotes t)
 
 ;; Timestamp functions
 (defun my-insert-timestamp ()

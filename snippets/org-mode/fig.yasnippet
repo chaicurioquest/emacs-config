@@ -3,7 +3,7 @@
 # key: fig
 # expand-env: ((yas-indent-line 'fixed))
 # --
-#+NAME: fig:${1:label}
-#+CAPTION: ${2:Caption here}
+#+NAME: `(org-auto-label "fig")`
+#+CAPTION: ${1:Caption here}
 #+ATTR_LATEX: :width 0.8\textwidth
-[[file:images/${3:wavefun3d.jpg}]]
+[[`(file-relative-name (read-file-name "Select image: " (file-name-directory (buffer-file-name))) (file-name-directory (buffer-file-name)))`]]
