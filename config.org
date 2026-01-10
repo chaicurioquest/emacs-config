@@ -363,6 +363,33 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :defer t
   :hook (org-mode . org-cdlatex-mode))
 #+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+;; ──────────────────────────────────────────────────────────────
+;; math-delimiters: Smart \( \) / \[ \] insertion (best companion to cdlatex)
+;; ──────────────────────────────────────────────────────────────
+(use-package math-delimiters
+  :straight (math-delimiters :type git :host github :repo "oantolin/math-delimiters")
+  :after (org cdlatex)               ; Load after these to be safe
+  :config
+  ;; Most popular & ergonomic choice: bind to $ (like everyone else does)
+  (with-eval-after-load 'org
+    (define-key org-mode-map (kbd "$") #'math-delimiters-insert))
+
+  ;; Very important: prevent conflict with CDLaTeX's own $ binding
+  (with-eval-after-load 'cdlatex
+    (define-key cdlatex-mode-map (kbd "$") nil))
+
+  ;; Optional extras you might want later:
+  ;; - Bind also in pure LaTeX buffers (if you ever edit .tex files directly)
+  ;; (with-eval-after-load 'latex
+  ;;   (define-key LaTeX-mode-map (kbd "$") #'math-delimiters-insert))
+
+  ;; - If you prefer triggering on typing \( or \[ instead:
+  ;; (define-key org-mode-map (kbd "\\(") #'math-delimiters-insert)
+  ;; (define-key org-mode-map (kbd "\\[") #'math-delimiters-insert)
+  )
+ #+END_SRC 
    
 ** AUCTeX is an extensible package for writing and formatting TeX files in Emacs and XEmacs
 #+BEGIN_SRC emacs-lisp
