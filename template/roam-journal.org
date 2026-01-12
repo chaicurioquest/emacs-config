@@ -2,13 +2,18 @@
 #+TITLE: ${title}
 #+FILETAGS: :journal:
 #+OPTIONS: toc:nil
-#+bibliography: bib/references.bib  ;; Uncomment if not in setupfile
-#+cite_export: biblatex authoryear
+#+BIBLIOGRAPHY: bib/references.bib  ;; only if not already in setupfile
+#+CITE_EXPORT: biblatex authoryear
 #+ROAM_ALIASES:
 #+ROAM_REFS:
 #+CREATED: %U
+#+LAST_MODIFIED: %U
 
 * Journal Entry
-%?  ;; Cursor for free-form reflection
+%?  ;; Free-form writing, thoughts, feelings, events
 
-#+print_bibliography:
+* Takeaways / Insights
+;; One or two key things worth remembering
+
+* References (optional)
+# #+print_bibliography:

@@ -8,10 +8,11 @@
 #+LAST_MODIFIED: %U
 
 * Idea Summary
-%?  ;; Concise overview
+%?  ;; Core idea / thesis in 2–5 sentences
 
 * Connections
-;; Link to related notes, e.g., [[id:uuid][Concept]]
+;; Link to related permanent / fleeting / literature notes
+;; e.g. [[id:uuid][Related Concept]]   [[file:../functional_blocks.org][Functional Blocks]]
 
-* References
-#+print_bibliography:
+* References (optional)
+# #+print_bibliography:

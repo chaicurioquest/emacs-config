@@ -2,14 +2,19 @@
 #+TITLE: %<%Y-%m-%d>
 #+FILETAGS: :daily:journal:
 #+OPTIONS: toc:nil
-#+ROAM_ALIASES: 
-#+ROAM_REFS: 
-#+CREATED: %U  ;; Creation timestamp
+#+ROAM_ALIASES:
+#+ROAM_REFS:
+#+CREATED: %U
+#+LAST_MODIFIED: %U
 
 * Morning Review
- ** %<%H:%M> %?
-* TODOs
+** %<%H:%M> %?  ;; Intentions / top priorities / mood
+
+* TODOs & Tasks
+- [ ]
+
+* Notes / Events
+;; Meetings, insights, random thoughts during the day
 
 * Evening Reflection
-
-
+;; Wins / challenges / what I learned / gratitude

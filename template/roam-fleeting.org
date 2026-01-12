@@ -1,14 +1,11 @@
-#+SETUPFILE: ${setupfile}
-#+TITLE: Fleeting Notes
-#+FILETAGS: :fleeting:
-#+OPTIONS: toc:nil
-#+PROPERTY: header-args :eval never-export
-#+ROAM_ALIASES:
-#+ROAM_REFS:
-#+CREATED: %U
-
-* Fleeting Captures
+** %<%H:%M> %^{Title|New Thought} :fleeting:%^{Tags|web|emerging|ai|semiconductor|blog}:
 :PROPERTIES:
-:ID: %(org-id-new)  ;; Auto-gen UUID; no prompt needed
+:ID: %(org-id-new)
+:CREATED: %U
+:SOURCE: %^{URL or Source|https://}
 :END:
-- %U %?  ;; Timestamp + cursor for quick note
+%?  ;; Quick notes or details
+
+#+BEGIN_QUOTE
+%^{Pasted Quote/Selection (optional)}
+#+END_QUOTE

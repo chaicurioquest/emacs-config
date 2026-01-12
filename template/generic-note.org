@@ -1,25 +1,20 @@
 #+SETUPFILE: ${setupfile}
-# Enable glossaries only when needed
 #+TITLE: %^{Title}
 #+DATE: \today
-#+FILETAGS: ::
-# OPTIONS: toc:t num:nil
+#+FILETAGS: :%^{Tags|generic|note|project|idea}:
 #+OPTIONS: toc:nil num:2
 #+PROPERTY: header-args :eval never-export
 #+BIBLIOGRAPHY: ${bib-path}
 #+CITE_EXPORT: biblatex authoryear
-#+ROAM_ALIASES: 
-#+ROAM_REFS: 
+#+ROAM_ALIASES:
+#+ROAM_REFS:
 #+CREATED: %U
+#+LAST_MODIFIED: %U
 
-* %?
+* %?  ;; Main content starts here
 
-
-# Enable if it needed
-* Acronyms
+* Acronyms / Glossary (optional)
 # LATEX: \printglossaries
-* References
+
+* References (optional)
 # LATEX: \printbibliography
-
-
-

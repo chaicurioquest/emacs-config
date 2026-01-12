@@ -5,12 +5,13 @@
 #+ROAM_ALIASES:
 #+ROAM_REFS:
 #+CREATED: %U
+#+LAST_MODIFIED: %U
 
 * Overview
-%?  ;; Quick summary
+%?  ;; One-paragraph summary or purpose of the note
 
 * Details
-;; In-depth explanation or data
+;; Main content, explanations, examples, data, code blocks, etc.
 
-* References
-#+print_bibliography:
+* References (optional)
+# #+print_bibliography:
