@@ -200,7 +200,26 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
 
 * Org source block language mappings
 #+BEGIN_SRC emacs-lisp
-;; Preserve indents without comma quoting for ALL source blocks (global default)
+;; Recommended Org source block language mappings
+;; Only include non-default mappings or EDA/VLSI-specific needs
+
+;; EDA/VLSI-focused mappings for circuit simulation and HDL workflows
+(add-to-list 'org-src-lang-modes '("spice" . fundamental))    ; ngspice/SPICE netlist fallback
+(add-to-list 'org-src-lang-modes '("ngspice" . fundamental))  ; ngspice-specific blocks
+(add-to-list 'org-src-lang-modes '("verilog" . verilog))      ; Verilog HDL syntax
+(add-to-list 'org-src-lang-modes '("vhdl" . vhdl))            ; VHDL syntax
+
+;; Optional: Python explicit mapping (auto-detects, but can help in edge cases)
+(add-to-list 'org-src-lang-modes '("python" . python))
+
+
+
+;; Better source code editing experience
+(setq org-src-fontify-natively t)         ; Syntax highlight code blocks directly in Org buffers
+(setq org-src-tab-acts-natively t)        ; TAB indents/completes as in the language's major mode
+
+;; Preserve indents without comma quoting for ALL source blocks (global default) 
+;; for indentation-sensitive languages like Verilog, VHDL, or Python
 (add-to-list 'org-babel-default-header-args '(:preserve-indent . t))
 
 ;; Disable comma quoting on indent for * / + / # lines in all blocks
