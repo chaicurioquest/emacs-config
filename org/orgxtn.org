@@ -198,5 +198,13 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
   ;; (setq org-confirm-babel-evaluate nil) ;; No confirmation for code evaluation
 #+END_SRC
 
+* Org source block language mappings
+#+BEGIN_SRC emacs-lisp
+;; Preserve indents without comma quoting for ALL source blocks (global default)
+(add-to-list 'org-babel-default-header-args '(:preserve-indent . t))
+
+;; Disable comma quoting on indent for * / + / # lines in all blocks
+(setq org-edit-src-quote-special nil)  
+#+END_SRC
 
 

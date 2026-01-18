@@ -9,3 +9,6 @@
 #+BEGIN_QUOTE
 %^{Pasted Quote/Selection (optional)}
 #+END_QUOTE
+
+*** Takeaways / Insights
+;; One or two key things worth remembering / personal lessons / action items

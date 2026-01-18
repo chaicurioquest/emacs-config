@@ -5,6 +5,8 @@ idea
 zettel
 # Knowledge domains
 vlsi 
+digital
+analog
 fpga 
 quantum 
 latex 
@@ -15,6 +17,7 @@ cite
 phd 
 masters
 # Output types
+simulation
 writing 
 publish 
 blog
