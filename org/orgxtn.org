@@ -37,20 +37,29 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 
 ;; Smart TAB: Yasnippet (inline) → CDLaTeX (math) → Org-cycle
 (with-eval-after-load 'org
-  (require 'yasnippet)  ;; Load yasnippet here if not elsewhere
+  (require 'yasnippet)
+  (require 'yankpad)  ; Load yankpad explicitly
+  
   (defun my/org-smart-tab ()
-    "Smart TAB: Yasnippet → CDLaTeX → Org-cycle."
+    "Smart TAB: Yankpad → Yasnippet → CDLaTeX → Org-cycle."
     (interactive)
     (cond
      ((org-at-heading-p) (org-cycle))
      ((org-in-src-block-p) (org-cycle))
      ((org-at-table-p 'any) (org-table-next-field))
+     ;; Yankpad trigger expansion (must come before yasnippet)
+     ((and (fboundp 'yankpad-expand) (yankpad-expand)) t)
+     ;; Yasnippet expansion
      ((or (and (fboundp 'yas-maybe-expand) (yas-maybe-expand))
           (and (fboundp 'yas-expand) (yas-expand))) t)
+     ;; CDLaTeX in math mode
      ((and (or (bound-and-true-p cdlatex-mode) (bound-and-true-p org-cdlatex-mode))
            (org-inside-LaTeX-fragment-p)) (cdlatex-tab))
+     ;; Default: cycle
      (t (org-cycle))))
+  
   (define-key org-mode-map (kbd "TAB") #'my/org-smart-tab))
+
 #+END_SRC
 
 ** ACTIVE Smart Org + PDF vertical preview
@@ -210,20 +219,20 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
 (add-to-list 'org-src-lang-modes '("vhdl" . vhdl))            ; VHDL syntax
 
 ;; Optional: Python explicit mapping (auto-detects, but can help in edge cases)
-(add-to-list 'org-src-lang-modes '("python" . python))
+;;(add-to-list 'org-src-lang-modes '("python" . python))
 
 
 
 ;; Better source code editing experience
 (setq org-src-fontify-natively t)         ; Syntax highlight code blocks directly in Org buffers
-(setq org-src-tab-acts-natively t)        ; TAB indents/completes as in the language's major mode
+;;(setq org-src-tab-acts-natively t)        ; TAB indents/completes as in the language's major mode
 
 ;; Preserve indents without comma quoting for ALL source blocks (global default) 
 ;; for indentation-sensitive languages like Verilog, VHDL, or Python
-(add-to-list 'org-babel-default-header-args '(:preserve-indent . t))
+;;(add-to-list 'org-babel-default-header-args '(:preserve-indent . t))
 
 ;; Disable comma quoting on indent for * / + / # lines in all blocks
-(setq org-edit-src-quote-special nil)  
+;;(setq org-edit-src-quote-special nil)  
 #+END_SRC
 
 

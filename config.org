@@ -275,6 +275,10 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   :straight (:type built-in)
   :ensure nil
   :config
+
+  ;; Minimal fix: preserve indentation in source blocks (prevents comma escaping)
+  (setq org-src-preserve-indentation t)
+  
   ;; Core requires
   (require 'oc)
   (require 'oc-biblatex)

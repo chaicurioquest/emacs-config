@@ -4,93 +4,110 @@
 * Snippets
 
 ** General
-*** greet
+
+*** hello
 :PROPERTIES:
 :yankpad-trigger: hello
 :END:
-#+BEGIN_SRC text
-  Hello, ${1:Name}! Welcome to Yankpad!
-#+END_SRC
 
-*** latex-export
+Hello, ${1:Name}! Welcome to Yankpad!
+
+*** latexp
 :PROPERTIES:
 :yankpad-trigger: latexp
 :END:
+
 #+BEGIN_EXPORT latex
 ;; org to latex export
-
-
-
 #+END_EXPORT
 
-*** elisp
+** Scripting
+
+*** spice
 :PROPERTIES:
-:yankpad-trigger: elfunc
+:yankpad-trigger: spice
 :END:
-#+BEGIN_SRC emacs-lisp
-;; Emacs LISP commands.
 
+#+BEGIN_SRC spice
+V1 in 0 DC ${2:5}
+R1 in out ${3:1k}
+C1 out 0 ${4:1u}
+.tran 1u 10m
+#+END_SRC
 
+*** tcl
+:PROPERTIES:
+:yankpad-trigger: tcl
+:END:
+
+#+BEGIN_SRC tcl
+proc ${1:name} {${2:args}} {
+    ${3:# body}
+    puts "${4:result}"
+}
 #+END_SRC
 
 *** linux
 :PROPERTIES:
-:yankpad-trigger: bashfc
+:yankpad-trigger: linux
 :END:
+
 #+BEGIN_SRC bash
 # bash shell commands.
-
 #+END_SRC
 
-*** python
+*** pyth
 :PROPERTIES:
-:yankpad-trigger: pyfunc
+:yankpad-trigger: pyth
 :END:
+
 #+BEGIN_SRC python
-  def ${1:func_name}(${2:args}):
-      """${3:Docstring}"""
-      ${4:pass}
+def ${1:func_name}(${2:args}):
+    """${3:Docstring}"""
+    ${4:pass}
 #+END_SRC
 
-*** meetings
+** Tasks
+
+*** meet
 :PROPERTIES:
 :yankpad-trigger: meet
 :END:
-#+BEGIN_SRC org
+
   * Meeting %<%Y-%m-%d> :meeting:${1:Tags}:
   :PROPERTIES:
-  :ID:       %(org-id-new)
-  :CREATED:  [%<%Y-%m-%d %a %H:%M>]
+  :ID: %(org-id-new)
+  :CREATED: [%<%Y-%m-%d %a %H:%M>]
   :END:
+  
   ** Attendees
   ${2:Attendees}
-
+  
   ** Agenda
   ${3:Agenda}
-
+  
   ** Notes
   ${4:Discussion Points}
-#+END_SRC
 
 *** todo
 :PROPERTIES:
-:yankpad-trigger: task
+:yankpad-trigger: todo
 :END:
-#+BEGIN_SRC org
+
   * TODO ${1:Task Title} :task:${2:Tags}:
   :PROPERTIES:
-  :ID:       %(org-id-new)
-  :CREATED:  [%(format-time-string "%Y-%m-%d %a %H:%M")]
+  :ID: %(org-id-new)
+  :CREATED: [%(format-time-string "%Y-%m-%d %a %H:%M")]
   :END:
+  
   DEADLINE: <%<%Y-%m-%d>>
   ${3:Task details}
-#+END_SRC
- 
-*** web-capture
+
+*** web
 :PROPERTIES:
-:yankpad-trigger: wc
+:yankpad-trigger: web
 :END:
-#+BEGIN_SRC org
+
   * ${1:Title}
   :PROPERTIES:
   :URL: ${2:https://example.com/...}
@@ -99,33 +116,30 @@
   :TAGS: ${4:web,ai}
   :ID: %(org-id-new)
   :END:
+  
   #+BEGIN_QUOTE
   $0
   #+END_QUOTE
-#+END_SRC
 
-** Handwritten
-*** hwnote
+*** handwrn
 :PROPERTIES:
-:yankpad-trigger: hwn
+:yankpad-trigger: handwrn
 :END:
-#+BEGIN_SRC org
+
   * ${1:Note Title} :handwritten:${2:Tags}:
   :PROPERTIES:
-  :ID: %(org-id-new)  ; Auto-ID for linking/refile
-  :NOTER_DOCUMENT: attachment:${3:note.pdf}  ; For noter sync
+  :ID: %(org-id-new)
+  :NOTER_DOCUMENT: attachment:${3:note.pdf}
   :END:
-
-  #+CAPTION: Handwritten ${4:Diagram}
+  
+  #+CAPTION: Handwritten ${4:Diagram}}
   #+ATTR_ORG: :width 500
   [[attachment:${5:image.png}]]
-
+  
   ** OCR'd Text
   #+BEGIN_QUOTE
   ${6:Insert OCR here}
   #+END_QUOTE
-
+  
   ** Annotations
   ${7:Notes}
-#+END_SRC
-
