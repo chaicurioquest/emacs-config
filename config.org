@@ -575,6 +575,59 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 #+END_SRC
 
+#+BEGIN_SRC emacs-lisp
+;; ──────────────────────────────────────────────────────────────
+;; Custom: Auto-Sync Dual-Page Navigation (No external dependencies)
+;; ──────────────────────────────────────────────────────────────
+(defvar my/pdf-dual-sync-enabled nil
+  "Non-nil when dual-page sync is active.")
+
+(defun my/pdf-sync-advice (orig-fun &rest args)
+  "Advice to sync dual windows when navigating."
+  (if (not my/pdf-dual-sync-enabled)
+      (apply orig-fun args)  ;; Normal single-window behavior
+    (let* ((wins (get-buffer-window-list (current-buffer)))
+           (current-win (selected-window))
+           (other-win (car (delq current-win wins))))
+      ;; Execute in current window
+      (apply orig-fun args)
+      ;; Sync to other window if it exists
+      (when (and other-win (window-live-p other-win))
+        (with-selected-window other-win
+          (apply orig-fun args))))))
+
+(defun my/pdf-view-dual-mode ()
+  "Toggle side-by-side two-page view WITH auto-sync navigation."
+  (interactive)
+  (if (> (length (get-buffer-window-list (current-buffer))) 1)
+      ;; Disable: close extra windows and turn off sync
+      (progn
+        (delete-other-windows)
+        (setq my/pdf-dual-sync-enabled nil)
+        (message "Dual-page sync: OFF"))
+    ;; Enable: split window and turn on sync
+    (let ((buf (current-buffer))
+          (page (pdf-view-current-page)))
+      (delete-other-windows)
+      (split-window-right)
+      (other-window 1)
+      (set-window-buffer nil buf)
+      (pdf-view-goto-page (1+ page))
+      (pdf-view-fit-page-to-window)
+      (other-window -1)
+      (pdf-view-fit-page-to-window)
+      (setq my/pdf-dual-sync-enabled t)
+      (message "Dual-page sync: ON (use n/p/SPC/DEL)"))))
+
+;; Apply advice to pdf-tools navigation commands
+(with-eval-after-load 'pdf-view
+  (advice-add 'pdf-view-next-page :around #'my/pdf-sync-advice)
+  (advice-add 'pdf-view-previous-page :around #'my/pdf-sync-advice)
+  (advice-add 'pdf-view-scroll-up-or-next-page :around #'my/pdf-sync-advice)
+  (advice-add 'pdf-view-scroll-down-or-previous-page :around #'my/pdf-sync-advice)
+  (define-key pdf-view-mode-map (kbd "d") #'my/pdf-view-dual-mode))
+#+END_SRC
+
 ** pdf annotation org noter optional dependancies
 #+BEGIN_SRC emacs-lisp
 ;; Optional for org-noter EPUB/DJVU (suppress warnings if not used)
