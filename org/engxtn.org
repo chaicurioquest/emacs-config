@@ -47,6 +47,7 @@ These should be loaded *after* general Org settings.
 \\usepackage{amsmath,mathtools}
 \\usepackage{xcolor}
 \\usepackage{siunitx}
+\\usepackage{upgreek}
 \\usepackage{tikz}
 \\usepackage[american]{circuitikz}
 \\usepackage[active,tightpage,displaymath,latexmath]{preview}
@@ -56,6 +57,7 @@ These should be loaded *after* general Org settings.
 \\PreviewEnvironment{displaymath}
 \\PreviewEnvironment{equation}
 \\PreviewEnvironment{align}
+\\PreviewEnvironment{subequations}
 \\PreviewEnvironment{tikzpicture}
 \\PreviewEnvironment{circuitikz}
 
@@ -64,7 +66,6 @@ These should be loaded *after* general Org settings.
 \\AtBeginDocument{\\pagecolor{orgbg}\\color{orgfg}}
 
 \\newcommand{\\pv}[1]{\\begin{preview}#1\\end{preview}}
-
 \\mathsurround=0pt
 \\setlength\\abovedisplayskip{0pt}
 \\setlength\\belowdisplayskip{0pt}
@@ -121,9 +122,6 @@ These should be loaded *after* general Org settings.
 
 * Export Settings
 #+BEGIN_SRC emacs-lisp
-(setq org-latex-default-packages-alist
-      (delete '("AUTO" "inputenc" t) org-latex-default-packages-alist))
-
 (setq preview-LaTeX-command
       '("%`%l -interaction=nonstopmode -halt-on-error -output-directory=%o %t"))
 #+END_SRC

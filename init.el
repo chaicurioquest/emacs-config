@@ -4,9 +4,6 @@
 ;; Sets early optimizations (GC, package.el) for faster startup.
 ;; Synced via https://github.com/chaicurioquest/emacs-config.
 
-;; Speed up startup by increasing garbage collection threshold (reset later).
-(setq gc-cons-threshold (* 50 1000 1000))
-
 ;; Disable package.el (straight.el handles packages)
 (setq package-enable-at-startup nil)
 
@@ -42,6 +39,8 @@
 ;; Auto-tangle, byte-compile, and load config.org (best practice)
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== Tangling and loading config.org ==="))
+
+;; org-babel-load-file loads config.el directly without going through my/tangle-if-needed guards
 (org-babel-load-file my-config-org)
 
 ;; Load private tweaks if present (won't error if missing)
@@ -56,19 +55,16 @@
 ;; Set default font size (adjust the :height value as needed; 100 is default, 120-140 is larger/readable)
 (set-face-attribute 'default nil :height 160)
 
-;; Reset GC to reasonable value post-init
-(setq gc-cons-threshold (* 2 1024 1024))
-
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(custom-enabled-themes '(tango-dark))
  '(my-org-refile-to-ids
    '(("+fleeting" . "df82ceed-3a1c-470c-8703-6fafa24823e363")
      ("+meeting" . "d39cd7c9-99bf-483e-b338-4bd08ae6e413")
      ("+task" . "07bb75d6-077e-4ea8-a8a7-f7dc86cb5737")))
+ '(safe-local-variable-values nil)
  '(warning-suppress-log-types '((ox-latex) (emacs))))
 
 (custom-set-faces

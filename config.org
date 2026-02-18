@@ -6,7 +6,7 @@
 #+OPTIONS: toc:t num:nil
 #+PROPERTY: header-args :eval never-export
 #+CREATED: 2025-07-12
-#+LAST_MODIFIED: [2025-08-12 Tue 16:06]
+#+LAST_MODIFIED: [2026-02-18 Wed 16:49]
 
 * Purpose
 This Org-mode configuration is the single source for my Emacs 30 setup, designed to be:
@@ -99,6 +99,13 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 (unless (file-directory-p default-directory)
   (make-directory default-directory t))
 (message "Default directory: %s" default-directory)
+
+;; =========Stable global anchor for all path expansion ============
+;; Captured here ONCE; never changes, even when buffer-local
+;; default-directory shifts (e.g., opening files in books/)
+(defvar my/notes-root-dir default-directory
+  "Absolute path to notes root. Set once at startup. Device-portable.") 
+
 #+END_SRC
 
 ** Global paths — defined very early
@@ -159,7 +166,7 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
   "Set `org-agenda-files` to top-level .org files in `default-directory`,
 plus recursive .org files from the 'roam' subdirectory, excluding unwanted dirs."
   (interactive)
-  (let* ((notes-dir (file-name-as-directory default-directory))
+  (let* ((notes-dir (file-name-as-directory my/notes-root-dir))
          (roam-dir (expand-file-name "roam/" notes-dir))
          (excluded-dirs '("build" "ltximg" "images" ".attach" ".autosaves" ".backups" "bib" "latex" ".git"))
          (dir-predicate (lambda (d)
@@ -191,12 +198,12 @@ plus recursive .org files from the 'roam' subdirectory, excluding unwanted dirs.
 ;; Initialize once
 (my/update-agenda-files)
 
-;; Rescan only when saving an Org file under the notes dir (including subdirs like roam)
+;; Rescan only when saving an Org file under the notes dir use stable var, not buffer-local default-directory
 (add-hook 'after-save-hook
           (lambda ()
             (when (and (derived-mode-p 'org-mode)
                        buffer-file-name
-                       (string-prefix-p (file-name-as-directory default-directory)
+                       (string-prefix-p (file-name-as-directory my/notes-root-dir)
                                         (file-name-directory (file-truename buffer-file-name))))
               (my/update-agenda-files))))
 #+END_SRC
@@ -569,9 +576,9 @@ If using AUCTeX for LaTeX exports, add reftex package.
   ;; load pdf-isearch and activate isearch mode
     (require 'pdf-isearch)
     (add-hook 'pdf-view-mode-hook #'pdf-isearch-minor-mode)
-    (add-hook 'pdf-view-mode-hook #'my/pdf-clear-cache-safely)))
+    (add-hook 'pdf-view-mode-hook #'my/pdf-clear-cache-safely))
   ;; Automatically revert unmodified PDF buffers without asking when the file changes
-    (setq revert-without-query '(".+\\.pdf$"))
+    (setq revert-without-query '(".+\\.pdf$")))
 
 #+END_SRC
 
@@ -710,7 +717,8 @@ If using AUCTeX for LaTeX exports, add reftex package.
         org-noter-highlight-selected-text nil
         org-noter-insert-note-no-questions t
         org-noter-hide-other nil
-        org-noter-doc-property-in-notes nil))
+        org-noter-doc-property-in-notes nil
+        org-noter-always-create-frame nil))
 #+END_SRC
 
 ** pdf annotation using org noter
@@ -852,7 +860,7 @@ If FULL-PATH, return the full path. Handles nil :book-dir."
 
 ** UI Theme, word wrap and other settings.
 #+BEGIN_SRC emacs-lisp
-(load-theme 'tsdh-dark t)  ;;Dark theme for Emacs
+(load-theme 'tango-dark t)  ;;Dark theme for Emacs
 (global-visual-line-mode 1) ;;Wrap text in GUI Windows
 (when (fboundp 'set-fringe-mode)
   (set-fringe-mode 10)) ;;Sets the width of the left and right fringes (the empty margin space at the edge of windows in Emacs) to 10 pixels.
@@ -934,6 +942,49 @@ If FULL-PATH, return the full path. Handles nil :book-dir."
   :defer t)
 #+END_SRC
 
+** Removing line breaks
+#+BEGIN_SRC emacs-lisp
+;; Unfill package: M-Q removes line breaks from PDF text (inverse of M-q fill-paragraph)
+(use-package unfill
+  :straight t
+  :bind ("M-Q" . unfill-paragraph))
+#+END_SRC
+
+** Glossary package for Acronmys                               :enhancement:
+#+BEGIN_SRC emacs-lisp
+;; ========================================
+;; Org-glossary package
+;; Added: 2026-02-18
+;; ========================================
+(use-package org-glossary
+  :straight (org-glossary :type git :host github :repo "tecosaur/org-glossary")
+  :after org
+  :commands (org-glossary-mode))
+;; ── Fix: org-glossary infinite recursion in dependency watcher ──
+;; org-glossary--register-buffer-dependencies has no cycle detection
+;; (unlike org-glossary--get-terms which does). This adds one.
+(defvar my/org-glossary--visiting nil
+  "Files currently being visited by register-buffer-dependencies.")
+
+(with-eval-after-load 'org-glossary
+  (advice-add 'org-glossary--register-buffer-dependencies :around
+              (lambda (orig &optional path-spec)
+                (let* ((path-spec (or path-spec
+                                      (org-glossary--complete-path-spec path-spec)))
+                       (file (plist-get path-spec :file)))
+                  (if (and file (member (expand-file-name file)
+                                        my/org-glossary--visiting))
+                      nil  ; already visiting — break cycle
+                    (let ((my/org-glossary--visiting
+                           (if file
+                               (cons (expand-file-name file)
+                                     my/org-glossary--visiting)
+                             my/org-glossary--visiting)))
+                      (funcall orig path-spec)))))))
+
+
+#+END_SRC
+
 ** Tangle everything (C-c T)
 #+BEGIN_SRC emacs-lisp
 (defun my-tangle-all ()
@@ -967,7 +1018,6 @@ If FULL-PATH, return the full path. Handles nil :book-dir."
 
 (provide 'config)
 #+END_SRC
-
 
 * Git sync for Org notes
 Note: If you are not using git source control for org notes across devices, comment/remove following function

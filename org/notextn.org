@@ -288,7 +288,7 @@ with metadata and a NOTER_DOCUMENT property."
            (book-path (or (calibredb-get-file-path candidate t)
                           (calibredb-get-file-path candidate nil)))
            ;; Notes directory under your default-directory (~/org/).
-           (books-notes-dir (expand-file-name "books" default-directory))
+           (books-notes-dir (expand-file-name "books" my/notes-root-dir))
            ;; Slug for filename: first-author-title, lowercased and cleaned.
            (slug (downcase
                   (replace-regexp-in-string

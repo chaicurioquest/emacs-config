@@ -68,9 +68,8 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
 ;;; keymaps.el --- Central keymaps and global bindings -*- lexical-binding: t; -*-
 
 ;; ─────────────────────────────────────────────────────────────
-;; Prefix keymaps (no quote — bind the keymap value itself)
+;; Prefix keymaps
 ;; ─────────────────────────────────────────────────────────────
-
 (defvar my/citar-map (make-sparse-keymap)
   "Prefix C-c i → citations, literature notes, timestamps, PDF tools.")
 (global-set-key (kbd "C-c i") my/citar-map)
@@ -86,7 +85,6 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
 ;; ─────────────────────────────────────────────────────────────
 ;; Global single-key bindings
 ;; ─────────────────────────────────────────────────────────────
-
 (global-set-key (kbd "C-c t") #'my-tangle-config-org)
 (global-set-key (kbd "C-c T") #'my-tangle-all)
 (global-set-key (kbd "C-c c") #'org-capture)
@@ -99,9 +97,8 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
 (global-set-key (kbd "M-o") #'ace-window)
 
 ;; ─────────────────────────────────────────────────────────────
-;; C-c i → Everything citation & literature related
+;; C-c i → Citations, literature, timestamps, PDF tools
 ;; ─────────────────────────────────────────────────────────────
-
 ;; Timestamps
 (define-key my/citar-map (kbd "t") #'my-insert-timestamp)
 (define-key my/citar-map (kbd "d") #'my-insert-datestamp)
@@ -113,37 +110,38 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
   (define-key my/citar-map (kbd "C") #'citar-insert-citation)   ; Shift variant
   (define-key my/citar-map (kbd "r") #'citar-insert-reference)
   (define-key my/citar-map (kbd "k") #'citar-insert-keys)
-  (define-key my/citar-map (kbd "n") #'citar-create-note)       ; New note
-  (define-key my/citar-map (kbd "N") #'citar-open-note)         ; Open/create note at point
-  (define-key my/citar-map (kbd "C-n") #'citar-open-notes)      ; Pick entry → open note
-  (define-key my/citar-map (kbd "o") #'citar-open)              ; Open PDF/link/etc.
-  (define-key my/citar-map (kbd "O") #'citar-open-files))       ; Open all files
+  (define-key my/citar-map (kbd "n") #'citar-create-note)
+  (define-key my/citar-map (kbd "N") #'citar-open-note)
+  (define-key my/citar-map (kbd "C-n") #'citar-open-notes)
+  (define-key my/citar-map (kbd "O") #'citar-open-files))
 
-;; PDF annotation helpers (Custom functions)
+;; PDF + Org-noter annotation helpers
 (with-eval-after-load 'org-noter
   (define-key my/citar-map (kbd "a") #'my/open-pdf-and-note)
-  (define-key my/citar-map (kbd "g") (lambda () (interactive) (my/open-pdf-and-note 'generic)))
+  (define-key my/citar-map (kbd "g") (lambda () (interactive)
+                                       (my/open-pdf-and-note 'generic)))
   (define-key my/citar-map (kbd "A") #'org-noter-pdftools-insert-annotations)
-  (define-key my/citar-map (kbd "f") #'my/fix-duplicated-noter-paths)) ; New: Fix old duplicated paths
+  (define-key my/citar-map (kbd "f") #'my/fix-duplicated-noter-paths))
 
+;; Glossary toggle — NEW (added 2026-02-18)
+(with-eval-after-load 'org-glossary
+  (define-key my/citar-map (kbd "G") #'org-glossary-mode))      ; C-c i G
+
+;; PDF view bindings
 (with-eval-after-load 'pdf-view
-  ;; Image capture from PDF
-  ;;  Current workflow: Use mouse to select region, then ~C-c i s~ to save as image
   (define-key pdf-view-mode-map (kbd "C-c i s") #'my/save-pdf-region-to-datestamp)
   (define-key pdf-view-mode-map (kbd "C-c i S")
     (lambda () (interactive) (my/save-pdf-region-to-datestamp t)))
-  ;; PDF text search
   (define-key pdf-view-mode-map (kbd "C-s") #'isearch-forward)
   (define-key pdf-view-mode-map (kbd "C-r") #'isearch-backward))
 
-;; Calibre integration (laptop only) — loads calibredb on first use
+;; Calibre (laptop only)
 (when (eq my-device 'laptop)
   (define-key my/citar-map (kbd "b") #'my/open-calibre-book-and-note))
 
 ;; ─────────────────────────────────────────────────────────────
-;; C-c r → Pure Org-roam navigation (no citar clutter)
+;; C-c r → Org-roam navigation & dailies
 ;; ─────────────────────────────────────────────────────────────
-
 (with-eval-after-load 'org-roam
   (define-key my/roam-map (kbd "f") #'org-roam-node-find)
   (define-key my/roam-map (kbd "i") #'org-roam-node-insert)
@@ -156,31 +154,32 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
   (define-key my/roam-map (kbd "t") #'my-org-roam-tag-add)
   (define-key my/roam-map (kbd "r") #'my-org-roam-tag-remove)
   (define-key my/roam-map (kbd "s") #'my/org-roam-safe-rebuild)
+  ;; Transclude — NEW (added 2026-02-18)
+  (define-key my/roam-map (kbd "x") #'my/org-insert-transclude-from-id-with-front-author)  ; C-c r x
   (when (eq my-device 'laptop)
     (define-key my/roam-map (kbd "g") #'org-roam-ui-open)))
 
 ;; ─────────────────────────────────────────────────────────────
 ;; C-c g → Git for Org notes
 ;; ─────────────────────────────────────────────────────────────
-
 (define-key git-org-map (kbd "p") #'magit-pull-org-repo)
 (define-key git-org-map (kbd "u") #'magit-push-org-repo)
 
 ;; ─────────────────────────────────────────────────────────────
 ;; Org-mode local overrides
 ;; ─────────────────────────────────────────────────────────────
-
 (with-eval-after-load 'org
   (define-key org-mode-map (kbd "TAB") #'my/org-smart-tab)
-  (define-key org-mode-map (kbd "C-c i i") #'org-toggle-item))
+  (define-key org-mode-map (kbd "C-c i i") #'org-toggle-item)
+  ;; Tag-target refile — NEW (added 2026-02-18)
+  (define-key org-mode-map (kbd "C-c i R") #'my-org-refile-to-tag-targets))  ; C-c i R
 
 (with-eval-after-load 'mu4e-view
   (define-key mu4e-view-mode-map (kbd "C-c C-c") #'mu4e-org-store-and-capture))
 
 ;; ─────────────────────────────────────────────────────────────
-;; Consult keybindings (moved here from use-package in config.el)
+;; Consult keybindings
 ;; ─────────────────────────────────────────────────────────────
-
 (with-eval-after-load 'consult
   (global-set-key (kbd "C-s") #'consult-line)
   (global-set-key (kbd "C-c h") #'consult-org-heading)

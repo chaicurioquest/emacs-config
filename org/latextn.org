@@ -14,19 +14,34 @@
 (use-package oc-biblatex :after oc)
 
 ;; Prefer LuaLaTeX for export & Babel execution
-;;(defvar my/org-latex-engine "lualatex"
-;;  "Default LaTeX engine for Org export. Change to \"pdflatex\" only when needed.")
-  
-(setq org-latex-compiler "lualatex")  ; Hardcode to avoid nil
-(setq org-babel-latex-compiler "lualatex")  ; Hardcode to avoid nil
+(setq org-latex-compiler "lualatex")  ;; Hardcode to avoid nil
+(setq org-babel-latex-compiler "lualatex")  ;; Hardcode to avoid nil
 
+;; Commented since setup latex file handle latex engine compatibility: Dated 2026-02-16
 ;; Remove inputenc and fontenc with exact match (fourth element is engine list)
-(setq org-latex-default-packages-alist
-      (delete '("AUTO" "inputenc" t ("pdflatex"))
-              (delete '("T1" "fontenc" t ("pdflatex")) org-latex-default-packages-alist)))
+;;(setq org-latex-default-packages-alist
+;;      (delete '("AUTO" "inputenc" t ("pdflatex"))
+;;              (delete '("T1" "fontenc" t ("pdflatex")) org-latex-default-packages-alist)))
 
-;; Add fontspec for LuaTeX
-(add-to-list 'org-latex-default-packages-alist '("" "fontspec" t) t)
+
+;; ------------------------------
+;; Tier 1: Essential Default Packages
+;; ------------------------------
+(setq org-latex-default-packages-alist
+      '(("" "amsmath" t)           ; Math support
+        ("" "fontspec" t)          ; LuaLaTeX font handling
+        ("" "graphicx" t)          ; Images - ESSENTIAL
+        ("" "longtable" nil)       ; Multi-page tables
+        ("normalem" "ulem" t)      ; Underline/strikethrough
+        ("" "capt-of" nil)         ; Captions outside floats
+        ("" "hyperref" nil)))      ; Links/PDF metadata - ESSENTIAL
+
+;; Note: graphicx, rotating, hyperref loaded in setup-latex.org
+;; Note: wrapfig removed (rarely used, avoid conflicts)     
+
+;; ------------------------------
+;; Preview Configuration
+;; ------------------------------
 
 ;; Show previews only when you ask (change to t to enable automatically)
 ;; (setq org-startup-with-latex-preview t)
@@ -37,10 +52,15 @@
 ;;      (plist-put org-format-latex-options :scale 1.1)) ;; 1.0–1.3 typical
 
 ;; Tweak preview scale and other options
-(setq org-format-latex-options (plist-put org-format-latex-options :scale 1.5)) 
+(setq org-format-latex-options
+      (plist-put org-format-latex-options :scale 1.2))  ;; Unified scale
 
 ;; Customize preview image directory to use temp dir
 (setq org-preview-latex-image-directory (concat temporary-file-directory "ltximg/"))
+
+;; ------------------------------
+;; Labels and References
+;; ------------------------------
 
 ;; In cdlatex: Auto-generate labels for equations, figures, and tables without prompting (prompt only for sections)
 (setq reftex-insert-label-flags '("s" "s"))
@@ -61,23 +81,34 @@ Scans the buffer for existing #+NAME: lines with the prefix and a numeric suffix
             (setq max-num num))))
       (format "%s:%d" prefix (1+ max-num)))))
 
+;; ------------------------------
+;; Environment Variables for LaTeX
+;; ------------------------------
+
 ;; Set TEXINPUTS to include subdirs under root for LaTeX inputs
 (setenv "TEXINPUTS" (concat
-                     (file-name-as-directory default-directory) "latex:"
-                     (file-name-as-directory default-directory) "images:"
+                     (file-name-as-directory my/notes-root-dir) "latex:"
+                     (file-name-as-directory my/notes-root-dir) "images:"
                      (getenv "TEXINPUTS")))
 
 ;; Set BIBINPUTS to include bib/ under root for bibliography files
 (setenv "BIBINPUTS" (concat
-                     (file-name-as-directory default-directory) "bib:"
+                     (file-name-as-directory my/notes-root-dir) "bib:"
                      (getenv "BIBINPUTS")))
 
+;; ------------------------------
+;; Export Process
+;; ------------------------------
 ;; Define LaTeX-to-PDF export commands with explicit multiple runs, without separate build dir
 (let ((latexmkrc (expand-file-name ".latexmkrc" (file-name-directory setupfile))))
   (setq org-latex-pdf-process
         `(,(format "latexmk -lualatex -r %s -f %%f" latexmkrc)
           "cp build/%b.pdf %b.pdf"
           "find build -type f ! -name '*.log' -delete")))
+
+;; ------------------------------
+;; Validation
+;; ------------------------------
  
 ;; Warn if setup-latex.org is missing
 (let ((setup-file setupfile))

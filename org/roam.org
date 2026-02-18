@@ -49,7 +49,7 @@ Tangle with `C-c t` or `M-x my-tangle-config-org`.
           (insert-file-contents template-path)
           (goto-char (point-min))
           (while (search-forward "${setupfile}" nil t)
-            (replace-match (expand-file-name "latex/setup-latex.org" default-directory) t t))
+            (replace-match (expand-file-name "latex/setup-latex.org" my/notes-root-dir) t t))
           (buffer-string))
       (message "Template %s not found; using fallback." template-path)
       "* Default Note\n:PROPERTIES:\n:ID: %^{id-or-auto}\n:END:\n%?\n- %U")))
