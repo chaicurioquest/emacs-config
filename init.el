@@ -4,10 +4,9 @@
 ;; Sets early optimizations (GC, package.el) for faster startup.
 ;; Synced via https://github.com/chaicurioquest/emacs-config.
 
-;; Disable package.el (straight.el handles packages)
-(setq package-enable-at-startup nil)
-
 ;; Bootstrap straight.el for reproducible package management.
+;; To update: M-x straight-pull-package RET straight RET
+;;            then: M-x straight-freeze-versions RET
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name
@@ -18,7 +17,7 @@
   (unless (file-exists-p bootstrap-file)
     (with-current-buffer
         (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         "https://raw.githubusercontent.com/radian-software/straight.el/main/install.el"
          'silent 'inhibit-cookies)
       (goto-char (point-max))
       (eval-print-last-sexp)))
@@ -39,6 +38,9 @@
 ;; Auto-tangle, byte-compile, and load config.org (best practice)
 (when (getenv "MY_DEBUG_DEVICE")
   (message "=== Tangling and loading config.org ==="))
+
+;; Never let org silently eval untrusted blocks during tangle-load
+(setq org-confirm-babel-evaluate t)  ; must be set BEFORE org-babel-load-file
 
 ;; org-babel-load-file loads config.el directly without going through my/tangle-if-needed guards
 (org-babel-load-file my-config-org)
@@ -65,7 +67,8 @@
      ("+meeting" . "d39cd7c9-99bf-483e-b338-4bd08ae6e413")
      ("+task" . "07bb75d6-077e-4ea8-a8a7-f7dc86cb5737")))
  '(safe-local-variable-values nil)
- '(warning-suppress-log-types '((ox-latex) (emacs))))
+ ;; '(warning-suppress-log-types '((ox-latex) (emacs)))
+ )
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.

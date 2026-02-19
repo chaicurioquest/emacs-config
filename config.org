@@ -564,7 +564,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
     :config
     (setq pdf-info-epdfinfo-program
           (expand-file-name "build/server/epdfinfo" (straight--build-dir "pdf-tools")))
-    ;; Automatically revert unmodified PDF buffers without asking when the file changes
+    ;; Automatically revert unmodified PDF buffers
     (setq revert-without-query '(".+\\.pdf$"))
     (condition-case nil
         (unless (file-executable-p pdf-info-epdfinfo-program)
@@ -579,12 +579,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
     (require 'pdf-isearch)
     (add-hook 'pdf-view-mode-hook #'pdf-isearch-minor-mode)
     (add-hook 'pdf-view-mode-hook #'my/pdf-clear-cache-safely)))
-<<<<<<< HEAD
-=======
-  ;; Automatically revert unmodified PDF buffers without asking when the file changes
-    (setq revert-without-query '(".+\\.pdf$"))
-
->>>>>>> testing
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
