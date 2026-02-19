@@ -10,12 +10,12 @@
 
 * Purpose
 This Org-mode configuration is the single source for my Emacs 30 setup, designed to be:
-- **Future-proof** · Structured with comments, tables, CANCELLED blocks.
-- **Reliable**     · Reproducible packages via straight.el, lazy loading.
-- **Minimal**      · Single config.org, minimal hooks/keybindings.
-- **Portable**     · Device-specific settings via device.el.
-- **Synced**       · GitHub + Syncthing.
-- **Modular**      · All extensions live in org/*.org files.
+- *Future-proof* · Structured with comments, tables, CANCELLED blocks.
+- *Reliable*     · Reproducible packages via straight.el, lazy loading.
+- *Minimal*      · Single config.org, minimal hooks/keybindings.
+- *Portable*     · Device-specific settings via device.el.
+- *Synced*       · GitHub + Syncthing.
+- *Modular*      · All extensions live in org/*.org files.
 
 * My Digital Workflow :workflow:
 | Purpose                         | Solution                              | Notes (device-specific in brackets)                              | Keybindings                          |

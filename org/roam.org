@@ -8,12 +8,12 @@
 
 * Purpose
 Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, dailies, and dynamic tags from .filetags via my-org-read-filetags in org/filetags.org. Designed to be:
-- **Future-proof**: Structured with comments and tables for easy updates; includes safe DB rebuilds.
-- **Reliable**: Reproducible via straight.el with error handling and db autosync; fixes for citar-org-roam integration.
-- **Minimal**: Lightweight setup with essential keybindings, no external dependencies beyond org-roam.
-- **Portable**: Works on laptop (system-name: ram), Termux, tablet via device-aware paths.
-- **Synced**: ~/.emacs.d/ and notes synced via GitHub[](https://github.com/chaicurioquest/emacs-config) and Syncthing.
-- **Integrated**: Uses my-org-read-filetags for tag completion (shared with yankpad snippets), integrates with Zotero via org-roam-bibtex/Citar for bib notes, Org-noter for PDF annotations, and new features like transclusion and glossary autodetection.
+- *Future-proof*: Structured with comments and tables for easy updates; includes safe DB rebuilds.
+- *Reliable*: Reproducible via straight.el with error handling and db autosync; fixes for citar-org-roam integration.
+- *Minimal*: Lightweight setup with essential keybindings, no external dependencies beyond org-roam.
+- *Portable*: Works on laptop (system-name: ram), Termux, tablet via device-aware paths.
+- *Synced*: ~/.emacs.d/ and notes synced via GitHub[](https://github.com/chaicurioquest/emacs-config) and Syncthing.
+- *Integrated*: Uses my-org-read-filetags for tag completion (shared with yankpad snippets), integrates with Zotero via org-roam-bibtex/Citar for bib notes, Org-noter for PDF annotations, and new features like transclusion and glossary autodetection.
 
 * My Org-Roam Workflow                                             :workflow:
 | Workflow              | Solution                             | Notes                                                         | Device   | Keybindings                                       |

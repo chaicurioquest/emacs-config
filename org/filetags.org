@@ -13,11 +13,11 @@ Based on Karl Voit’s tag guidelines:
 - Lowercase, plural, minimal, non-overlapping, general
 - Avoids redundancy
 - Features:
-- **Future-proof**: Tidy structure and extensible; now integrated with glossary for acronym handling.
-- **Reliable**: Uses `ht` and `f.el` for parsing; mutual exclusivity preserved where needed.
-- **Minimal**: Lightweight, no UI assumptions; completion via ivy or built-in.
-- **Portable**: Works across laptop, Termux, tablet.
-- **Synced**: Via GitHub and Syncthing.
+- *Future-proof*: Tidy structure and extensible; now integrated with glossary for acronym handling.
+- *Reliable*: Uses `ht` and `f.el` for parsing; mutual exclusivity preserved where needed.
+- *Minimal*: Lightweight, no UI assumptions; completion via ivy or built-in.
+- *Portable*: Works across laptop, Termux, tablet.
+- *Synced*: Via GitHub and Syncthing.
 
 * ACTIVE Filetags Setup                                            :workflow:
 Configure filetags for tag management with mutual exclusivity, used by org-roam (C-c r t) and standalone (C-c f t).
