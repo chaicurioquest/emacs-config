@@ -500,6 +500,15 @@ Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) f
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
+
+;; Suppress embark-consult false-positive timing warning
+(defun my/suppress-embark-consult-warning (type msg &rest _)
+  (not (and (eq type 'emacs)
+            (string-match-p "embark-consult" msg))))
+(advice-add 'display-warning :before-while
+            #'my/suppress-embark-consult-warning)
+
+
 ;; -----------------------------
 ;; Embark — Contextual Actions
 ;; -----------------------------
@@ -523,8 +532,11 @@ Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) f
 #+BEGIN_SRC emacs-lisp
 ;; Integrate Embark + Consult (if you have consult; otherwise omit)
 (use-package embark-consult
-  :straight t
-  :after (embark consult)
+  :straight (:host github
+             :repo "oantolin/embark"
+             :files ("embark-consult.el"))  ;;just this one file, same repo
+  :after embark
+  :demand t
   :hook (embark-collect-mode . consult-preview-at-point-mode)
   :config (message "✅ Embark-Consult integration enabled."))
 #+END_SRC
