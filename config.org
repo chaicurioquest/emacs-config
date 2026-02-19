@@ -546,7 +546,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 #+BEGIN_SRC emacs-lisp
 (use-package reftex
-  :straight t
+  :straight nil
   :defer t
   :diminish reftex-mode)
 #+END_SRC
@@ -665,11 +665,15 @@ If using AUCTeX for LaTeX exports, add reftex package.
 (ignore-errors (unload-feature 'org-ref t))
 (straight-override-recipe '(org-ref :type built-in :local-repo nil :files nil))
 (setq load-path (cl-remove-if (lambda (p) (string-match-p "org-ref" p)) load-path))
-(unless (featurep 'org-ref)
-  (defvar org-ref-bibliography-notes nil)
-  (defvar org-ref-default-bibliography nil)
-  (defvar org-ref-pdf-directory nil)
-  (provide 'org-ref))
+
+;; Define stub vars ONLY so other code can `boundp` or `setq` them safely.
+;; IMPORTANT: do NOT (provide 'org-ref) here.
+(unless (boundp 'org-ref-bibliography-notes)
+  (defvar org-ref-bibliography-notes nil))
+(unless (boundp 'org-ref-default-bibliography)
+  (defvar org-ref-default-bibliography nil))
+(unless (boundp 'org-ref-pdf-directory)
+  (defvar org-ref-pdf-directory nil)) 
 #+END_SRC
 
 ** Zotero/Bibliography Integration
@@ -821,7 +825,11 @@ If FULL-PATH, return the full path. Handles nil :book-dir."
                    lib-dir
                    "title,authors,author_sort,publisher,pubdate,isbn,id")))
         (message "Running: %s" cmd)
-        (let ((exit-code (shell-command cmd "*calibredb-bib*" "*calibredb-bib*")))
+        (let ((exit-code 
+           (call-process "calibredb" nil "*calibredb-bib*" t
+              "catalog" bib-file
+              "--with-library" lib-dir
+              "--fields" "title,authors,author_sort,publisher,pubdate,isbn,id")))
           (if (zerop exit-code)
               (message "Updated %s" bib-file)
             (message "calibredb failed; see *calibredb-bib* buffer")))))))
