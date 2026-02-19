@@ -513,14 +513,65 @@ If ID is nil, offer completion over all IDs in currently open Org buffers."
     (define-key calibredb-search-mode-map (kbd "C-c i b")
       #'my/open-calibre-book-and-note)))
 
-;; ── pdf-view local bindings ──
+;; ── pdf-view local bindings (all keybindings and advice in one block) ──
 (with-eval-after-load 'pdf-view
+  ;; Mouse region selection
   (define-key pdf-view-mode-map [drag-mouse-1] 'ignore)
   (define-key pdf-view-mode-map (kbd "<down-mouse-1>") 'pdf-view-mouse-set-region)
   (define-key pdf-view-mode-map (kbd "<S-down-mouse-1>") 'pdf-view-mouse-set-region-rectangle)
+  ;; Image capture
   (define-key pdf-view-mode-map (kbd "C-c i s") 'my/save-pdf-region-to-datestamp)
   (define-key pdf-view-mode-map (kbd "C-c i S")
-    (lambda () (interactive) (my/save-pdf-region-to-datestamp t))))
+    (lambda () (interactive) (my/save-pdf-region-to-datestamp t)))
+  ;; Dual-page sync
+  (define-key pdf-view-mode-map (kbd "d") #'my/pdf-view-dual-mode)
+  (advice-add 'pdf-view-next-page :around #'my/pdf-sync-advice)
+  (advice-add 'pdf-view-previous-page :around #'my/pdf-sync-advice)
+  (advice-add 'pdf-view-scroll-up-or-next-page :around #'my/pdf-sync-advice)
+  (advice-add 'pdf-view-scroll-down-or-previous-page :around #'my/pdf-sync-advice))
+#+END_SRC
+
+* Page Navigation
+
+#+BEGIN_SRC emacs-lisp
+;; ──────────────────────────────────────────────────────────────
+;; Dual-Page Sync Navigation
+;; ──────────────────────────────────────────────────────────────
+(defvar my/pdf-dual-sync-enabled nil
+  "Non-nil when dual-page sync is active.")
+
+(defun my/pdf-sync-advice (orig-fun &rest args)
+  "Advice to sync dual windows when navigating."
+  (if (not my/pdf-dual-sync-enabled)
+      (apply orig-fun args)
+    (let* ((wins (get-buffer-window-list (current-buffer)))
+           (current-win (selected-window))
+           (other-win (car (delq current-win wins))))
+      (apply orig-fun args)
+      (when (and other-win (window-live-p other-win))
+        (with-selected-window other-win
+          (apply orig-fun args))))))
+
+(defun my/pdf-view-dual-mode ()
+  "Toggle side-by-side two-page view WITH auto-sync navigation."
+  (interactive)
+  (if (> (length (get-buffer-window-list (current-buffer))) 1)
+      (progn
+        (delete-other-windows)
+        (setq my/pdf-dual-sync-enabled nil)
+        (message "Dual-page sync: OFF"))
+    (let ((buf (current-buffer))
+          (page (pdf-view-current-page)))
+      (delete-other-windows)
+      (split-window-right)
+      (other-window 1)
+      (set-window-buffer nil buf)
+      (pdf-view-goto-page (1+ page))
+      (pdf-view-fit-page-to-window)
+      (other-window -1)
+      (pdf-view-fit-page-to-window)
+      (setq my/pdf-dual-sync-enabled t)
+      (message "Dual-page sync: ON (use n/p/SPC/DEL)"))))
 #+END_SRC
 
 * Org-roam Capture Template
