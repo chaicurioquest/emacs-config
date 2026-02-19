@@ -1,0 +1,61 @@
+#+TITLE: Emacs Config Cheat-Sheet
+#+DATE: 2026-02-20
+#+AUTHOR: Generated for Quick Reference
+
+* Prefixes Overview
+- C-c i: Citations/PDF/Noter/Timestamps
+- C-c r: Org-Roam (notes/dailies/tags)
+- C-c g: Git (pull/push Org repo)
+- C-c f: Filetags
+- TAB: Smart expand/cycle in Org
+
+* Core Workflows
+- Tangle configs: C-c T (all) / C-c t (current)
+- Capture note: C-c c (generic) / C-c r n (Roam)
+- Agenda: C-c a
+- Search: C-s (line) / C-c h (headings) / C-c k (ripgrep)
+- Buffers/Windows: C-c b (switch) / M-o (ace-window)
+- Undo: C-z
+- Git: C-x g (status) / C-c g p (pull) / C-c g u (push)
+
+* Roam & Notes (C-c r)
+- f: Find note
+- i: Insert link
+- n: New note
+- d/T/P/N/D: Dailies (capture/today/prev/next/date)
+- t/r: Add/remove tag
+- s: Rebuild DB
+- g: Graph UI (laptop)
+- x: Transclude from ID
+
+* Citations & Bib (C-c i)
+- c/C: Insert citation
+- r: Insert reference
+- k: Insert keys
+- n/N/C-n: Create/open note
+- o/O: Open PDF/files
+- a: Open PDF + Noter
+- p: Fit PDF height
+- s/S: Save PDF region (rect w/ Shift)
+- t/d/o: Insert timestamp/date/Org-ts
+- i: Toggle item
+- R: Refile to tag targets
+
+* PDF/Noter Tools
+- In PDF: C-c i s/S (save region)
+- Vertical PDF: C-c v
+- Dual-page: M-x my/pdf-view-dual-mode
+
+* Mail (Laptop: C-c m)
+- In view: C-c C-c (capture to Org)
+
+* Other
+- Tags: C-c f t (set filetags)
+- Alerts: Auto (Org/mu4e)
+- LaTeX: Auto-preview on save; export C-c C-e l o
+- Glossary: Auto in Org (no key; export handles)
+
+* Debugging
+- Set env MY_DEBUG_DEVICE=1 for load messages
+- Rebuild Roam DB: C-c r s
+- Reload config: M-x load-file ~/.emacs.d/config.el

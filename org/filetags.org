@@ -9,14 +9,14 @@
 This configuration sets up two layers of tag files:
 1. `~/.emacs.d/.filetags` – General-purpose tags for PIM and file management (used globally).
 2. `~/.emacs.d/.filetags-org` – Specific to Org-mode and Org-Roam files under `~/wspace/org/notes/`.
- Based on Karl Voit’s tag guidelines:
+Based on Karl Voit’s tag guidelines:
 - Lowercase, plural, minimal, non-overlapping, general
 - Avoids redundancy
 - Features:
-- **Future-proof**: Tidy structure and extensible
-- **Reliable**: Uses `ht` and `f.el` for parsing
-- **Minimal**: Lightweight, no UI assumptions
-- **Portable**: Works across laptop, Termux, tablet
+- **Future-proof**: Tidy structure and extensible; now integrated with glossary for acronym handling.
+- **Reliable**: Uses `ht` and `f.el` for parsing; mutual exclusivity preserved where needed.
+- **Minimal**: Lightweight, no UI assumptions; completion via ivy or built-in.
+- **Portable**: Works across laptop, Termux, tablet.
 - **Synced**: Via GitHub and Syncthing.
 
 * ACTIVE Filetags Setup                                            :workflow:

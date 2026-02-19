@@ -6,29 +6,32 @@
 #+CREATED: %U
 #+LAST_MODIFIED: [2025-08-10 Sun 16:50]
 
-** Purpose
+* Purpose
 Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, dailies, and dynamic tags from .filetags via my-org-read-filetags in org/filetags.org. Designed to be:
-- **Future-proof**: Structured with comments and tables for easy updates.
-- **Reliable**: Reproducible via straight.el with error handling and db autosync.
+- **Future-proof**: Structured with comments and tables for easy updates; includes safe DB rebuilds.
+- **Reliable**: Reproducible via straight.el with error handling and db autosync; fixes for citar-org-roam integration.
 - **Minimal**: Lightweight setup with essential keybindings, no external dependencies beyond org-roam.
 - **Portable**: Works on laptop (system-name: ram), Termux, tablet via device-aware paths.
 - **Synced**: ~/.emacs.d/ and notes synced via GitHub[](https://github.com/chaicurioquest/emacs-config) and Syncthing.
-- **Integrated**: Uses my-org-read-filetags for tag completion (shared with yankpad snippets), integrates with Zotero via org-roam-bibtex/Citar for bib notes, and Org-noter for PDF annotations.
-
-Tangle with `C-c t` or `M-x my-tangle-config-org`.
+- **Integrated**: Uses my-org-read-filetags for tag completion (shared with yankpad snippets), integrates with Zotero via org-roam-bibtex/Citar for bib notes, Org-noter for PDF annotations, and new features like transclusion and glossary autodetection.
 
 * My Org-Roam Workflow                                             :workflow:
 | Workflow              | Solution                             | Notes                                                         | Device   | Keybindings                                       |
 |-----------------------|--------------------------------------|---------------------------------------------------------------|----------|-------------------------------------------------  |
 | Find existing note    | org-roam-node-find                   | Search notes by title/ID/tags; Vertico completion             | All      | C-c r f                                           |
 | Insert link to note   | org-roam-node-insert                 | Link to another note (backlinks auto-created)                 | All      | C-c r i                                           |
-| Capture new note      | org-roam-capture                     | Create notes with templates (default, fleeting, permanent, journal, bibliography) | All | C-c r n                            |
-| Dailies capture       | org-roam-dailies-capture-today       | Daily notes with templates; auto-timestamped                  | All      | C-c r d                                           |
-| Navigate dailies      | org-roam-dailies-goto-*              | Jump to today/previous/next/specific date                     | All      | C-c r T (today), P (previous), N (next), D (date) |
-| Bibliography notes    | org-roam-bibtex (with Citar)         | Create notes from Zotero refs; integrates with Org-noter for annotations | All   | C-c r c (via Citar open/create)           |
-| Tag notes             | my-org-roam-tag-add / my-org-roam-tag-remove | Dynamic tags from filetags.org; Vertico completion    | All      | C-c r t (add), r (remove)                         |
-| View backlinks        | org-roam-buffer-toggle               | Displays backlinks, references in side buffer                 | All      | C-c r b                                           |
-| View graph            | org-roam-ui                          | Interactive graph UI (on laptop)                              | Laptop   | C-c r g                                           |  
+| Capture new note      | org-roam-capture                     | Create notes with templates (default, fleeting, permanent, journal, bibliography) | All | C-c r n                                           |
+| Daily notes           | org-roam-dailies                     | Capture/goto today/previous/next/date                         | All      | C-c r d/T/P/N/D                                   |
+| Add/remove tags       | my-org-roam-tag-add/remove           | Uses .filetags completion (from filetags.org)                 | All      | C-c r t/r                                         |
+| Rebuild DB safely     | my/org-roam-safe-rebuild             | Clears and syncs DB; skips if PDF open                        | All      | C-c r s                                           |
+| Graph UI              | org-roam-ui-open                     | Interactive graph (laptop only)                               | Laptop   | C-c r g                                           |
+| Transclude content    | my/org-insert-transclude-from-id-with-front-author | Insert transcluded block from ID (new: 2026-02-18)     | All      | C-c r x                                           |
+| Refile to tag targets | my-org-refile-to-tag-targets         | Refile to headings with :TAG_TARGET: (new: 2026-02-18)        | All      | C-c i R                                           |
+| Glossary acronyms     | org-glossary-mode                    | Autodetect/expand in Org; LaTeX export handling               | All      | Auto-enabled (hook)                               |
+| Bib integration       | citar-org-roam                       | Create/open notes for citations; Zotero sync                  | All      | C-c i n/N/C-n (via Citar)                         |
+| PDF annotations       | org-noter                            | Sync notes with PDF; fixes for winprops/location              | All      | C-c i p (open PDF + noter)                        |
+| Mail to Org           | mu4e-org-store-and-capture           | Capture emails as TODOs (laptop only)                         | Laptop   | C-c C-c (in mu4e-view)                            |
+| Alerts/Notifications  | org-alert/mu4e-alert                 | Device-aware; sanitized messages                              | All      | Auto (hooks/timers)                               |
 
 #+BEGIN_SRC emacs-lisp
 ;; Use id: links when interactively inserting links

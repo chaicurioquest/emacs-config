@@ -26,43 +26,49 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
 | C-c i o            | citar-open                                   | Open PDF/link/website                                 | Any mode               |
 | C-c i O            | citar-open-files                             | Open all attached files                               | Any mode               |
 | C-c i a            | my/open-pdf-and-note                         | Open PDF + start org-noter session                    | Any mode               |
-| C-c i g            | my/open-pdf-and-note 'generic                | Same but generic (no special handling)                | Any mode               |
-| C-c i s            | my/save-pdf-region-to-datestamp              | Save selected PDF region as image to note             | pdf-view-mode          |
-| C-c i S            | my/save-pdf-region-to-datestamp (whole-page) | Save entire PDF page as image to note                 | pdf-view-mode          |
-| C-c i A            | org-noter-pdftools-insert-annotations        | Insert PDF annotations into note                      | pdf-view-mode          |
-| C-c i f            | my/fix-duplicated-noter-paths                | Fix duplicated paths in old notes                     | Org-mode               |
-| C-c i b            | my/open-calibre-book-and-note                | Open Calibre book + note (laptop only)                | Laptop only            |
+| C-c i p            | my/pdf-view-fit-height                       | Fit PDF to window height                              | PDF buffer             |
+| C-c i s            | my/save-pdf-region-to-datestamp              | Save PDF region as image (rectangular with Shift)     | PDF buffer             |
+| C-c i S            | my/save-pdf-region-to-datestamp (rect)       | Rectangular region save                               | PDF buffer             |
 | C-c i t            | my-insert-timestamp                          | Insert YYYY-MM-DD HH:MM:SS                            | Any mode               |
 | C-c i d            | my-insert-datestamp                          | Insert YYYY-MM-DD                                     | Any mode               |
-| C-c i o            | my-insert-org-timestamp                      | Insert Org timestamp [YYYY-MM-DD Day HH:MM]           | Any mode               |
-| **C-c r** (prefix) | —                                            | Pure Org-roam navigation & dailies                    | —                      |
-| C-c r f            | org-roam-node-find                           | Find node                                             | Org-mode               |
-| C-c r i            | org-roam-node-insert                         | Insert node link                                      | Org-mode               |
-| C-c r n            | org-roam-capture                             | Capture new node                                      | Org-mode               |
-| C-c r d            | org-roam-dailies-capture-today               | Capture today's daily                                 | Org-mode               |
-| C-c r T            | org-roam-dailies-goto-today                  | Go to today's daily                                   | Org-mode               |
-| C-c r P            | org-roam-dailies-goto-previous-note          | Previous daily                                        | Org-mode               |
-| C-c r N            | org-roam-dailies-goto-next-note              | Next daily                                            | Org-mode               |
-| C-c r D            | org-roam-dailies-goto-date                   | Go to specific date                                   | Org-mode               |
-| C-c r t            | my-org-roam-tag-add                          | Add tag to node                                       | Org-mode               |
-| C-c r r            | my-org-roam-tag-remove                       | Remove tag from node                                  | Org-mode               |
-| C-c r s            | my/org-roam-safe-rebuild                     | Safe DB rebuild                                       | Org-mode               |
-| C-c r g            | org-roam-ui-open                             | Open graph UI (laptop only)                           | Laptop only            |
-| **C-c g** (prefix) | —                                            | Git sync for Org notes                                | —                      |
-| C-c g p            | magit-pull-org-repo                          | Pull changes from repo                                | Any mode               |
-| C-c g u            | magit-push-org-repo                          | Push changes to repo                                  | Any mode               |
-| C-c t              | my-tangle-config-org                         | Tangle only config.org                                | Any mode               |
-| C-c T              | my-tangle-all                                | Tangle all modular files                              | Any mode               |
-| C-c c              | org-capture                                  | Quick capture                                         | Any mode               |
-| C-c a              | org-agenda                                   | Agenda view                                           | Any mode               |
-| C-c v              | my/org-pdf-vertical-view                     | Side-by-side PDF preview                              | Any mode               |
-| C-c f t            | my-org-set-filetags                          | Set file-level tags                                   | Org-mode               |
-| C-x g              | magit-status                                 | Full Magit status                                     | Any mode               |
-| C-c m              | mu4e                                         | Open email (Mu4e)                                     | Any mode               |
-| C-z                | undo                                         | Undo                                                  | Any mode               |
-| M-o                | ace-window                                   | Fast window switching                                 | Any mode               |
-| TAB (Org)          | my/org-smart-tab                             | Smart TAB (yasnippet / CDLaTeX / visibility cycling)  | Org-mode               |
-| C-c i i (Org)      | org-toggle-item                              | Toggle list item                                      | Org-mode               |
+| C-c i o            | my-insert-org-timestamp                      | Insert [YYYY-MM-DD Day HH:MM]                         | Org-mode               |
+| C-c i i            | org-toggle-item                              | Toggle item/bullet in Org                             | Org-mode               |
+| C-c i R            | my-org-refile-to-tag-targets                 | Refile to :TAG_TARGET: headings (new: 2026-02-18)     | Org-mode               |
+| **C-c r** (prefix) | —                                            | Org-Roam navigation, capture, dailies                 | Roam workflow          |
+| C-c r f            | org-roam-node-find                           | Find node by title/tags/ID                            | Any mode               |
+| C-c r i            | org-roam-node-insert                         | Insert link to node                                   | Org-mode               |
+| C-c r n            | org-roam-capture                             | Capture new note                                      | Any mode               |
+| C-c r d            | org-roam-dailies-capture-today               | Capture daily note                                    | Any mode               |
+| C-c r T            | org-roam-dailies-goto-today                  | Goto today's daily                                    | Any mode               |
+| C-c r P            | org-roam-dailies-goto-previous-note          | Goto previous daily                                   | Any mode               |
+| C-c r N            | org-roam-dailies-goto-next-note              | Goto next daily                                       | Any mode               |
+| C-c r D            | org-roam-dailies-goto-date                   | Goto specific date daily                              | Any mode               |
+| C-c r t            | my-org-roam-tag-add                          | Add tag from .filetags                                | Org-mode               |
+| C-c r r            | my-org-roam-tag-remove                       | Remove tag                                            | Org-mode               |
+| C-c r s            | my/org-roam-safe-rebuild                     | Safe DB rebuild                                       | Any mode               |
+| C-c r g            | org-roam-ui-open                             | Open graph UI (laptop only)                           | Laptop                 |
+| C-c r x            | my/org-insert-transclude-from-id-with-front-author | Insert transclusion (new: 2026-02-18)           | Org-mode               |
+| **C-c g** (prefix) | —                                            | Git operations on Org notes                           | Git workflow           |
+| C-c g p            | magit-pull-org-repo                          | Pull Org repo                                         | Any mode               |
+| C-c g u            | magit-push-org-repo                          | Push Org repo                                         | Any mode               |
+| **Global**         |                                              |                                                       |                        |
+| C-c t              | my-tangle-config-org                         | Tangle current .org file                              | Org-mode               |
+| C-c T              | my-tangle-all                                | Tangle all modular .org files                         | Any mode               |
+| C-c c              | org-capture                                  | Org capture                                           | Any mode               |
+| C-c a              | org-agenda                                   | Org agenda                                            | Any mode               |
+| C-c v              | my/org-pdf-vertical-view                     | Open PDF vertically                                   | Org-mode               |
+| C-c f t            | my-org-set-filetags                          | Set filetags                                          | Org-mode               |
+| C-x g              | magit-status                                 | Magit status                                          | Any mode               |
+| C-c m              | mu4e                                         | Open mu4e (laptop only)                               | Laptop                 |
+| C-z                | undo                                         | Undo (simple)                                         | Any mode               |
+| M-o                | ace-window                                   | Switch windows                                        | Any mode               |
+| TAB (in Org)       | my/org-smart-tab                             | Yasnippet → CDLaTeX → Org-cycle                       | Org-mode               |
+| C-s                | consult-line                                 | Search line (Consult)                                 | Any mode               |
+| C-c h              | consult-org-heading                          | Search Org headings                                   | Org-mode               |
+| C-c k              | consult-ripgrep                              | Ripgrep search                                        | Any mode               |
+| C-c b              | consult-buffer                               | Switch buffer                                         | Any mode               |
+| C-c p              | consult-find                                 | Find file                                             | Any mode               |
+| C-c C-c (mu4e)     | mu4e-org-store-and-capture                   | Capture email to Org                                  | mu4e-view              |
 
 #+BEGIN_SRC emacs-lisp
 ;;; keymaps.el --- Central keymaps and global bindings -*- lexical-binding: t; -*-

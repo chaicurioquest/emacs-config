@@ -6,6 +6,10 @@
 #+CREATED: %U
 #+LAST_MODIFIED: [2025-10-10 Fri 22:17]
 
+* Purpose
+This file configures GTD workflows with Org-alert for notifications, device-aware settings (e.g., intervals shorter on mobile), and integrations like mu4e-alert. Ensures no double-notifications and guards for mobile/laptop differences.
+- **Optimizations**: Sanitized notifications, fallback styles (libnotify, termux, message), excluded CANCELLED tasks.
+
 * ACTIVE Enable message alerts in general
 #+BEGIN_SRC emacs-lisp
 ;; org-alert-config.el --- Device-aware org-alert configuration
