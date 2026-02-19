@@ -39,18 +39,9 @@ with a unified command set under =C-c i=.
         (image-mode-setup-winprops))))
   (apply orig args))
 
-(with-eval-after-load 'org-noter
-  ;; ── Settings (here to guarantee application after org-noter loads) ──
-  (setq org-noter-notes-search-path
-        (list (expand-file-name "literature" org-roam-directory))
-        org-noter-auto-save-last-location nil
-        org-noter-highlight-selected-text nil
-        org-noter-insert-note-no-questions t   ;; ← fixes "No match" prompt
-        org-noter-hide-other nil
-        org-noter-always-create-frame nil)
-  ;; ── winprops fix ──
-  (advice-add 'org-noter--doc-approx-location :around
-              #'my/sanitize-image-winprops-in-doc-window))
+;; ── winprops fix ──
+(advice-add 'org-noter--doc-approx-location :around
+              #'my/sanitize-image-winprops-in-doc-window)
 
 (add-hook 'pdf-view-mode-hook #'image-mode-setup-winprops)
 (add-hook 'image-mode-hook #'image-mode-setup-winprops)
@@ -118,11 +109,10 @@ with a unified command set under =C-c i=.
         ((vectorp x) (when (> (length x) 0) (my/citar-extract-first-path (aref x 0))))
         ((listp x) (my/citar-extract-first-path (car x)))
         ((hash-table-p x) (let (found)
-                            (maphash (lambda (_ v)
-                                       (unless found
-                                         (setq found (my/citar-extract-first-path v))))
-                                     x)
-                            found))
+                           (maphash (lambda (_ v)
+                                      (unless found (setq found (my/citar-extract-first-path v))))
+                                    x)
+                           found))
         (t nil)))
 #+END_SRC
 
@@ -228,14 +218,17 @@ Kills buffer after saving only if this function opened it."
          (key (if is-bib
                   (substring (or key-or-pdf (concat "@" (citar-select-ref))) 1)
                 nil))
+         ;; Use robust selector for generic PDFs
          (pdf-raw (if is-bib
                       (my/citar-extract-first-path (citar-get-files key))
                     (my/select-pdf-project-or-browse)))
+         ;; Defensive conversion: buffer or string to path
          (pdf (cond
                ((bufferp pdf-raw) (buffer-file-name pdf-raw))
                ((stringp pdf-raw) pdf-raw)
                (t (user-error "PDF selection did not yield a valid path or buffer."))))
          (entry (when is-bib (ignore-errors (citar-get-entry key))))
+         ;; Defensive: only use file-name-base if pdf is a string
          (title (or (when entry (cdr (assoc "title" entry)))
                     (and (stringp pdf) (file-name-base pdf))
                     "Overview"))
@@ -243,10 +236,10 @@ Kills buffer after saving only if this function opened it."
          (note-file (if is-bib
                         (expand-file-name (concat key ".org")
                                           (expand-file-name "literature" org-roam-directory))
+                      ;; Prompt to save generic note in default-directory
                       (let ((default-dir default-directory))
                         (make-directory default-dir t)
-                        (read-file-name "Save note as: " default-dir nil nil
-                                        (concat suggested-name ".org"))))))
+                        (read-file-name "Save note as: " default-dir nil nil (concat suggested-name ".org"))))))
     (unless (file-directory-p (file-name-directory note-file))
       (make-directory (file-name-directory note-file) t))
     (unless (file-exists-p note-file)
@@ -261,8 +254,10 @@ Kills buffer after saving only if this function opened it."
     (find-file note-file)
     (goto-char (point-min))
     (re-search-forward "^\\* ")
+    ;; Kill any existing Org-noter sessions to prevent duplicates
     (when (bound-and-true-p org-noter--session)
       (org-noter-kill-session))
+    ;; Start Org-noter session (no args)
     (org-noter)
     (message "Opened %s note → %s"
              (if is-bib "bibliography" "generic")
@@ -283,58 +278,70 @@ Kills buffer after saving only if this function opened it."
 (when (eq my-device 'laptop)
   (defun my/open-calibre-book-and-note ()
     "Open Calibre book (PDF/EPUB) and a standalone Org note in ~/org/books/.
+This function integrates Calibredb with Org-mode for note-taking.
 If the Org note for the selected book does not exist, it is created automatically
 with metadata and a NOTER_DOCUMENT property."
     (interactive)
     (require 'calibredb)
     (unless (derived-mode-p 'calibredb-search-mode 'calibredb-show-mode)
       (call-interactively #'calibredb))
-    (let* ((candidate (car (calibredb-find-candidate-at-point)))
+    (let* (;; Book entry at point in *calibredb-search* / *calibredb-show*.
+           (candidate (car (calibredb-find-candidate-at-point)))
+           ;; (message "CANDIDATE: %S" candidate) ; Uncomment for debugging.
            (id (calibredb-getattr candidate :id))
+           ;; Use calibredb's actual metadata fields.
            (title (or (calibredb-getattr candidate :book-title)
-                      (calibredb-getattr candidate :title)))
+                        (calibredb-getattr candidate :title)))
            (author (or (calibredb-getattr candidate :author-sort)
-                       (calibredb-getattr candidate :author)))
+                        (calibredb-getattr candidate :author)))
+           ;; Full values used inside the note.
            (title* (or title "Unknown"))
            (author* (or author "Unknown"))
+           ;; Short filename: first author + title.
            (file-author
-            (if (and author* (string-match "\\`\\([^,&]+\\)" author*))
+            (if (and author*
+                     (string-match "\\`\\([^,&]+\\)" author*))
                 (string-trim (match-string 1 author*))
               author*))
+           (file-title (or title* "Unknown"))
+           ;; Prefer main file (pdf/epub/etc.) resolved by calibredb.
            (book-path (or (calibredb-get-file-path candidate t)
                           (calibredb-get-file-path candidate nil)))
            ;; Notes directory under your default-directory (~/org/).
-           (books-notes-dir (expand-file-name "books" my/notes-root-dir))
+           (books-notes-dir (expand-file-name "books" default-directory))
            ;; Slug for filename: first-author-title, lowercased and cleaned.
-           (slug (downcase
-                  (replace-regexp-in-string
-                   "[^a-z0-9 ]" ""
-                   (format "%s - %s" file-author file-title))))
+           (slug (downcase (replace-regexp-in-string "[^a-z0-9 ]" "" (format "%s - %s" file-author title*))))
            (slug (replace-regexp-in-string " " "-" slug))
            (note-file (expand-file-name (concat slug ".org") books-notes-dir)))
+   
       (message "ID=%S TITLE=%S AUTHOR=%S FILE=%S" id title author book-path)
       (unless book-path
         (user-error "No file for \"%s\" (ID: %s)" title* id))
+      ;; Ensure notes directory exists.
       (make-directory books-notes-dir t)
+      ;; Create note once, with full title/author and NOTER_DOCUMENT.
       (unless (file-exists-p note-file)
         (with-temp-file note-file
           (insert
            (format
             "#+TITLE: %s\n#+AUTHOR: %s\n#+CREATED: %s\n#+ROAM_TAGS: book\n\n* Overview\n:PROPERTIES:\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n\n* Analysis and Inference\n\n"
-            title* author*
+            title* author* 
             (format-time-string "%Y-%m-%d")
             (expand-file-name book-path)
             (org-id-new)))))
+      ;; Optional post-processing of the note.
       (when (fboundp 'my/bibnote-normalize-file)
         (my/bibnote-normalize-file note-file (expand-file-name book-path) title*))
+      ;; Open book left, note right.
       (find-file (expand-file-name book-path))
       (split-window-right)
       (other-window 1)
       (find-file note-file)
+      ;; Move to the heading with drawer and start Org-noter
       (goto-char (point-min))
       (if (re-search-forward "^\\* Overview" nil t)
           (progn
-            (org-entry-get nil "NOTER_DOCUMENT")
+            (org-entry-get nil "NOTER_DOCUMENT") ; Force Org to parse properties
             (org-noter))
         (message "Warning: No Overview heading found; Org-noter not started."))
       (message "Opened: %s by %s with Org-noter session" title* author*))))
