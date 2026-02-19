@@ -5,6 +5,7 @@
 #+DATE: 2025-08-13
 #+CREATED: %U
 #+LAST_MODIFIED: [2026-02-18 Wed 16:50]
+#+LAST_MODIFIED: [2026-02-18 Wed 16:50]
 
 This file contains consolidated configurations for general Org-mode extensions, including attachments, smart TAB, hooks, capture templates, and LaTeX/PDF export processes. VLSI-specific diagram settings (TikZ, CircuitTikZ, ditaa) are in ~org/customxtn.org~ (optional). Tangled to ~org/orgxtn.el~ and loaded via ~my/tangle-if-needed~ in ~config.org~.
 
@@ -232,52 +233,6 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
 ;;(add-to-list 'org-babel-default-header-args '(:preserve-indent . t))
 
 ;; Disable comma quoting on indent for * / + / # lines in all blocks
-;;(setq org-edit-src-quote-special nil)  
-#+END_SRC
-
-* Org glossary package export behaviour                         :enhancement:
-#+BEGIN_SRC emacs-lisp
-;; ========================================
-;; Org-glossary export behavior
-;; Added: 2026-02-18
-;; ========================================
-(with-eval-after-load 'org-glossary
-  ;; Global term sources
-  (setq org-glossary-global-terms
-        (list
-         (expand-file-name "general_acronyms.org" org-roam-directory)
-         (expand-file-name "vlsi_acronyms.org" org-roam-directory)))
-
-  ;; Export behaviour
-  ;; Don't detect acronyms in section headings (cleaner TOC)
-  (setq org-glossary-autodetect-in-headings nil
-        org-glossary-print-on-export nil)
-
-  
-  ;; Acronyms: first-use expansion + \gls{} for LaTeX
-  (org-glossary-set-export-spec 'latex 'acronym
-    :first-use "%v (%t)"
-    :use "%t"
-    :definition-structure "\\newacronym{%k}{%t}{%v}") 
-
-  ;; Glossary terms
-  (org-glossary-set-export-spec 'latex 'glossary
-    :first-use "%t"
-    :use "%t"
-    :definition-structure "\\newglossaryentry{%k}{name={%t},description={%v}}"))
-
-
-  (defun my/org-glossary-safe-enable ()
-  "Enable org-glossary-mode unless this buffer IS a glossary source file."
-  (when (and buffer-file-name
-             (boundp 'org-glossary-global-terms)  
-             org-glossary-global-terms
-             (not (member (expand-file-name buffer-file-name)
-                          (if (listp org-glossary-global-terms)
-                              org-glossary-global-terms
-                            (list org-glossary-global-terms)))))
-    (org-glossary-mode 1)))
-
-(add-hook 'org-mode-hook #'my/org-glossary-safe-enable)
+(setq org-edit-src-quote-special nil)  
 #+END_SRC
 

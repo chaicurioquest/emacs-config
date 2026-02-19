@@ -576,9 +576,9 @@ If using AUCTeX for LaTeX exports, add reftex package.
   ;; load pdf-isearch and activate isearch mode
     (require 'pdf-isearch)
     (add-hook 'pdf-view-mode-hook #'pdf-isearch-minor-mode)
-    (add-hook 'pdf-view-mode-hook #'my/pdf-clear-cache-safely))
+    (add-hook 'pdf-view-mode-hook #'my/pdf-clear-cache-safely)))
   ;; Automatically revert unmodified PDF buffers without asking when the file changes
-    (setq revert-without-query '(".+\\.pdf$")))
+    (setq revert-without-query '(".+\\.pdf$"))
 
 #+END_SRC
 
@@ -717,8 +717,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
         org-noter-highlight-selected-text nil
         org-noter-insert-note-no-questions t
         org-noter-hide-other nil
-        org-noter-doc-property-in-notes nil
-        org-noter-always-create-frame nil))
+        org-noter-doc-property-in-notes nil))
 #+END_SRC
 
 ** pdf annotation using org noter
@@ -735,14 +734,9 @@ If using AUCTeX for LaTeX exports, add reftex package.
     :config
     ;; Require the bundled org-noter-pdftools
     (require 'org-noter-pdftools)
-    ;; Add behavior for jumping to notes
-    (condition-case nil
-        (add-to-list 'org-noter-notes-window-behavior '(org-noter-pdftools-jump-to-note))
-      (error (message "Org-noter-pdftools integration failed")))
-    ;; Optional: Customize icons/colors for annotations (from org-noter-pdftools)
-    (setq org-noter-pdftools-free-pointer-icon "PencilTip"
-          org-noter-pdftools-free-pointer-color "DodgerBlue"
-          org-noter-pdftools-markup-pointer-color "DarkOrange")))
+    (with-eval-after-load 'pdf-view
+    ;; Shortcut: Press 'v' in PDF to jump to Org note
+    (define-key pdf-view-mode-map (kbd "v") #'org-noter-pdftools-jump-to-note))))
 #+END_SRC
 
 **  Content inclusion from other Org Mode file
@@ -850,6 +844,38 @@ If FULL-PATH, return the full path. Handles nil :book-dir."
   (setq mouse-wheel-progressive-speed nil))
 #+END_SRC
 
+** Glossary package for Acronmys                               :enhancement:
+#+BEGIN_SRC emacs-lisp
+;; ========================================
+;; Org-glossary package
+;; Added: 2026-02-18
+;; ========================================
+(use-package org-glossary
+  :straight (org-glossary :type git :host github :repo "tecosaur/org-glossary")
+  :after org
+  :commands (org-glossary-mode))
+  
+;; Fix: org-glossary infinite recursion in dependency watcher
+(defvar my/org-glossary--visiting nil
+  "Files currently being visited by register-buffer-dependencies.")
+
+(with-eval-after-load 'org-glossary
+  (advice-add 'org-glossary--register-buffer-dependencies :around
+              (lambda (orig &optional path-spec)
+                (let* ((path-spec (or path-spec
+                                      (org-glossary--complete-path-spec path-spec)))
+                       (file (plist-get path-spec :file)))
+                  (if (and file (member (expand-file-name file)
+                                        my/org-glossary--visiting))
+                      nil  ; already visiting — break cycle
+                    (let ((my/org-glossary--visiting
+                           (if file
+                               (cons (expand-file-name file)
+                                     my/org-glossary--visiting)
+                             my/org-glossary--visiting)))
+                      (funcall orig path-spec)))))))
+#+END_SRC
+
 * ACTIVE General Settings
 
 ** Profiling
@@ -940,49 +966,6 @@ If FULL-PATH, return the full path. Handles nil :book-dir."
 (use-package ace-window
   :straight t 
   :defer t)
-#+END_SRC
-
-** Removing line breaks
-#+BEGIN_SRC emacs-lisp
-;; Unfill package: M-Q removes line breaks from PDF text (inverse of M-q fill-paragraph)
-(use-package unfill
-  :straight t
-  :bind ("M-Q" . unfill-paragraph))
-#+END_SRC
-
-** Glossary package for Acronmys                               :enhancement:
-#+BEGIN_SRC emacs-lisp
-;; ========================================
-;; Org-glossary package
-;; Added: 2026-02-18
-;; ========================================
-(use-package org-glossary
-  :straight (org-glossary :type git :host github :repo "tecosaur/org-glossary")
-  :after org
-  :commands (org-glossary-mode))
-;; ── Fix: org-glossary infinite recursion in dependency watcher ──
-;; org-glossary--register-buffer-dependencies has no cycle detection
-;; (unlike org-glossary--get-terms which does). This adds one.
-(defvar my/org-glossary--visiting nil
-  "Files currently being visited by register-buffer-dependencies.")
-
-(with-eval-after-load 'org-glossary
-  (advice-add 'org-glossary--register-buffer-dependencies :around
-              (lambda (orig &optional path-spec)
-                (let* ((path-spec (or path-spec
-                                      (org-glossary--complete-path-spec path-spec)))
-                       (file (plist-get path-spec :file)))
-                  (if (and file (member (expand-file-name file)
-                                        my/org-glossary--visiting))
-                      nil  ; already visiting — break cycle
-                    (let ((my/org-glossary--visiting
-                           (if file
-                               (cons (expand-file-name file)
-                                     my/org-glossary--visiting)
-                             my/org-glossary--visiting)))
-                      (funcall orig path-spec)))))))
-
-
 #+END_SRC
 
 ** Tangle everything (C-c T)
