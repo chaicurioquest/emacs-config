@@ -16,6 +16,7 @@ It handles both bibliography notes and generic PDFs (books, whitepapers, etc.)
 with a unified command set under =C-c i=.
 
 * Core Functions
+
 #+BEGIN_SRC emacs-lisp
 ;;; notextn.el --- Org-noter + Citar + PDF Tools integration -*- lexical-binding: t; -*-
 ;; Required packages
@@ -24,19 +25,12 @@ with a unified command set under =C-c i=.
 (require 'org-noter)
 #+END_SRC
 
+** Winprops + Org-noter Settings
+
 #+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
 ;; Fix "wrong-type-argument listp t" from image-mode-winprops
 ;; ──────────────────────────────────────────────────────────────
-;;(defun my/proper-list-p (obj)
-;;  "Return t if OBJ is a proper list (nil-terminated, no cycles or dots)."
-;;  (and (listp obj)
-;;       (catch 'improper
-;;         (while (consp obj)
-;;           (setq obj (cdr obj))
-;;           (unless (or (consp obj) (null obj))
-;;            (throw 'improper nil)))
-;;         (null obj))))
 (defun my/sanitize-image-winprops-in-doc-window (orig &rest args)
   "Initialize image-mode-winprops-alist in the Org-noter document window before calling ORIG."
   (let ((doc-win (org-noter--get-doc-window)))
@@ -45,11 +39,17 @@ with a unified command set under =C-c i=.
         (image-mode-setup-winprops))))
   (apply orig args))
 
-(with-eval-after-load 'org-noter
-  (advice-add 'org-noter--doc-approx-location :around #'my/sanitize-image-winprops-in-doc-window))
+;; ── winprops fix ──
+(advice-add 'org-noter--doc-approx-location :around
+              #'my/sanitize-image-winprops-in-doc-window)
+
 (add-hook 'pdf-view-mode-hook #'image-mode-setup-winprops)
 (add-hook 'image-mode-hook #'image-mode-setup-winprops)
+#+END_SRC
 
+** Org-noter-pdftools Fixes
+
+#+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
 ;; Fix "wrong-type-argument listp #s(org-noter-pdftools--location ...)"
 ;; ──────────────────────────────────────────────────────────────
@@ -57,7 +57,7 @@ with a unified command set under =C-c i=.
   (defun my/org-noter-convert-location-to-cons (loc)
     "Convert org-noter-pdftools location struct to (page . top) cons."
     (cond
-     ((consp loc) loc) ;; Already cons
+     ((consp loc) loc)
      ((org-noter-pdftools--location-p loc)
       (cons (org-noter-pdftools--location-page loc)
             (org-noter-pdftools--location-height loc)))
@@ -66,19 +66,22 @@ with a unified command set under =C-c i=.
   (advice-add 'org-noter--pretty-print-location-for-title :around
               (lambda (orig loc &rest args)
                 (let ((converted-loc (my/org-noter-convert-location-to-cons loc)))
-                  (apply orig converted-loc args)))))
+                  (apply orig converted-loc args))))
+
+  ;; FIX: Enhanced jump handler to bridge PDF and Org windows
+  (advice-add 'org-noter-pdftools-jump-to-note :around
+              (lambda (orig &rest args)
+                (condition-case nil
+                    (let ((session (or (and (boundp 'org-noter--session) org-noter--session)
+                                       (with-selected-window (next-window)
+                                         (and (boundp 'org-noter--session) org-noter--session)))))
+                      (if session
+                          (apply orig args)
+                        (message "Org-noter jump: No session found. Try M-x org-noter first.")))
+                  (error (message "Org-noter jump failed: Window configuration error."))))))
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp
-(use-package org-pdfview
-  :straight t
-  :after (org pdf-view)
-  :config
-  (add-to-list 'org-modules 'org-pdfview)
-  (org-link-set-parameters "pdf"
-                           :follow #'org-pdfview-open
-                           :export #'org-pdfview-export))
-#+END_SRC
+** Relative Path Portability
 
 #+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
@@ -92,6 +95,8 @@ with a unified command set under =C-c i=.
                 (apply orig (if (and rel (not (string-prefix-p "../" rel))) rel doc-file)
                        args))))
 #+END_SRC
+
+** Citar Path Helper
 
 #+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
@@ -111,13 +116,17 @@ with a unified command set under =C-c i=.
         (t nil)))
 #+END_SRC
 
+** Normalize Note File
+
 #+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
 ;; Normalize note file
 ;; ──────────────────────────────────────────────────────────────
 (defun my/bibnote-normalize-file (note-file &optional pdf title)
-  "Ensure note file has proper structure and properties."
-  (let ((buf (find-file-noselect note-file)))
+  "Ensure NOTE-FILE has proper structure and properties.
+Kills buffer after saving only if this function opened it."
+  (let* ((existing-buf (get-file-buffer note-file))
+         (buf (or existing-buf (find-file-noselect note-file))))
     (with-current-buffer buf
       (save-excursion
         (goto-char (point-min))
@@ -134,13 +143,16 @@ with a unified command set under =C-c i=.
           (goto-char (point-max))
           (unless (bolp) (insert "\n"))
           (insert "* Analysis and Inference\n\n")))
-      (when (buffer-modified-p) (save-buffer))))
+      (when (buffer-modified-p) (save-buffer)))
+    (unless existing-buf (kill-buffer buf)))
   note-file)
 #+END_SRC
 
+** Templates
+
 #+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
-;; Templates & helpers(no dead Bib Entry)
+;; Templates & helpers (no dead Bib Entry)
 ;; ──────────────────────────────────────────────────────────────
 (defun my/load-template (filename)
   "Load template or return clean fallback."
@@ -173,10 +185,14 @@ with a unified command set under =C-c i=.
     (format template title citekey citekey author doi year noter-document id)))
 #+END_SRC
 
+* PDF Selection and Openers
+
+** Project PDF Selector
+
 #+BEGIN_SRC emacs-lisp
-;; Select pdf from Org default directory or any folder
+;; Select PDF from project or browse
 (defun my/select-pdf-project-or-browse ()
-  "Select PDF project-wide (recursive, includes .attach) or browse any location manually."
+  "Select PDF project-wide (recursive, includes .attach) or browse manually."
   (interactive)
   (let* ((root (read-directory-name "Project root directory: " default-directory))
          (find-cmd (format "find %s \\( -type f -o -type l \\) -name '*.pdf'" root))
@@ -187,6 +203,8 @@ with a unified command set under =C-c i=.
         (read-file-name "Select any file: " nil nil t)
       choice)))
 #+END_SRC
+
+** Unified Opener
 
 #+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
@@ -246,6 +264,8 @@ with a unified command set under =C-c i=.
              (file-name-nondirectory note-file))))
 #+END_SRC
 
+** Calibre Book Opener
+
 #+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
 ;; Calibre books – C-c i b (laptop only)
@@ -254,7 +274,7 @@ with a unified command set under =C-c i=.
 ;; 2. / term RET → optional: live-filter by text (title/author/tags).
 ;; 3. Move point to book → use n/p or arrow keys.
 ;; 4. C-c i b → opens book file left + Org note right in ~/org/books/.
-;; ─────────────
+;; ──────────────────────────────────────────────────────────────
 (when (eq my-device 'laptop)
   (defun my/open-calibre-book-and-note ()
     "Open Calibre book (PDF/EPUB) and a standalone Org note in ~/org/books/.
@@ -288,12 +308,9 @@ with metadata and a NOTER_DOCUMENT property."
            (book-path (or (calibredb-get-file-path candidate t)
                           (calibredb-get-file-path candidate nil)))
            ;; Notes directory under your default-directory (~/org/).
-           (books-notes-dir (expand-file-name "books" my/notes-root-dir))
+           (books-notes-dir (expand-file-name "books" default-directory))
            ;; Slug for filename: first-author-title, lowercased and cleaned.
-           (slug (downcase
-                  (replace-regexp-in-string
-                   "[^a-z0-9 ]" ""
-                   (format "%s - %s" file-author file-title))))
+           (slug (downcase (replace-regexp-in-string "[^a-z0-9 ]" "" (format "%s - %s" file-author title*))))
            (slug (replace-regexp-in-string " " "-" slug))
            (note-file (expand-file-name (concat slug ".org") books-notes-dir)))
    
@@ -330,29 +347,37 @@ with metadata and a NOTER_DOCUMENT property."
       (message "Opened: %s by %s with Org-noter session" title* author*))))
 #+END_SRC
 
+* Annotation and Transclusion Helpers
+
+** Image Directory
+
 #+BEGIN_SRC emacs-lisp
-;; Define my/get-image-dir-for-note
 (defun my/get-image-dir-for-note (note-file)
   "Return directory for images for NOTE-FILE."
-  (let ((base-dir (file-name-directory note-file)))
-    (expand-file-name "images" base-dir)))
+  (expand-file-name "images" (file-name-directory note-file)))
 #+END_SRC
 
+** Front-matter and Annotation Helpers
 
 #+BEGIN_SRC emacs-lisp
 (defun my/org-get-front-matter-prop (file prop)
   "Return PROP from FILE-level keywords or the first heading in FILE."
   (when (and file (file-exists-p file))
-    (with-current-buffer (find-file-noselect file)
-      (save-excursion
-        (goto-char (point-min))
-        (let* ((kw (org-collect-keywords (list prop)))
-               (val (cadr (assoc-string prop kw t))))
-          (or val
-              (progn
+    (let* ((existing-buf (get-file-buffer file))
+           (buf (or existing-buf (find-file-noselect file)))
+           (result
+            (with-current-buffer buf
+              (save-excursion
                 (goto-char (point-min))
-                (when (re-search-forward org-heading-regexp nil t)
-                  (org-entry-get nil prop)))))))))
+                (let* ((kw (org-collect-keywords (list prop)))
+                       (val (cadr (assoc-string prop kw t))))
+                  (or val
+                      (progn
+                        (goto-char (point-min))
+                        (when (re-search-forward org-heading-regexp nil t)
+                          (org-entry-get nil prop)))))))))
+      (unless existing-buf (kill-buffer buf))
+      result)))
 
 (defun my/org-get-annot-page (marker)
   "Extract page number from NOTER_PAGE of heading at MARKER."
@@ -372,7 +397,11 @@ with metadata and a NOTER_DOCUMENT property."
       (if (> (length parts) 1)
           (format "%s et al." first)
         first))))
+#+END_SRC
 
+** Transclusion with Attribution
+
+#+BEGIN_SRC emacs-lisp
 (defun my/org-insert-transclude-from-id-with-front-author (&optional id)
   "Insert #+transclude line and LaTeX attribution using ID.
 If ID is nil, offer completion over all IDs in currently open Org buffers."
@@ -390,8 +419,8 @@ If ID is nil, offer completion over all IDs in currently open Org buffers."
         (insert "#+LATEX: \\begin{flushright}\n")
         (insert "-- ")
         (when author (insert author))
-        (when title 
-          (if author 
+        (when title
+          (if author
               (insert (format ", %s" title))
             (insert title)))
         (when page
@@ -401,17 +430,17 @@ If ID is nil, offer completion over all IDs in currently open Org buffers."
         (insert "\n#+LATEX: \\end{flushright}\n")))))
 #+END_SRC
 
+* Image Capture
 
 #+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
-;; Automate Image Capture for Annotations – Common Logic for All Types
+;; Automate Image Capture for Annotations
 ;; ──────────────────────────────────────────────────────────────
 (defun my/save-pdf-region-to-datestamp (&optional whole-page)
   "Save PDF region (or WHOLE-PAGE) as JPG and insert link at cursor in Org note."
   (interactive "P")
   (when (derived-mode-p 'pdf-view-mode)
     (require 'org-noter)
-    ;; Ensure there is an Org-noter session
     (unless (bound-and-true-p org-noter--session)
       (when (y-or-n-p "No Org-noter session. Start one now? ")
         (org-noter)))
@@ -420,7 +449,7 @@ If ID is nil, offer completion over all IDs in currently open Org buffers."
            (note-buf (when note-win (window-buffer note-win)))
            (note-file (when note-buf (buffer-file-name note-buf))))
       (unless note-file
-        (user-error "No associated Org note window found. Use C-c i a / C-c i g to open PDF + note."))
+        (user-error "No associated Org note window found. Use C-c i a to open PDF + note."))
       (let* ((image-dir (my/get-image-dir-for-note note-file))
              (timestamp (format-time-string "%Y-%m-%d-%H%M%S"))
              (filename (expand-file-name (format "%s.jpg" timestamp) image-dir))
@@ -432,21 +461,16 @@ If ID is nil, offer completion over all IDs in currently open Org buffers."
                                 (file-relative-name filename (file-name-directory note-file)))))
         (make-directory image-dir t)
         (if whole-page
-            ;; Whole page capture
             (shell-command
              (format "pdftoppm -jpeg -r %d -f %d -l %d '%s' > '%s'"
                      resolution
-                     (pdf-view-current-page)
-                     (pdf-view-current-page)
+                     (pdf-view-current-page) (pdf-view-current-page)
                      pdf-file filename))
-          ;; Region capture
           (setq raw-edges (condition-case nil
                               (pdf-view-active-region)
                             (error nil)))
-          (message "Debug: Raw edges = %S | Active? %s"
-                   raw-edges (pdf-view-active-region-p))
           (setq quads (if (numberp (car-safe raw-edges))
-                          (cdr raw-edges) ; new format: drop page number
+                          (cdr raw-edges)
                         raw-edges))
           (if (and quads
                    (listp quads)
@@ -456,8 +480,8 @@ If ID is nil, offer completion over all IDs in currently open Org buffers."
                           (= (length quad) 4)
                           (cl-every #'numberp quad))))
               (let ((quad (car quads)))
-                (setq page-size (pdf-info-pagesize (pdf-view-current-page))
-                      pixel-width (* (car page-size) (/ resolution 72.0))
+                (setq page-size   (pdf-info-pagesize (pdf-view-current-page))
+                      pixel-width  (* (car page-size) (/ resolution 72.0))
                       pixel-height (* (cdr page-size) (/ resolution 72.0))
                       crop-x (* (nth 0 quad) pixel-width)
                       crop-y (* (nth 1 quad) pixel-height)
@@ -466,60 +490,54 @@ If ID is nil, offer completion over all IDs in currently open Org buffers."
                 (shell-command
                  (format "pdftoppm -jpeg -r %d -f %d -l %d -x %.0f -y %.0f -W %.0f -H %.0f '%s' > '%s'"
                          resolution
-                         (pdf-view-current-page)
-                         (pdf-view-current-page)
+                         (pdf-view-current-page) (pdf-view-current-page)
                          crop-x crop-y crop-w crop-h
                          pdf-file filename)))
-            (user-error "No valid single rectangular region selected. Drag mouse to select or use C-c i S for whole page.")))
-        ;; Insert link at cursor position in Org note
+            (user-error "No valid region selected. Drag to select or use C-c i S for whole page.")))
         (with-current-buffer note-buf
           (insert link-text)
           (save-buffer))
-        ;; No clipboard copy
         (message "Saved → %s"
                  (file-relative-name filename (file-name-directory note-file)))))))
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp
-;; Mode-local bindings for pdf-view (these are safe — not global prefixes)
-(with-eval-after-load 'pdf-view
-  ;; Bind drag event to ignore to block global override and let pdf-tools handle via down-mouse
-  (define-key pdf-view-mode-map [drag-mouse-1] 'ignore)
-  ;; Bind plain left-drag for standard region (reinforce default if needed)
-  (define-key pdf-view-mode-map (kbd "<down-mouse-1>") 'pdf-view-mouse-set-region)
-  ;; Bind Shift + left-drag for rectangular region (ideal for images/diagrams)
-  (define-key pdf-view-mode-map (kbd "<S-down-mouse-1>") 'pdf-view-mouse-set-region-rectangle)
-  (define-key pdf-view-mode-map (kbd "C-c i s") 'my/save-pdf-region-to-datestamp)
-  (define-key pdf-view-mode-map (kbd "C-c i S") (lambda () (interactive) (my/save-pdf-region-to-datestamp t))))
-#+END_SRC
+* Keybindings
 
 #+BEGIN_SRC emacs-lisp
-;; ──────────────────────────────────────────────────────────────
-;; Org-roam capture template
-;; ──────────────────────────────────────────────────────────────
+;; ── C-c i a: open any PDF + note (bib or generic) ──
+(global-set-key (kbd "C-c i a") #'my/open-pdf-and-note)
+
+;; ── C-c i b: open Calibre book + note (laptop only) ──
+(when (eq my-device 'laptop)
+  (with-eval-after-load 'calibredb
+    (define-key calibredb-search-mode-map (kbd "C-c i b")
+      #'my/open-calibre-book-and-note)))
+
+;; ── pdf-view local bindings ──
+(with-eval-after-load 'pdf-view
+  (define-key pdf-view-mode-map [drag-mouse-1] 'ignore)
+  (define-key pdf-view-mode-map (kbd "<down-mouse-1>") 'pdf-view-mouse-set-region)
+  (define-key pdf-view-mode-map (kbd "<S-down-mouse-1>") 'pdf-view-mouse-set-region-rectangle)
+  (define-key pdf-view-mode-map (kbd "C-c i s") 'my/save-pdf-region-to-datestamp)
+  (define-key pdf-view-mode-map (kbd "C-c i S")
+    (lambda () (interactive) (my/save-pdf-region-to-datestamp t))))
+#+END_SRC
+
+* Org-roam Capture Template
+
+#+BEGIN_SRC emacs-lisp
 (add-to-list 'org-roam-capture-templates
              '("b" "bibliography note" plain #'my/load-roam-bib-template
                :target (file+head "literature/${citar-citekey}.org" "")
                :unnarrowed t :immediate-finish t))
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp
-(defun my/sanitize-image-winprops-in-pdf-window (&rest _args)
-  "Reset broken `image-mode-winprops-alist` in PDF view before annotations."
-  (let ((win (org-noter--get-doc-window)))
-    (when (and win (window-live-p win))
-      (with-selected-window win
-        (let ((props (window-parameter nil 'image-mode-winprops-alist)))
-          (unless (listp props)
-            (set-window-parameter nil 'image-mode-winprops-alist nil))))))
-  t) ;; return non-nil to signal advice success (optional)
-(advice-add 'org-noter-insert-note :before #'my/sanitize-image-winprops-in-pdf-window)
-#+END_SRC
+* Transclusion Settings
 
 #+BEGIN_SRC emacs-lisp
-;; During many quotes Reduce bloat by skipping drawers
+;; Reduce bloat: skip drawers during transclusion
 (with-eval-after-load 'org-transclusion
-  (setq org-transclusion-exclude-elements '(property-drawer))) 
+  (setq org-transclusion-exclude-elements '(property-drawer)))
 
 (provide 'notextn)
 ;;; notextn.el ends here

@@ -5,6 +5,7 @@
 #+DATE: 2025-08-13
 #+CREATED: %U
 #+LAST_MODIFIED: [2026-02-18 Wed 16:50]
+#+LAST_MODIFIED: [2026-02-18 Wed 16:50]
 
 This file contains consolidated configurations for general Org-mode extensions, including attachments, smart TAB, hooks, capture templates, and LaTeX/PDF export processes. VLSI-specific diagram settings (TikZ, CircuitTikZ, ditaa) are in ~org/customxtn.org~ (optional). Tangled to ~org/orgxtn.el~ and loaded via ~my/tangle-if-needed~ in ~config.org~.
 
