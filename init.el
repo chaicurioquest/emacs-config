@@ -1,5 +1,5 @@
 ;;; init.el --- Bootstrap Emacs config.org
-;; Minimal bootstrapper for Emacs 30 configuration.
+;; Minimal bootstrapper for Emacs 30.1.90 configuration.
 ;; Loads config.el (tangled from config.org) or tangles config.org if needed.
 ;; Sets early optimizations (GC, package.el) for faster startup.
 ;; Synced via https://github.com/chaicurioquest/emacs-config.
