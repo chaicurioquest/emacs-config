@@ -22,6 +22,9 @@
 ;; Disable package.el early (use straight.el)
 (setq package-enable-at-startup nil)
 
+;; Reduce straight.el's file-watching overhead at startup
+(setq straight-check-for-modifications '(find-at-startup))
+
 ;; Safer GUI check for early-init context
 ;;(push '(menu-bar-lines . 0) default-frame-alist)
 (push '(tool-bar-lines . 0) default-frame-alist)
