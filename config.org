@@ -911,6 +911,10 @@ If FULL-PATH, return the full path. Handles nil :book-dir."
     (side . right)
     (window-width . 0.5)))
 
+;; DocView continuous page scrolling
+(with-eval-after-load 'doc-view
+  (setq doc-view-continuous t))    
+
 ;; Enable smart quotes while exporting to pdf
 (setq org-export-with-smart-quotes t)
 
