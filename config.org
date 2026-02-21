@@ -782,35 +782,6 @@ If FULL-PATH, return the full path. Handles nil :book-dir."
             (message "calibredb failed; see *calibredb-bib* buffer")))))))
 #+END_SRC
 
-** Hugo website/blog generator
-#+BEGIN_SRC emacs-lisp
-;; Exports an org-mode file to multiple markdown files that are then used 
-;; by the hugo static site generator to generator the website
-
-(use-package ox-hugo
-  :straight t
-  :after ox)  ; Load after Org export
-#+END_SRC
-
-** Magit is a Git GUI interface for Emacs
-#+BEGIN_SRC emacs-lisp
-(use-package magit
-  :straight t
-  :defer t
-  :commands (magit-status magit-blame)
-  :config
-  (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1
-        magit-save-repository-buffers 'dontask))
-#+END_SRC
-
-* ACTIVE UI & General Settings
-#+BEGIN_SRC emacs-lisp
-(when (eq my-device 'termux)
-  (when (fboundp 'set-fringe-mode)
-  (set-fringe-mode 0))
-  (setq mouse-wheel-progressive-speed nil))
-#+END_SRC
-
 ** Glossary package for Acronmys                               :enhancement:
 #+BEGIN_SRC emacs-lisp
 ;; ========================================
@@ -842,6 +813,37 @@ If FULL-PATH, return the full path. Handles nil :book-dir."
                              my/org-glossary--visiting)))
                       (funcall orig path-spec)))))))
 #+END_SRC
+
+** Hugo website/blog generator
+#+BEGIN_SRC emacs-lisp
+;; Exports an org-mode file to multiple markdown files that are then used 
+;; by the hugo static site generator to generator the website
+
+(use-package ox-hugo
+  :straight t
+  :after ox)  ; Load after Org export
+#+END_SRC
+
+** Magit is a Git GUI interface for Emacs
+#+BEGIN_SRC emacs-lisp
+(use-package magit
+  :straight t
+  :defer t
+  :commands (magit-status magit-blame)
+  :config
+  (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1
+        magit-save-repository-buffers 'dontask))
+#+END_SRC
+
+* ACTIVE UI & General Settings
+#+BEGIN_SRC emacs-lisp
+(when (eq my-device 'termux)
+  (when (fboundp 'set-fringe-mode)
+  (set-fringe-mode 0))
+  (setq mouse-wheel-progressive-speed nil))
+#+END_SRC
+
+
 
 * ACTIVE General Settings
 
@@ -899,6 +901,15 @@ If FULL-PATH, return the full path. Handles nil :book-dir."
 ;; Enable smart window navigation
 (windmove-default-keybindings) ;; Shift + Arrow
 (winner-mode 1)                ;; C-c <left/right> undo/redo window layout
+
+;; DocView (PPTX, DOCX) always opens on the right side
+(add-to-list 'display-buffer-alist
+  '((lambda (buf _)
+      (with-current-buffer buf
+        (derived-mode-p 'doc-view-mode)))
+    (display-buffer-in-side-window)
+    (side . right)
+    (window-width . 0.5)))
 
 ;; Enable smart quotes while exporting to pdf
 (setq org-export-with-smart-quotes t)

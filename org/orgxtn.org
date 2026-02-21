@@ -188,11 +188,28 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
     (while (search-forward "${bib-path}" nil t) ;; added 2025-10-28 bib path
       (replace-match bib-path t t))
     (buffer-string)))
+ 
+ ;; The sidecar template definition
+ (defvar my/sidecar-note-template
+  (with-temp-buffer
+    (insert-file-contents (expand-file-name "template/sidecar-note.org" user-emacs-directory))
+    (goto-char (point-min))
+    (while (search-forward "${setupfile}" nil t)
+      (replace-match setupfile t t))
+    (goto-char (point-min))
+    (while (search-forward "${bib-path}" nil t)
+      (replace-match bib-path t t))
+    (buffer-string)))   
 
 (setq org-capture-templates
   `(("n" "Generic Note" plain
      (file (lambda () (read-file-name "New Note File: " default-directory nil nil ".org")))
      ,my/generic-note-template
+     :empty-lines 1 :prepend t)
+
+     ("s" "Sidecar Note (PPTX/Doc)" plain
+     (file (lambda () (read-file-name "New Sidecar File: " default-directory nil nil ".org")))
+     ,my/sidecar-note-template
      :empty-lines 1 :prepend t)))
 #+END_SRC
 

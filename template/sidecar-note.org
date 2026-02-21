@@ -1,0 +1,29 @@
+:PROPERTIES:
+:ID:       %(org-id-new)
+:NOTER_DOCUMENT: %^{NOTER_DOCUMENT|./}
+:END:
+#+SETUPFILE: ${setupfile}
+#+TITLE: %^{Title}
+#+AUTHOR: %^{Author}
+#+DATE: %<%Y-%m-%d>
+#+FILETAGS: :%^{Tags|semiconductors:tools:presentations}:
+#+OPTIONS: toc:nil num:2
+#+PROPERTY: header-args :eval never-export
+#+BIBLIOGRAPHY: ${bib-path}
+#+CITE_EXPORT: biblatex authoryear
+#+ROAM_ALIASES:
+#+ROAM_REFS:
+#+CREATED: %U
+#+LAST_MODIFIED: %U
+
+* Source
+[[file:%^{NOTER_DOCUMENT}][Open Document]]
+
+* Overview
+%?
+
+* Key Concepts
+** Concept 1
+** Concept 2
+
+* Annotations
