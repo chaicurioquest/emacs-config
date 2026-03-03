@@ -96,6 +96,27 @@ with a unified command set under =C-c i=.
                        args))))
 #+END_SRC
 
+#+BEGIN_SRC emacs-lisp
+;; ──────────────────────────────────────────────────────────────
+;; PDF opening after Org → LaTeX export (C-c C-e l o)
+;; Also handles [[file:*.pdf]] links in Org files
+;; ──────────────────────────────────────────────────────────────
+(defun my/org-open-pdf-right (file &optional _link)
+  "Open exported PDF (or any PDF link) in a vertical split on the right.
+Used by org-file-apps for C-c C-e l o and PDF links."
+  (let ((buf (find-file-noselect file)))
+    (pop-to-buffer buf
+                   `((display-buffer-reuse-window
+                      display-buffer-in-direction)
+                     (direction . right)
+                     (window-width . 0.5)
+                     (inhibit-same-window . t))
+                   t)))
+
+(with-eval-after-load 'org
+  (add-to-list 'org-file-apps '("\\.pdf\\'" . my/org-open-pdf-right)))
+#+END_SRC
+
 ** Citar Path Helper
 
 #+BEGIN_SRC emacs-lisp

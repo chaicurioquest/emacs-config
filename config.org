@@ -902,7 +902,7 @@ If FULL-PATH, return the full path. Handles nil :book-dir."
 (windmove-default-keybindings) ;; Shift + Arrow
 (winner-mode 1)                ;; C-c <left/right> undo/redo window layout
 
-;; DocView (PPTX, DOCX) always opens on the right side
+;; DocView (PPTX, DOCX) always opens on the right side of the window
 (add-to-list 'display-buffer-alist
   '((lambda (buf _)
       (with-current-buffer buf
@@ -910,6 +910,26 @@ If FULL-PATH, return the full path. Handles nil :book-dir."
     (display-buffer-in-side-window)
     (side . right)
     (window-width . 0.5)))
+
+;; ──────────────────────────────────────────────────────────────
+;; EVERY PDF opens on the right (vertical split) — perfect for noter
+;; Applies to: C-x C-f, C-c C-e l o, PDF links, org-noter, citar, calibredb, etc.
+;; ──────────────────────────────────────────────────────────────
+(defcustom my/pdf-right-window-width 0.5
+  "Width of the right window when opening PDFs (0.0–1.0).
+Change this value and re-eval config.el or restart Emacs."
+  :type 'float
+  :group 'my/window-management)
+
+(add-to-list 'display-buffer-alist
+             '((lambda (buf _)
+                 (with-current-buffer buf
+                   (eq major-mode 'pdf-view-mode)))   ; precise match
+               (display-buffer-reuse-window display-buffer-in-direction)
+               (direction . right)
+               (window-width . my/pdf-right-window-width)
+               (inhibit-same-window . t)
+               (reusable-frames . visible)))
 
 ;; DocView continuous page scrolling
 (with-eval-after-load 'doc-view

@@ -45,6 +45,7 @@ These should be loaded *after* general Org settings.
 "\\documentclass[varwidth=true,border=0pt]{standalone}
 \\usepackage{fontspec}
 \\usepackage{amsmath,mathtools}
+\\DeclarePairedDelimiter{\\abs}{\\lvert}{\\rvert}
 \\usepackage{xcolor}
 \\usepackage{siunitx}
 \\usepackage{upgreek}

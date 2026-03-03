@@ -132,7 +132,7 @@ def ${1:func_name}(${2:args}):
   :NOTER_DOCUMENT: attachment:${3:note.pdf}
   :END:
   
-  #+CAPTION: Handwritten ${4:Diagram}}
+  #+CAPTION: Handwritten ${4:Diagram}
   #+ATTR_ORG: :width 500
   [[attachment:${5:image.png}]]
   

@@ -7,8 +7,8 @@
         ;; Header row
         (header (mapconcat (lambda (i) (format "Col%d" (1+ i)))
                            (number-sequence 0 (1- cols)) " | "))
-        ;; Divider row (Org table uses '-' with '+' separators)
-        (divider (mapconcat (lambda (_) (make-string 5 ?-))
+        ;; Divider row: changed to use '+' only between columns
+        (divider (mapconcat (lambda (_) (make-string 6 ?-))
                             (number-sequence 1 cols) "+"))
         ;; Body rows
         (body (mapconcat
@@ -19,4 +19,4 @@
                          " |"))
                (number-sequence 1 rows)
                "\n")))
-   (concat "| " header " |\n|-" divider "-|\n" body))`
+   (concat "| " header " |\n|" divider "|\n" body))`
