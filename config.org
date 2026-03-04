@@ -199,16 +199,17 @@ plus recursive .org files from the 'roam' subdirectory, excluding unwanted dirs.
 (my/update-agenda-files)
 
 ;; Rescan only when saving an Org file under the notes dir not buffer-local default-directory
+(defvar my--agenda-update-timer nil)
+
 (add-hook 'after-save-hook
           (lambda ()
             (when (and (derived-mode-p 'org-mode)
                        buffer-file-name
                        (string-prefix-p (file-name-as-directory my/notes-root-dir)
-                                        (file-name-directory (file-truename buffer-file-name)))
-                       ;; Only rescan if this file is not already tracked
-                       (not (member (file-truename buffer-file-name)
-                                    (mapcar #'file-truename org-agenda-files))))
-              (my/update-agenda-files))))
+                                        (file-name-directory (file-truename buffer-file-name))))
+              (when my--agenda-update-timer (cancel-timer my--agenda-update-timer))
+              (setq my--agenda-update-timer
+                    (run-with-idle-timer 2 nil #'my/update-agenda-files)))))
 #+END_SRC
 
 
@@ -294,17 +295,21 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
   (require 'oc-biblatex)
   
  ;; Org-cite export processors: use biblatex for LaTeX
- ;; (setq org-cite-export-processors
- ;;      '((latex biblatex)
- ;;        (html csl)
- ;;        (t csl)))
+ (setq org-cite-export-processors
+      '((latex biblatex)
+        (html csl)
+        (t csl)))
 
   ;; Enable refiling to any heading in agenda files (incl. roam/notes/mobile)
   (setq org-refile-targets '((org-agenda-files :maxlevel . 5)))
   (setq org-refile-use-outline-path 'file) ;; Show file paths in prompt
   (setq org-outline-path-complete-in-steps nil) ;; Complete in one step (Vertico fuzzy)
   (setq org-refile-allow-creating-parent-nodes 'confirm)
-  (setq org-refile-use-cache t))  ;; Cache targets for speed
+  (setq org-refile-use-cache t)  ;; Cache targets for speed
+  
+  ;; Clear stale cache when agenda is opened (prevents missing targets)
+  (add-hook 'org-agenda-mode-hook #'org-refile-cache-clear)
+  ) 
 #+END_SRC
 
 ** Ensure use-package is available.
@@ -634,7 +639,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
 ;; -----------------------------
 (use-package citar
   :straight t
-  :no-require t
   :commands (citar-insert-citation citar-create-note)
   :custom
   (org-cite-global-bibliography (list bib-path books-bib-path))
@@ -674,7 +678,7 @@ If using AUCTeX for LaTeX exports, add reftex package.
 #+BEGIN_SRC emacs-lisp
 (use-package org-noter
   :straight t
-  :after (org pdf-tools)
+  :after org
   :demand t  ; Ensure ready for bindings
   :config
   (setq org-noter-notes-search-path (list (expand-file-name "literature" org-roam-directory))
@@ -724,9 +728,9 @@ If using AUCTeX for LaTeX exports, add reftex package.
   :config
   ;;(add-hook 'org-mode-hook #'org-transclusion-mode)
   ;; Optional: actually enable indentation in Org buffers
-  (add-hook 'org-mode-hook
-             (lambda ()
-               (setq-local org-transclusion-indent-mode t)))
+  ;; (add-hook 'org-mode-hook
+  ;;            (lambda ()
+  ;;              (setq-local org-transclusion-indent-mode t)))
   )
 
 #+END_SRC
@@ -806,8 +810,10 @@ If using AUCTeX for LaTeX exports, add reftex package.
   (setq backup-directory-alist `((".*" . ,backup-dir))
         auto-save-file-name-transforms `((".*" ,autosave-dir t))
         auto-save-default t
-        version-control nil
-        delete-old-versions t
+        version-control t         
+        kept-new-versions 6        ; keep last 6 backups
+        kept-old-versions 2        ; keep 2 old ones
+        delete-old-versions t      ; auto-delete excess
         make-backup-files t
         backup-by-copying t))
 #+END_SRC
@@ -852,12 +858,14 @@ If using AUCTeX for LaTeX exports, add reftex package.
 (setq switch-to-buffer-obey-display-actions t)
 
 ;; Route ALL document buffers to the right (C-x C-f, links, org-noter, calibre)
+(defun my/document-buffer-p (buf _)
+  (with-current-buffer buf
+    (or (memq major-mode '(pdf-view-mode doc-view-mode nov-mode djvu-read-mode))
+        (and buffer-file-name
+             (string-match-p "\\.\\(pdf\\|epub\\|djvu\\)\\'" buffer-file-name)))))
+
 (add-to-list 'display-buffer-alist
-             '((lambda (buf _)
-                 (with-current-buffer buf
-                   (or (memq major-mode '(pdf-view-mode doc-view-mode nov-mode djvu-read-mode))
-                       (and buffer-file-name
-                            (string-match-p "\\.\\(pdf\\|epub\\|djvu\\)\\'" buffer-file-name)))))
+             '(my/document-buffer-p
                (display-buffer-reuse-window display-buffer-in-direction)
                (direction . right)
                (window-width . 0.5)

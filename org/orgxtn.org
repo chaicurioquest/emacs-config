@@ -172,11 +172,6 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-;; Enable CDLaTeX separately for math snippets (enhances Smart TAB; toggle if not needed)
-(add-hook 'org-mode-hook #'org-cdlatex-mode)
-#+END_SRC
-
-#+BEGIN_SRC emacs-lisp
 ;; Added 2025-07-28: capture template, loading content from generic-note.org.
 (defvar my/generic-note-template
   (with-temp-buffer
@@ -218,7 +213,8 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
 
 #+BEGIN_SRC emacs-lisp
 ;; Enable bash/shell  for general-purpose code and latex block code execution.
-(org-babel-do-load-languages 'org-babel-load-languages '((shell . t) (latex . t)))  
+(with-eval-after-load 'org
+  (org-babel-do-load-languages 'org-babel-load-languages '((shell . t) (latex . t)))) 
    
   ;; Add future Babel settings here, e.g.:
   ;; (org-babel-do-load-languages 'org-babel-load-languages '((python . t) (emacs-lisp . t)))

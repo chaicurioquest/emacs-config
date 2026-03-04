@@ -96,27 +96,27 @@ with a unified command set under =C-c i=.
                        args))))
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp
-;; ──────────────────────────────────────────────────────────────
-;; PDF opening after Org → LaTeX export (C-c C-e l o)
-;; Also handles [[file:*.pdf]] links in Org files
-;; ──────────────────────────────────────────────────────────────
-(defun my/org-open-pdf-right (file &optional _link)
-  "Open any PDF/DOCX/PPTX on the right → always clean Org-left + Viewer-right."
-  (let ((doc-buf (find-file-noselect file)))
-    (delete-other-windows)               ; ← enforce exactly 2 windows
-    (split-window-right)                 ; 50/50 (matches org-noter)
-    (other-window 1)
-    (switch-to-buffer doc-buf)
-    (cond
-     ((derived-mode-p 'pdf-view-mode) (pdf-view-fit-page-to-window))
-     ((derived-mode-p 'doc-view-mode) (doc-view-fit-page-to-window)))
-    (other-window -1)                    ; leave cursor in Org file
-    (message "Viewer on right → %s" (file-name-nondirectory file))))
+;; #+BEGIN_SRC emacs-lisp
+;; ;; ──────────────────────────────────────────────────────────────
+;; ;; PDF opening after Org → LaTeX export (C-c C-e l o)
+;; ;; Also handles [[file:*.pdf]] links in Org files
+;; ;; ──────────────────────────────────────────────────────────────
+;; (defun my/org-open-pdf-right (file &optional _link)
+;;   "Open any PDF/DOCX/PPTX on the right → always clean Org-left + Viewer-right."
+;;   (let ((doc-buf (find-file-noselect file)))
+;;     (delete-other-windows)               ; ← enforce exactly 2 windows
+;;     (split-window-right)                 ; 50/50 (matches org-noter)
+;;     (other-window 1)
+;;     (switch-to-buffer doc-buf)
+;;     (cond
+;;      ((derived-mode-p 'pdf-view-mode) (pdf-view-fit-page-to-window))
+;;      ((derived-mode-p 'doc-view-mode) (doc-view-fit-page-to-window)))
+;;     (other-window -1)                    ; leave cursor in Org file
+;;     (message "Viewer on right → %s" (file-name-nondirectory file))))
 
-(with-eval-after-load 'org
-  (add-to-list 'org-file-apps '("\\.pdf\\'" . my/org-open-pdf-right)))
-#+END_SRC
+;; (with-eval-after-load 'org
+;;   (add-to-list 'org-file-apps '("\\.pdf\\'" . my/org-open-pdf-right)))
+;; #+END_SRC
 
 ** Citar Path Helper
 
