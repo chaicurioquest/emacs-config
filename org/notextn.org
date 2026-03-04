@@ -102,16 +102,17 @@ with a unified command set under =C-c i=.
 ;; Also handles [[file:*.pdf]] links in Org files
 ;; ──────────────────────────────────────────────────────────────
 (defun my/org-open-pdf-right (file &optional _link)
-  "Open exported PDF (or any PDF link) in a vertical split on the right.
-Used by org-file-apps for C-c C-e l o and PDF links."
-  (let ((buf (find-file-noselect file)))
-    (pop-to-buffer buf
-                   `((display-buffer-reuse-window
-                      display-buffer-in-direction)
-                     (direction . right)
-                     (window-width . 0.5)
-                     (inhibit-same-window . t))
-                   t)))
+  "Open any PDF/DOCX/PPTX on the right → always clean Org-left + Viewer-right."
+  (let ((doc-buf (find-file-noselect file)))
+    (delete-other-windows)               ; ← enforce exactly 2 windows
+    (split-window-right)                 ; 50/50 (matches org-noter)
+    (other-window 1)
+    (switch-to-buffer doc-buf)
+    (cond
+     ((derived-mode-p 'pdf-view-mode) (pdf-view-fit-page-to-window))
+     ((derived-mode-p 'doc-view-mode) (doc-view-fit-page-to-window)))
+    (other-window -1)                    ; leave cursor in Org file
+    (message "Viewer on right → %s" (file-name-nondirectory file))))
 
 (with-eval-after-load 'org
   (add-to-list 'org-file-apps '("\\.pdf\\'" . my/org-open-pdf-right)))
@@ -240,9 +241,11 @@ Kills buffer after saving only if this function opened it."
                   (substring (or key-or-pdf (concat "@" (citar-select-ref))) 1)
                 nil))
          ;; Use robust selector for generic PDFs
-         (pdf-raw (if is-bib
-                      (my/citar-extract-first-path (citar-get-files key))
-                    (my/select-pdf-project-or-browse)))
+          (pdf-raw (if is-bib
+             (or (my/citar-extract-first-path (citar-get-files key))
+                 (my/select-pdf-project-or-browse))  ; ← fallback added
+           (my/select-pdf-project-or-browse)))
+
          ;; Defensive conversion: buffer or string to path
          (pdf (cond
                ((bufferp pdf-raw) (buffer-file-name pdf-raw))
@@ -270,19 +273,78 @@ Kills buffer after saving only if this function opened it."
           (insert (format "#+TITLE: %s\n* Overview\n:PROPERTIES:\n:ID: %s\n:NOTER_DOCUMENT: %s\n:END:\n* Analysis and Inference\n"
                           title (org-id-new) (or pdf "")))))
       (my/bibnote-normalize-file note-file pdf title))
-    (find-file pdf)
-    (split-window-right)
+      
     (find-file note-file)
+    (delete-other-windows)
     (goto-char (point-min))
-    (re-search-forward "^\\* ")
-    ;; Kill any existing Org-noter sessions to prevent duplicates
-    (when (bound-and-true-p org-noter--session)
-      (org-noter-kill-session))
-    ;; Start Org-noter session (no args)
-    (org-noter)
+    (re-search-forward "^\\*\\s-+Overview" nil t)
+    (org-entry-put (point) "NOTER_DOCUMENT" (expand-file-name pdf))
+    ;; Pre-split: notes=left (current), doc=right — org-noter reuses both
+    (set-window-buffer (split-window-right) (find-file-noselect pdf))
+    (let ((switch-to-buffer-obey-display-actions nil))  
+      (org-noter))
     (message "Opened %s note → %s"
              (if is-bib "bibliography" "generic")
              (file-name-nondirectory note-file))))
+#+END_SRC
+
+** Calibre BibTeX Export
+
+#+BEGIN_SRC emacs-lisp
+;; ──────────────────────────────────────────────────────────────
+;; Calibre helper functions (laptop only)
+;; ──────────────────────────────────────────────────────────────
+(when (eq my-device 'laptop)
+
+  (defun calibredb-get-cover (candidate &optional full-path)
+    "Get cover image path of CANDIDATE. Handles nil :book-dir."
+    (let* ((path (calibredb-getattr candidate :book-dir)))
+      (when path
+        (let ((cover (expand-file-name "cover.jpg" path)))
+          (when (file-exists-p cover)
+            (if full-path cover (concat "file:" cover)))))))
+
+  (defun my/calibredb-export-books-bib ()
+    "Regenerate `books-bib-path` from the Calibre library (laptop only)."
+    (interactive)
+    (let* ((bib-file (expand-file-name books-bib-path))
+           (lib-dir  my-calibre-library-dir))
+      (let ((exit-code
+             (call-process "calibredb" nil "*calibredb-bib*" t
+                           "catalog" bib-file
+                           "--with-library" lib-dir
+                           "--fields" "title,authors,author_sort,publisher,pubdate,isbn,id")))
+        (if (not (zerop exit-code))
+            (message "calibredb failed; see *calibredb-bib* buffer")
+          (let* ((json-str (shell-command-to-string
+                            (format "calibredb list --fields=id,formats --with-library '%s' --for-machine"
+                                    lib-dir)))
+                 (entries (ignore-errors (json-parse-string json-str :array-type 'list))))
+            (when entries
+              (with-temp-buffer
+                (insert-file-contents bib-file)
+                (dolist (entry entries)
+                  (let* ((id  (number-to-string (gethash "id" entry)))
+                         (fmts (gethash "formats" entry))
+                         (pdf  (when (listp fmts)
+                                 (seq-find (lambda (f) (string-suffix-p ".pdf" f)) fmts))))
+                    (when pdf
+                      (goto-char (point-min))
+                      (when (re-search-forward (format "calibreid = \"%s\"" id) nil t)
+                        (re-search-forward "^}" nil t)
+                        (beginning-of-line)
+                        (insert (format "    file = \"%s\",\n" pdf))))))
+                (write-file bib-file))))
+          (message "Updated %s" bib-file)))))
+          (with-eval-after-load 'calibredb
+  (add-hook 'calibredb-search-mode-hook
+            (lambda ()
+              (when (and (fboundp 'my/calibredb-export-books-bib)
+                         (file-newer-than-file-p
+                          (expand-file-name "metadata.db" my-calibre-library-dir)
+                          (expand-file-name books-bib-path)))
+                (my/calibredb-export-books-bib)
+                (message "Bib auto-updated (DB newer than bib)"))))))
 #+END_SRC
 
 ** Calibre Book Opener
@@ -353,19 +415,19 @@ with metadata and a NOTER_DOCUMENT property."
       ;; Optional post-processing of the note.
       (when (fboundp 'my/bibnote-normalize-file)
         (my/bibnote-normalize-file note-file (expand-file-name book-path) title*))
-      ;; Open book left, note right.
-      (find-file (expand-file-name book-path))
-      (split-window-right)
-      (other-window 1)
-      (find-file note-file)
-      ;; Move to the heading with drawer and start Org-noter
-      (goto-char (point-min))
-      (if (re-search-forward "^\\* Overview" nil t)
-          (progn
-            (org-entry-get nil "NOTER_DOCUMENT") ; Force Org to parse properties
-            (org-noter))
-        (message "Warning: No Overview heading found; Org-noter not started."))
-      (message "Opened: %s by %s with Org-noter session" title* author*))))
+
+     (find-file note-file)
+     (delete-other-windows)
+     (goto-char (point-min))
+     (if (re-search-forward "^\\* Overview" nil t)
+         (progn
+           ;; Pre-split: notes=left (current), doc=right — org-noter reuses both
+           (set-window-buffer (split-window-right) (find-file-noselect book-path))
+           (org-noter)
+           (message "Opened: %s by %s with Org-noter session" title* author*))
+       (message "Warning: No Overview heading found in %s — Org-noter not started."
+                (file-name-nondirectory note-file))))))
+
 #+END_SRC
 
 * Annotation and Transclusion Helpers

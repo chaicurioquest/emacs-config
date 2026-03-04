@@ -253,6 +253,38 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
 ;;(setq org-edit-src-quote-special nil)  
 #+END_SRC
 
+** Glossary package for Acronmys                               :enhancement:
+#+BEGIN_SRC emacs-lisp
+;; ========================================
+;; Org-glossary package
+;; Added: 2026-02-18
+;; ========================================
+(use-package org-glossary
+  :straight (org-glossary :type git :host github :repo "tecosaur/org-glossary")
+  :after org
+  :commands (org-glossary-mode))
+  
+;; Fix: org-glossary infinite recursion in dependency watcher
+(defvar my/org-glossary--visiting nil
+  "Files currently being visited by register-buffer-dependencies.")
+
+(with-eval-after-load 'org-glossary
+  (advice-add 'org-glossary--register-buffer-dependencies :around
+              (lambda (orig &optional path-spec)
+                (let* ((path-spec (or path-spec
+                                      (org-glossary--complete-path-spec path-spec)))
+                       (file (plist-get path-spec :file)))
+                  (if (and file (member (expand-file-name file)
+                                        my/org-glossary--visiting))
+                      nil  ; already visiting — break cycle
+                    (let ((my/org-glossary--visiting
+                           (if file
+                               (cons (expand-file-name file)
+                                     my/org-glossary--visiting)
+                             my/org-glossary--visiting)))
+                      (funcall orig path-spec)))))))
+#+END_SRC
+
 * Org glossary package export behaviour                         :enhancement:
 #+BEGIN_SRC emacs-lisp
 ;; ========================================
