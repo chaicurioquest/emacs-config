@@ -72,6 +72,16 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 ** Disable startup screen.
 #+BEGIN_SRC emacs-lisp
 (setq inhibit-startup-screen t)
+
+;; Silence "Auto saving..." progress messages
+(setq auto-save-no-message t)
+
+;; Delete auto-save file when original is saved cleanly
+;; Prevents "has auto save data; consider M-x recover-this-file" spam at startup
+(setq delete-auto-save-files t)
+
+;; Silence straight.el lockfile write notification
+(setq straight-vc-git-default-clone-depth 1)  ; shallow clones = faster + less noise
 #+END_SRC
 
 ** Load device detection (with fallback)

@@ -7,6 +7,11 @@
 ;; Bootstrap straight.el for reproducible package management.
 ;; To update: M-x straight-pull-package RET straight RET
 ;;            then: M-x straight-freeze-versions RET
+
+;; Check for package modifications only on save, not at every startup
+;; Eliminates "Processing repository..." spam in *Messages*
+(setq straight-check-for-modifications '(check-on-save find-when-checking))
+
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name
@@ -42,8 +47,16 @@
 ;; Never let org silently eval untrusted blocks during tangle-load
 (setq org-confirm-babel-evaluate t)  ; must be set BEFORE org-babel-load-file
 
-;; org-babel-load-file loads config.el directly without going through my/tangle-if-needed guards
-(org-babel-load-file my-config-org)
+;; Tangle config.org → config.el only when config.org is newer than config.el.
+;; Modular files (notextn.org, roam.org, etc.) are handled unconditionally
+;; inside config.el via my/tangle-if-needed on every startup — unchanged.
+(let* ((config-el (expand-file-name "config.el" user-emacs-directory)))
+  (when (or (not (file-exists-p config-el))
+            (file-newer-than-file-p my-config-org config-el))
+    (org-babel-tangle-file my-config-org config-el "emacs-lisp")
+    (set-file-times config-el)   ; touch config.el so next startup skips tangle
+    (message "Tangled config.org → config.el"))
+  (load config-el nil 'nomessage))
 
 ;; Load private tweaks if present (won't error if missing)
 ;; user files specific setting goes here 
