@@ -53,7 +53,7 @@
 
 ;; Tweak preview scale and other options
 (setq org-format-latex-options
-      (plist-put org-format-latex-options :scale 1.2))  ;; Unified scale
+      (plist-put org-format-latex-options :scale 1.0))  ;; Unified scale
 
 ;; Customize preview image directory to use temp dir
 (setq org-preview-latex-image-directory (concat temporary-file-directory "ltximg/"))

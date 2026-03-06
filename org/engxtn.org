@@ -89,7 +89,7 @@ These should be loaded *after* general Org settings.
                                  :image-input-type "pdf"
                                  :image-output-type "png"
                                  :latex-compiler ("lualatex -interaction=nonstopmode -halt-on-error -output-directory %o %f")
-                                 :image-converter ("pdftoppm -png -singlefile -r 300 %f | convert -trim - %O")))
+                                 :image-converter ("pdftoppm -png -singlefile -r 150 %f | convert -trim - %O")))
     (setq org-preview-latex-default-process 'pdftoppm-fast))
 
    ;; 2. Fallback: ImageMagick (convert/magick) + Ghostscript
