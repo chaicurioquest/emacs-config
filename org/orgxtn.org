@@ -38,9 +38,6 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 
 ;; Smart TAB: Yasnippet (inline) → CDLaTeX (math) → Org-cycle
 (with-eval-after-load 'org
-  (require 'yasnippet)
-  (require 'yankpad)  ; Load yankpad explicitly
-  
   (defun my/org-smart-tab ()
     "Smart TAB: Yankpad → Yasnippet → CDLaTeX → Org-cycle."
     (interactive)
@@ -58,8 +55,7 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
            (org-inside-LaTeX-fragment-p)) (cdlatex-tab))
      ;; Default: cycle
      (t (org-cycle))))
-  
-  (define-key org-mode-map (kbd "TAB") #'my/org-smart-tab))
+    (define-key org-mode-map (kbd "TAB") #'my/org-smart-tab))
 
 #+END_SRC
 

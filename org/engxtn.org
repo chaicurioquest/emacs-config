@@ -18,13 +18,13 @@ These should be loaded *after* general Org settings.
 #+END_SRC
 
 
-* Helper: Construct LaTeX Command
-#+BEGIN_SRC emacs-lisp
-(defun my/org-latex-make-latex-cmd (engine)
-  "Return a LaTeX command for org-preview using ENGINE."
-  (format "%s -interaction=nonstopmode -halt-on-error -output-directory=%%o %%f"
-          (or engine "lualatex")))
-#+END_SRC
+;; * Helper: Construct LaTeX Command
+;; #+BEGIN_SRC emacs-lisp
+;; (defun my/org-latex-make-latex-cmd (engine)
+;;   "Return a LaTeX command for org-preview using ENGINE."
+;;   (format "%s -interaction=nonstopmode -halt-on-error -output-directory=%%o %%f"
+;;           (or engine "lualatex")))
+;; #+END_SRC
 
 
 * Ensure TeX Binaries Available
@@ -39,10 +39,10 @@ These should be loaded *after* general Org settings.
 #+END_SRC
 
 
-* Custom LaTeX Preview Header (TikZ + CircuitTikZ)
+* LaTeX Preview Setup (Including TikZ + CircuitTikZ)
 #+BEGIN_SRC emacs-lisp
-(setq org-format-latex-header
-"\\documentclass[varwidth=true,border=0pt]{standalone}
+    (setq org-format-latex-header
+           "\\documentclass[varwidth=true,border=0pt]{standalone}
 \\usepackage{fontspec}
 \\usepackage{amsmath,mathtools}
 \\DeclarePairedDelimiter{\\abs}{\\lvert}{\\rvert}
@@ -50,14 +50,17 @@ These should be loaded *after* general Org settings.
 \\usepackage{siunitx}
 \\usepackage{upgreek}
 \\usepackage{tikz}
+\\usetikzlibrary{calc}
 \\usepackage[american]{circuitikz}
-\\usepackage[active,tightpage,displaymath,latexmath]{preview}
+\\usepackage[active,tightpage,displaymath,textmath]{preview}
 
 \\setlength\\PreviewBorder{0pt}
 \\PreviewEnvironment{math}
 \\PreviewEnvironment{displaymath}
 \\PreviewEnvironment{equation}
+\\PreviewEnvironment{equation*}
 \\PreviewEnvironment{align}
+\\PreviewEnvironment{align*}
 \\PreviewEnvironment{subequations}
 \\PreviewEnvironment{tikzpicture}
 \\PreviewEnvironment{circuitikz}
@@ -118,11 +121,4 @@ These should be loaded *after* general Org settings.
 ;;  :config
 ;;  (add-hook 'mathpix-after-insert-hook #'org-latex-preview))
 ;;  (add-hook 'mathpix-after-insert-hook (lambda () (org-noter-sync-current-note)))  ;; Sync noter after OCR
-#+END_SRC
-
-
-* Export Settings
-#+BEGIN_SRC emacs-lisp
-(setq preview-LaTeX-command
-      '("%`%l -interaction=nonstopmode -halt-on-error -output-directory=%o %t"))
 #+END_SRC

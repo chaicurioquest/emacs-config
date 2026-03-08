@@ -10,9 +10,6 @@
 ;; pdfLaTeX kept as standby for compatibility
 ;; ------------------------------
 
-(require 'oc)
-(use-package oc-biblatex :after oc)
-
 ;; Prefer LuaLaTeX for export & Babel execution
 (setq org-latex-compiler "lualatex")  ;; Hardcode to avoid nil
 (setq org-babel-latex-compiler "lualatex")  ;; Hardcode to avoid nil
@@ -29,7 +26,6 @@
 ;; ------------------------------
 (setq org-latex-default-packages-alist
       '(("" "amsmath" t)           ; Math support
-        ("" "fontspec" t)          ; LuaLaTeX font handling
         ("" "graphicx" t)          ; Images - ESSENTIAL
         ("" "longtable" nil)       ; Multi-page tables
         ("normalem" "ulem" t)      ; Underline/strikethrough
@@ -48,12 +44,14 @@
 ;; (setq org-preview-latex-default-process 'imagemagick)
 
 ;; Tweak preview scale and other options
-;; (setq org-format-latex-options
-;;      (plist-put org-format-latex-options :scale 1.1)) ;; 1.0–1.3 typical
+;; (with-eval-after-load 'org
+;;   (plist-put org-format-latex-options :scale 1.1)) ;; 1.0–1.3 typical
 
 ;; Tweak preview scale and other options
-(setq org-format-latex-options
-      (plist-put org-format-latex-options :scale 1.0))  ;; Unified scale
+(with-eval-after-load 'org
+  (plist-put org-format-latex-options :scale 1.0)
+  (setq org-highlight-latex-and-related '(native latex script))
+  (setq org-startup-with-latex-preview nil))
 
 ;; Customize preview image directory to use temp dir
 (setq org-preview-latex-image-directory (concat temporary-file-directory "ltximg/"))
@@ -89,12 +87,12 @@ Scans the buffer for existing #+NAME: lines with the prefix and a numeric suffix
 (setenv "TEXINPUTS" (concat
                      (file-name-as-directory my/notes-root-dir) "latex:"
                      (file-name-as-directory my/notes-root-dir) "images:"
-                     (getenv "TEXINPUTS")))
+                     (or (getenv "TEXINPUTS") "")))
 
 ;; Set BIBINPUTS to include bib/ under root for bibliography files
 (setenv "BIBINPUTS" (concat
                      (file-name-as-directory my/notes-root-dir) "bib:"
-                     (getenv "BIBINPUTS")))
+                     (or (getenv  "BIBINPUTS") "")))
 
 ;; ------------------------------
 ;; Export Process
