@@ -62,15 +62,24 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, dail
 #+BEGIN_SRC emacs-lisp
 (use-package org-roam
   :straight t
-  :demand t
+  :defer t
   :init
   (setq org-roam-completion-everywhere t
         org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
   ;; NOTE: all global keybindings for org-roam are in keymaps.el (C-c r prefix).
   :config
-  (setq org-roam-db-location (expand-file-name "org-roam.db" org-roam-directory))
+  ;; Ensure directories exist
   (dolist (d (list org-roam-directory org-roam-dailies-directory))
-    (make-directory d t)))
+  ;; Set DB location local to notes dir for sync
+  (setq org-roam-db-location (expand-file-name "org-roam.db" org-roam-directory))
+    (make-directory d t))
+  (add-hook 'org-roam-mode-hook
+            (lambda ()
+              (unless (bound-and-true-p my/org-roam-initialized)
+                (setq my/org-roam-initialized t)
+                (org-roam-db-autosync-mode 1)
+                (org-roam-db-sync))))
+                (setq org-roam-db-gc-threshold most-positive-fixnum))
 #+END_SRC
 
 ** Org roam templates

@@ -151,13 +151,17 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
     (error (message "Failed to tangle config.org: %S" err))))
 
 (defun my/tangle-if-needed (org-file el-file)
-  "Tangle ORG-FILE to EL-FILE only if ORG-FILE is newer."
+  "Tangle ORG-FILE to EL-FILE only if ORG-FILE is newer. Kill buffer if we opened it."
   (let ((org-full (expand-file-name org-file user-emacs-directory))
         (el-full  (expand-file-name el-file  user-emacs-directory)))
     (when (or (not (file-exists-p el-full))
               (file-newer-than-file-p org-full el-full))
       (require 'org)
-      (org-babel-tangle-file org-full el-full "emacs-lisp")
+      (let ((was-open (find-buffer-visiting org-full)))
+        (org-babel-tangle-file org-full el-full "emacs-lisp")
+        (unless was-open
+          (when-let (b (find-buffer-visiting org-full))
+            (kill-buffer b))))
       (message "Tangled: %s → %s" org-file el-file))))
 #+END_SRC
 
@@ -207,6 +211,9 @@ plus recursive .org files from the 'roam' subdirectory, excluding unwanted dirs.
 
 ;; Initialize once
 (my/update-agenda-files)
+
+;; Critical: stops Org from  visiting agenda files during startup.
+(setq org-agenda-inhibit-startup t) 
 
 ;; Rescan only when saving an Org file under the notes dir not buffer-local default-directory
 (defvar my--agenda-update-timer nil)

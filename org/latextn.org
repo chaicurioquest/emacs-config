@@ -50,8 +50,11 @@
 ;; Tweak preview scale and other options
 (with-eval-after-load 'org
   (plist-put org-format-latex-options :scale 1.0)
+  (plist-put org-format-latex-options :foreground 'default) 
+  (plist-put org-format-latex-options :background 'default)  
   (setq org-highlight-latex-and-related '(native latex script))
   (setq org-startup-with-latex-preview nil))
+
 
 ;; Customize preview image directory to use temp dir
 (setq org-preview-latex-image-directory (concat temporary-file-directory "ltximg/"))

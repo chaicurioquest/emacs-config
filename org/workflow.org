@@ -79,6 +79,21 @@ This file configures GTD workflows with Org-alert for notifications, device-awar
     (org-alert-enable)
     (setq my-org-alert-enabled t))
 
+  ;; ── ADD THIS BLOCK immediately after org-alert-enable ──
+  ;; org-alert-check opens all 37 agenda files every interval.
+  ;; Kill what it opens, but never touch files already open or modified.
+ (advice-add 'org-alert-check :around
+            (lambda (orig &rest args)
+              (let ((open-before (seq-filter #'buffer-file-name (buffer-list))))
+                (apply orig args)
+                (dolist (buf (buffer-list))
+                  (when (and (buffer-file-name buf)
+                             (string-match-p "\\.org\\'" (buffer-file-name buf))
+                             (not (memq buf open-before))
+                             (not (buffer-modified-p buf)))
+                    (kill-buffer buf))))))
+  ;; ── END ADD ──
+
   (message "Org-alert: style=%s device=%s interval=%ds cutoff=%dmin"
            alert-default-style
            (if (boundp 'my-device) my-device 'unknown)

@@ -50,7 +50,7 @@ These should be loaded *after* general Org settings.
 \\usepackage{siunitx}
 \\usepackage{upgreek}
 \\usepackage{tikz}
-\\usetikzlibrary{calc}
+\\usetikzlibrary{calc,arrows.meta,positioning}
 \\usepackage[american]{circuitikz}
 \\usepackage[active,tightpage,displaymath,textmath]{preview}
 
@@ -64,10 +64,6 @@ These should be loaded *after* general Org settings.
 \\PreviewEnvironment{subequations}
 \\PreviewEnvironment{tikzpicture}
 \\PreviewEnvironment{circuitikz}
-
-\\definecolor{orgfg}{rgb}{1,1,1}
-\\definecolor{orgbg}{rgb}{0.2,0.2,0.2}
-\\AtBeginDocument{\\pagecolor{orgbg}\\color{orgfg}}
 
 \\newcommand{\\pv}[1]{\\begin{preview}#1\\end{preview}}
 \\mathsurround=0pt
@@ -105,6 +101,18 @@ These should be loaded *after* general Org settings.
                                :latex-compiler ("lualatex -interaction=nonstopmode -halt-on-error -output-directory %o %f")
                                :image-converter ("convert -density 300 %f -trim -flatten %O")))
     (setq org-preview-latex-default-process 'imagemagick))))
+#+END_SRC
+
+* Theme-Aware Preview Refresh
+#+BEGIN_SRC emacs-lisp
+(defun my/org-latex-preview-refresh ()
+  "Clear preview cache and refresh when theme changes."
+  (interactive)
+  (shell-command "rm -rf /tmp/ltximg/")
+  (when (derived-mode-p 'org-mode)
+    (org-latex-preview '(64))))
+
+(add-hook 'after-load-theme-hook #'my/org-latex-preview-refresh)
 #+END_SRC
 
 
