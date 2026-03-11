@@ -2,6 +2,7 @@
 #+TITLE: %^{Title}
 #+DATE: \today
 #+FILETAGS: :%^{Tags|generic|note|project|idea}:
+# ALERT: yes
 #+OPTIONS: toc:nil num:2
 #+PROPERTY: header-args :eval never-export
 #+BIBLIOGRAPHY: ${bib-path}

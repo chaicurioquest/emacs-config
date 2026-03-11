@@ -7,6 +7,7 @@
 #+AUTHOR: %^{Author}
 #+DATE: %<%Y-%m-%d>
 #+FILETAGS: :%^{Tags|semiconductors:tools:presentations}:
+# ALERT: yes
 #+OPTIONS: toc:nil num:2
 #+PROPERTY: header-args :eval never-export
 #+BIBLIOGRAPHY: ${bib-path}
