@@ -135,9 +135,8 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
 
 ;; PDF view bindings
 (with-eval-after-load 'pdf-view
-  (define-key pdf-view-mode-map (kbd "C-c i s") #'my/save-pdf-region-to-datestamp)
-  (define-key pdf-view-mode-map (kbd "C-c i S")
-    (lambda () (interactive) (my/save-pdf-region-to-datestamp t)))
+  (define-key pdf-view-mode-map (kbd "C-c i s") #'my/pdf-screenshot-region-and-save)
+   (define-key pdf-view-mode-map (kbd "C-c i S") #'my/pdf-extract-whole-page-and-save)
   (define-key pdf-view-mode-map (kbd "C-s") #'isearch-forward)
   (define-key pdf-view-mode-map (kbd "C-r") #'isearch-backward))
 
@@ -187,11 +186,13 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
 ;; Consult keybindings
 ;; ─────────────────────────────────────────────────────────────
 (with-eval-after-load 'consult
-  (global-set-key (kbd "C-s") #'consult-line)
+  (global-set-key (kbd "C-s")   #'consult-line)
   (global-set-key (kbd "C-c h") #'consult-org-heading)
   (global-set-key (kbd "C-c k") #'consult-ripgrep)
   (global-set-key (kbd "C-c b") #'consult-buffer)
-  (global-set-key (kbd "C-c p") #'consult-find))
+  (global-set-key (kbd "C-c p") #'consult-find)
+  (global-set-key (kbd "C-c R") #'consult-recent-file)
+  (global-set-key (kbd "C-c O") #'my/consult-recent-org-file))
 
 (provide 'keymaps)
 ;;; keymaps.el ends here

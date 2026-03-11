@@ -18,6 +18,20 @@ This file configures GTD workflows with Org-alert for notifications, device-awar
   :defer nil)
 #+END_SRC
 
+* ACTIVE Agenda Dynamic Alert of org files with #+ALERT: yes
+#+BEGIN_SRC emacs-lisp
+(defun my/alert-files-dynamic ()
+  "Return agenda files that opt-in via #+ALERT: yes in their header.
+Reads only first 512 bytes per file — no full buffer visit."
+  (seq-filter
+   (lambda (f)
+     (and (file-readable-p f)
+          (with-temp-buffer
+            (insert-file-contents f nil 0 512)
+            (re-search-forward "^#\\+ALERT:[ \t]*yes" nil t))))
+   org-agenda-files))
+#+END_SRC
+
 * ACTIVE Enable message alerts for Org mode and across different devices.
 #+BEGIN_SRC emacs-lisp
 (use-package org-alert
@@ -74,17 +88,24 @@ This file configures GTD workflows with Org-alert for notifications, device-awar
            org-alert-notify-cutoff 10
            org-alert-notify-after-event-cutoff 10)))
 
-  ;; Enable once after variables set
-  (unless my-org-alert-enabled
-    (org-alert-enable)
-    (setq my-org-alert-enabled t))
+  ;; Never alert on cancelled tasks
+  (setq org-alert-excluded-todo-states '("CANCELLED"))
 
-  ;; ── ADD THIS BLOCK immediately after org-alert-enable ──
-  ;; org-alert-check opens all 37 agenda files every interval.
-  ;; Kill what it opens, but never touch files already open or modified.
- (advice-add 'org-alert-check :around
+  ;; Enable once after variables set
+(unless my-org-alert-enabled
+  (setq org-alert-timer
+        (run-with-timer org-alert-interval  ; first fire after 300s, not 0
+                        org-alert-interval
+                        #'org-alert-check))
+  (setq my-org-alert-enabled t))
+
+;; Restrict scanning to confirmed agenda/task files only during Emacs startup.
+;; Advice with ALL three guards:
+(advice-add 'org-alert-check :around
             (lambda (orig &rest args)
-              (let ((open-before (seq-filter #'buffer-file-name (buffer-list))))
+              (let* ((recentf-mode nil)
+                     (org-agenda-files (my/alert-files-dynamic))
+                     (open-before (seq-filter #'buffer-file-name (buffer-list))))
                 (apply orig args)
                 (dolist (buf (buffer-list))
                   (when (and (buffer-file-name buf)
@@ -100,6 +121,5 @@ This file configures GTD workflows with Org-alert for notifications, device-awar
            org-alert-interval
            org-alert-notify-cutoff))
 
-  ;; Never alert on cancelled tasks
-  (setq org-alert-excluded-todo-states '("CANCELLED"))
+
 #+END_SRC

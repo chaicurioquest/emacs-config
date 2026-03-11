@@ -438,6 +438,19 @@ with metadata and a NOTER_DOCUMENT property."
 (defun my/get-image-dir-for-note (note-file)
   "Return directory for images for NOTE-FILE."
   (expand-file-name "images" (file-name-directory note-file)))
+
+;; Newest-first image picker — sorts by actual mtime, not filename string.
+;; Handles mixed naming (screenshots, timestamps, any filename).
+(defun my/read-image-newest-first (dir)
+  "Select image from DIR sorted newest first by modification time."
+  (let* ((files  (directory-files dir nil "\\.\\(png\\|jpg\\|jpeg\\)\\'" t))
+         (sorted (sort files
+                       (lambda (a b)
+                         (time-less-p
+                          (nth 5 (file-attributes (expand-file-name b dir)))
+                          (nth 5 (file-attributes (expand-file-name a dir))))))))
+    (expand-file-name (completing-read "Select image: " sorted nil t) dir)))
+
 #+END_SRC
 
 ** Front-matter and Annotation Helpers
@@ -517,79 +530,76 @@ If ID is nil, offer completion over all IDs in currently open Org buffers."
 
 #+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
-;; Automate Image Capture for Annotations
+;; C-c i s — Capture drag-selected PDF region as timestamped PNG; insert #+CAPTION link in org-noter note.
+;; Zero coordinate math. Saves timestamped PNG to images/ sibling of note.
 ;; ──────────────────────────────────────────────────────────────
-(defun my/save-pdf-region-to-datestamp (&optional whole-page)
-  "Save PDF region (or WHOLE-PAGE) as JPG and insert link at cursor in Org note."
-  (interactive "P")
-  (when (derived-mode-p 'pdf-view-mode)
-    (require 'org-noter)
-    (unless (bound-and-true-p org-noter--session)
-      (when (y-or-n-p "No Org-noter session. Start one now? ")
-        (org-noter)))
-    (let* ((pdf-file (buffer-file-name))
-           (note-win (org-noter--get-notes-window))
-           (note-buf (when note-win (window-buffer note-win)))
-           (note-file (when note-buf (buffer-file-name note-buf))))
-      (unless note-file
-        (user-error "No associated Org note window found. Use C-c i a to open PDF + note."))
-      (let* ((image-dir (my/get-image-dir-for-note note-file))
-             (timestamp (format-time-string "%Y-%m-%d-%H%M%S"))
-             (filename (expand-file-name (format "%s.jpg" timestamp) image-dir))
-             (resolution 150)
-             (caption (read-string "Optional caption: "))
-             raw-edges quads page-size pixel-width pixel-height crop-x crop-y crop-w crop-h
-             (link-text (format "#+CAPTION: %s\n[[file:%s]]\n"
-                                (if (string-empty-p caption) "Captured image" caption)
-                                (file-relative-name filename (file-name-directory note-file)))))
-        (make-directory image-dir t)
-        (if whole-page
-            (shell-command
-             (format "pdftoppm -jpeg -r %d -f %d -l %d '%s' > '%s'"
-                     resolution
-                     (pdf-view-current-page) (pdf-view-current-page)
-                     pdf-file filename))
-          (setq raw-edges (condition-case nil
-                              (pdf-view-active-region)
-                            (error nil)))
-          (setq quads (if (numberp (car-safe raw-edges))
-                          (cdr raw-edges)
-                        raw-edges))
-          (if (and quads
-                   (listp quads)
-                   (= (length quads) 1)
-                   (let ((quad (car quads)))
-                     (and (listp quad)
-                          (= (length quad) 4)
-                          (cl-every #'numberp quad))))
-              (let ((quad (car quads)))
-                (setq page-size   (pdf-info-pagesize (pdf-view-current-page))
-                      pixel-width  (* (car page-size) (/ resolution 72.0))
-                      pixel-height (* (cdr page-size) (/ resolution 72.0))
-                      crop-x (* (nth 0 quad) pixel-width)
-                      crop-y (* (nth 1 quad) pixel-height)
-                      crop-w (* (- (nth 2 quad) (nth 0 quad)) pixel-width)
-                      crop-h (* (- (nth 3 quad) (nth 1 quad)) pixel-height))
-                (shell-command
-                 (format "pdftoppm -jpeg -r %d -f %d -l %d -x %.0f -y %.0f -W %.0f -H %.0f '%s' > '%s'"
-                         resolution
-                         (pdf-view-current-page) (pdf-view-current-page)
-                         crop-x crop-y crop-w crop-h
-                         pdf-file filename)))
-            (user-error "No valid region selected. Drag to select or use C-c i S for whole page.")))
-        (with-current-buffer note-buf
-          (insert link-text)
-          (save-buffer))
-        (message "Saved → %s"
-                 (file-relative-name filename (file-name-directory note-file)))))))
+(defun my/pdf-screenshot-region-and-save ()
+  "Capture screen region with scrot -s, save timestamped PNG, insert org link.
+Requires scrot (already installed per config). Draw rectangle over PDF region."
+  (interactive)
+  (unless (bound-and-true-p org-noter--session)
+    (user-error "No org-noter session. Use C-c i a first."))
+  (let* ((note-win  (org-noter--get-notes-window))
+         (note-buf  (when note-win (window-buffer note-win)))
+         (note-file (when note-buf (buffer-file-name note-buf))))
+    (unless note-file
+      (user-error "No Org note window found."))
+    (let* ((image-dir (my/get-image-dir-for-note note-file))
+           (timestamp (format-time-string "%Y-%m-%d-%H%M%S"))
+           (filename  (expand-file-name (concat timestamp ".png") image-dir)))
+      (make-directory image-dir t)
+      (call-process-shell-command
+       (format "scrot -s %s" (shell-quote-argument filename)))
+      (unless (file-exists-p filename)
+        (user-error "Screenshot cancelled or scrot failed."))
+      (message "Saved → %s  (C-c s → fig to insert)"
+         (file-relative-name filename (file-name-directory note-file))))))
+
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+;; ──────────────────────────────────────────────────────────────
+;; C-c i S — Capture entire current PDF page as timestamped PNG; insert #+CAPTION link in org-noter note.
+;; ──────────────────────────────────────────────────────────────
+(defun my/pdf-extract-whole-page-and-save ()
+  "Render current full PDF page via pdftoppm, save as timestamped PNG, insert org link."
+  (interactive)
+  (unless (derived-mode-p 'pdf-view-mode)
+    (user-error "Not in pdf-view-mode"))
+  (unless (bound-and-true-p org-noter--session)
+    (when (y-or-n-p "No Org-noter session. Start one now? ")
+      (org-noter)))
+  (let* ((note-win  (org-noter--get-notes-window))
+         (note-buf  (when note-win (window-buffer note-win)))
+         (note-file (when note-buf (buffer-file-name note-buf)))
+         (pdf-file  (buffer-file-name)))
+    (unless note-file
+      (user-error "No Org note window found. Use C-c i a to open PDF + note."))
+    (let* ((page        (pdf-view-current-page))
+           (resolution  150)
+           (image-dir   (my/get-image-dir-for-note note-file))
+           (timestamp   (format-time-string "%Y-%m-%d-%H%M%S"))
+           (filename    (expand-file-name (concat timestamp ".png") image-dir))
+           (temp-prefix (make-temp-file "pdfcap"))
+           (temp-page   (progn
+                          (call-process-shell-command
+                           (format "pdftoppm -jpeg -r %d -f %d -l %d %s %s"
+                                   resolution page page
+                                   (shell-quote-argument pdf-file)
+                                   (shell-quote-argument temp-prefix)))
+                          (car (file-expand-wildcards (concat temp-prefix "*.jpg"))))))
+      (make-directory image-dir t)
+      (unless temp-page
+        (user-error "pdftoppm failed. Ensure poppler-utils is installed."))
+      (rename-file temp-page filename t)      ; no crop — direct rename
+      (ignore-errors (delete-file temp-prefix))
+      (message "Saved → %s  (C-c s → fig to insert)"
+         (file-relative-name filename (file-name-directory note-file))))))
 #+END_SRC
 
 * Keybindings
 
 #+BEGIN_SRC emacs-lisp
-;; ── C-c i a: open any PDF + note (bib or generic) ──
-(global-set-key (kbd "C-c i a") #'my/open-pdf-and-note)
-
 ;; ── C-c i b: open Calibre book + note (laptop only) ──
 (when (eq my-device 'laptop)
   (with-eval-after-load 'calibredb
@@ -602,10 +612,7 @@ If ID is nil, offer completion over all IDs in currently open Org buffers."
   (define-key pdf-view-mode-map [drag-mouse-1] 'ignore)
   (define-key pdf-view-mode-map (kbd "<down-mouse-1>") 'pdf-view-mouse-set-region)
   (define-key pdf-view-mode-map (kbd "<S-down-mouse-1>") 'pdf-view-mouse-set-region-rectangle)
-  ;; Image capture
-  (define-key pdf-view-mode-map (kbd "C-c i s") 'my/save-pdf-region-to-datestamp)
-  (define-key pdf-view-mode-map (kbd "C-c i S")
-    (lambda () (interactive) (my/save-pdf-region-to-datestamp t)))
+
   ;; Dual-page sync
   (define-key pdf-view-mode-map (kbd "d") #'my/pdf-view-dual-mode)
   (advice-add 'pdf-view-next-page :around #'my/pdf-sync-advice)

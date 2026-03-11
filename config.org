@@ -67,6 +67,15 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
           (lambda ()
             (setq gc-cons-threshold (or my--old-gc-cons-threshold (* 16 1024 1024))
                   file-name-handler-alist my--old-file-name-handler-alist)))
+;; ;; ── DIAGNOSTIC: trace org file opens (REMOVE AFTER DIAGNOSIS) ──
+;; (advice-add 'find-file-noselect :before
+;;             (lambda (filename &rest _)
+;;               (when (and (stringp filename)
+;;                          (string-match-p "\\.org\\'" filename))
+;;                 (message "ORG-OPEN: %s\nCALLER:\n%s"
+;;                          filename
+;;                          (with-output-to-string (backtrace))))))
+
 #+END_SRC
 
 ** Disable startup screen.
@@ -157,10 +166,13 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
     (when (or (not (file-exists-p el-full))
               (file-newer-than-file-p org-full el-full))
       (require 'org)
-      (let ((was-open (find-buffer-visiting org-full)))
+      (let ((was-open (find-buffer-visiting org-full))
+            (recentf-mode nil))          ; ← suppress recentf during tangle
         (org-babel-tangle-file org-full el-full "emacs-lisp")
         (unless was-open
           (when-let (b (find-buffer-visiting org-full))
+            (with-current-buffer b
+              (set-buffer-modified-p nil)) ; ← prevent "modified buffer" kill prompt
             (kill-buffer b))))
       (message "Tangled: %s → %s" org-file el-file))))
 #+END_SRC
@@ -379,16 +391,18 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
         ispell-local-dictionary-alist
         '(("en_GB" "[[:alpha:]]" "[^[:alpha:]]" "[']" t
            ("-d" "en_GB") nil utf-8)))
-  (unless (executable-find "hunspell") (message "Hunspell not found; spellcheck disabled."))        
+  (unless (executable-find "hunspell") (message "Hunspell not found; spellcheck disabled."))
   :config
   ;; Enable flyspell everywhere you write text
   (add-hook 'text-mode-hook #'flyspell-mode)
   ;; For code: only check strings & comments
   (add-hook 'prog-mode-hook #'flyspell-prog-mode)
-
+  ;; Suppress "Invalid search bound" error from org-element-at-point on C-g
+  (advice-add 'org-mode-flyspell-verify :around
+              (lambda (orig &rest args)
+                (ignore-errors (apply orig args))))
   ;; Correction interface for M-$
   (use-package flyspell-correct :straight t))
-
 #+END_SRC
 
 ** CD Latex package for latex equations
@@ -495,7 +509,10 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 #+BEGIN_SRC emacs-lisp
 (use-package vertico
   :straight t
-  :init (vertico-mode))
+  :init (vertico-mode)
+  :config
+  ;; Sort recently used files/buffers first in all completing-read prompts
+  (setq vertico-sort-function nil)) ; preserve caller's sort order
 #+END_SRC
 
 ** Orderless: smart fuzzy matching for completion
@@ -503,9 +520,44 @@ Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliog
 (use-package orderless
   :straight t
   :custom
-  (completion-styles '(orderless))
+  (completion-styles '(orderless basic))
   (completion-category-defaults nil)
   (completion-category-overrides '((file (styles partial-completion)))))
+#+END_SRC
+
+** Saving History on File Management
+#+BEGIN_SRC emacs-lisp
+;; savehist — persists minibuffer history across sessions (official Vertico companion)
+(use-package savehist
+  :straight nil
+  :init (savehist-mode 1)
+  :custom
+  (history-length 1000)
+  (history-delete-duplicates t))
+#+END_SRC
+
+** Tracking Recent File Management
+#+BEGIN_SRC emacs-lisp
+;; recentf — tracks all opened files, powers consult-recent-file
+(use-package recentf
+  :straight nil
+  :init (recentf-mode 1)
+  :custom
+  (recentf-max-saved-items 300)
+  (recentf-save-file (expand-file-name "recentf" user-emacs-directory))
+  (recentf-exclude
+ (list (abbreviate-file-name (expand-file-name org-roam-directory))
+       (abbreviate-file-name (expand-file-name user-emacs-directory))
+       "/tmp/"
+       "\\.elc$"
+       "COMMIT_EDITMSG"
+       "\\.org_archive$"))
+  :config
+  (advice-add 'org-id-update-id-locations :around
+              (lambda (orig &rest args)
+                (let ((recentf-mode nil))
+                  (apply orig args)))))
+
 #+END_SRC
 
 ** Future enhancement Consult package: enhanced commands. :future:
@@ -552,6 +604,15 @@ Powerful, fast,and flexible search/navigation UI (search, buffer switch, etc.) f
 (use-package consult
   :straight t
   :after (vertico embark))  ; Defer config/bindings until dependencies are read
+
+  (defun my/consult-recent-org-file ()
+  "Find recently opened .org files via recentf."
+  (interactive)
+  (find-file
+   (completing-read "Recent org: "
+                    (seq-filter (lambda (f) (string-match-p "\\.org\\'" f))
+                                recentf-list)
+                    nil t)))
 #+END_SRC
 
 
@@ -928,6 +989,13 @@ If using AUCTeX for LaTeX exports, add reftex package.
   "Insert a timestamp in Org-mode format [YYYY-MM-DD Day HH:MM]"
   (interactive)
   (insert (format-time-string "[%Y-%m-%d %a %H:%M]")))
+;; M-Q: Join hard-wrapped paragraph into one line so visual-line-mode reflows to window width (opposite of M-q)
+(defun my/unfill-paragraph ()
+  "Join paragraph into one line. Opposite of M-q. Lets visual-line-mode reflow."
+  (interactive)
+  (let ((fill-column most-positive-fixnum))
+    (fill-paragraph nil)))
+(global-set-key (kbd "M-Q") #'my/unfill-paragraph)
 #+END_SRC
 
 * ACTIVE Keybindings

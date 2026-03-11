@@ -1,0 +1,56 @@
+# =====================================
+# Emacs autosaves & backups
+.autosaves/
+.backups/
+
+# Emacs lock & autosave temp files
+.#*
+*~
+\#*\#
+
+# Org-roam cache databases (regenerate locally)
+org-roam.db
+org-roam.sqlite
+
+# Org-mode export artifacts
+*.pdf
+*.html
+*.tex
+*.aux
+*.log
+*.out
+*.toc
+
+# LaTeX intermediate files
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+
+# Temporary system files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Org Babel / tangle temp
+*.org-tmp
+
+# Syncthing housekeeping (safe to ignore)
+.stfolder
+.stversions
+.syncthing.*
+
+# Vim / IDE temp files
+*.swp
+*.swo
+*.bak
+*.tmp
+*.lock
+
+# IDE / language-specific
+.idea/
+.vscode/
+*.pyc
+__pycache__/

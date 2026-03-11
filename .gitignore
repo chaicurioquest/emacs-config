@@ -1,22 +1,30 @@
-# Ignore everything expect the following
+# Ignore everything except tracked files
 *
 
-!.gitignore 
-!.filetags-org
-!config.org 
-!early-init.el 
-!init.el 
-!device.el 
+# Core config
+!.gitignore
+!config.org
+!early-init.el
+!init.el
+!device.el
 !README.md
-!org/ 
+!LICENSE
+
+# Org tangling outputs tracked in org/
+!org/
 !org/*.org
+
+# Templates and snippets — useful to others
 !template/
 !template/*
 !snippets/
 !snippets/org-mode/
 !snippets/org-mode/*
+
+# Source extras if any
 !src/
 !src/*
 
-
+# Syncthing ignore file
+!.stignore
 

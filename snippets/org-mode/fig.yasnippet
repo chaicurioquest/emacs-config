@@ -5,5 +5,5 @@
 # --
 #+NAME: `(org-auto-label "fig")`
 #+CAPTION: ${1:Caption here}
-#+ATTR_LATEX: :width 0.8\textwidth
-[[file:`(file-relative-name (read-file-name "Select image: " (file-name-directory (buffer-file-name))) (file-name-directory (buffer-file-name)))`]]
+#+ATTR_LATEX: :width 0.8\\textwidth
+[[file:`(file-relative-name (my/read-image-newest-first (expand-file-name "images/" (file-name-directory (buffer-file-name)))) (file-name-directory (buffer-file-name)))`]]
