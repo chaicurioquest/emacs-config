@@ -1,20 +1,20 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: %<%Y-%m-%d>
 #+FILETAGS: :daily:journal:
-#+OPTIONS: toc:nil
+
+#+OPTIONS: toc:nil num:2     
+
 #+ROAM_ALIASES:
 #+ROAM_REFS:
 #+CREATED: %U
 #+LAST_MODIFIED: %U
 
 * Morning Review
-** %<%H:%M> %?  ;; Intentions / top priorities / mood
+** %<%H:%M> %?
 
 * TODOs & Tasks
 - [ ]
 
 * Notes / Events
-;; Meetings, insights, random thoughts during the day
 
 * Evening Reflection
-;; Wins / challenges / what I learned / gratitude

@@ -37,8 +37,11 @@ Configure filetags for tag management with mutual exclusivity, used by org-roam 
 
 * Global Tag Files for Filetags Completion
 #+BEGIN_SRC emacs-lisp
-(setq filetags-tag-file "~/.emacs.d/.filetags"
-      filetags-extra-tag-files '("~/.emacs.d/.filetags-org"))
+;; .filetags lives in user-emacs-directory — portable across devices
+(setq filetags-tag-file
+      (expand-file-name ".filetags" user-emacs-directory)
+      filetags-extra-tag-files
+      (list (expand-file-name ".filetags-org" user-emacs-directory)))
 #+END_SRC
 
 * ACTIVE Tag Management
@@ -46,23 +49,30 @@ This section manages global and Org-specific tags using `.filetags` and `.fileta
 
 #+BEGIN_SRC emacs-lisp
 (defun my-org--filetags-path ()
-  "Return the path to the active global .filetags file."
-  (let ((link (expand-file-name ".filetags" user-emacs-directory)))
+  "Return path to the active .filetags file for the current device.
+Checks user-emacs-directory first (symlink or real file), then
+falls back to device-specific default location."
+  (let ((emacs-link (expand-file-name ".filetags" user-emacs-directory)))
     (cond
-     ((file-symlink-p link) (file-truename link))
-     ((file-exists-p link) link)
-     ((eq my-device 'laptop) (expand-file-name "~/.filetags"))
-     ((eq my-device 'termux) (expand-file-name "~/storage/shared/.filetags"))
-     ((eq my-device 'tablet) (expand-file-name "~/path/to/tablet/.filetags"))
+     ;; Symlink in emacs.d -> resolve to real file
+     ((file-symlink-p emacs-link) (file-truename emacs-link))
+     ;; Real file already in emacs.d
+     ((file-exists-p emacs-link) emacs-link)
+     ;; Device-specific fallback locations
+     ((eq my-device 'laptop)  (expand-file-name "~/.filetags"))
+     ((eq my-device 'tablet)  (expand-file-name ".filetags" my/notes-root-dir))
+     ((eq my-device 'phone)   (expand-file-name "storage/shared/.filetags"
+                                                 (getenv "HOME")))
      (t (expand-file-name "~/.filetags")))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
 (defun my-org-read-filetags ()
   "Read and return a list of tags from both global and extra .filetags files.
-Note: Per Karl Voit's guidelines, multiple tags per line are mutual exclusive,
-but this parser treats them as individual for flat completion."
-  (let ((files (cons (my-org--filetags-path) filetags-extra-tag-files))
+Per Karl Voit's guidelines, multiple tags per line are mutually exclusive,
+but parsed here as individual tags for flat completion."
+  (let ((files (cons (my-org--filetags-path)
+                     filetags-extra-tag-files))
         (tags '()))
     (dolist (file files)
       (when (file-exists-p file)
@@ -70,8 +80,9 @@ but this parser treats them as individual for flat completion."
           (insert-file-contents file)
           (goto-char (point-min))
           (while (not (eobp))
-            (let* ((line (buffer-substring-no-properties
-                          (line-beginning-position) (line-end-position)))
+            (let* ((line  (buffer-substring-no-properties
+                           (line-beginning-position)
+                           (line-end-position)))
                    (clean (car (split-string line "#")))
                    (words (split-string (string-trim clean) "\\s-+" t)))
               (dolist (tag words)
@@ -82,22 +93,21 @@ but this parser treats them as individual for flat completion."
 
 #+BEGIN_SRC emacs-lisp
 (defun my-org-set-filetags ()
-  "Interactively assign multiple tags from .filetags to the current Org heading."
+  "Interactively assign tags from .filetags to the current Org heading.
+Uses completing-read-multiple (Vertico/orderless aware)."
   (interactive)
   (require 'org)
-  (let* ((all-tags (my-org-read-filetags))
-         (current-tags (org-get-tags nil t))
-         (completion-function
-          (if (and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
-              (lambda (prompt choices)
-                (completing-read-multiple prompt choices nil t (mapconcat 'identity current-tags ",")))
-            'completing-read-multiple))
-         (selected-tags (funcall completion-function "Select tags (comma-separated): " all-tags)))
+  (let* ((all-tags      (my-org-read-filetags))
+         (current-tags  (org-get-tags nil t))
+         (selected-tags (completing-read-multiple
+                         "Select tags: "
+                         all-tags nil nil
+                         (mapconcat #'identity current-tags ","))))
     (org-set-tags selected-tags)))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-c f t") 'my-org-set-filetags)
+(global-set-key (kbd "C-c f t") #'my-org-set-filetags)
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp

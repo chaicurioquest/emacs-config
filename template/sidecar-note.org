@@ -4,16 +4,12 @@
 :END:
 #+SETUPFILE: ${setupfile}
 #+TITLE: %^{Title}
-#+AUTHOR: %^{Author}
-#+DATE: %<%Y-%m-%d>
-#+FILETAGS: :%^{Tags|semiconductors:tools:presentations}:
-# ALERT: yes
+#+FILETAGS: :%^{Tags|semiconductors:tools}:
+
 #+OPTIONS: toc:nil num:2
 #+PROPERTY: header-args :eval never-export
-#+BIBLIOGRAPHY: ${bib-path}
-#+CITE_EXPORT: biblatex authoryear
-#+ROAM_ALIASES:
-#+ROAM_REFS:
+#+LATEX_HEADER: \renewcommand{\makeglossaries}{}
+
 #+CREATED: %U
 #+LAST_MODIFIED: %U
 
@@ -24,7 +20,5 @@
 %?
 
 * Key Concepts
-** Concept 1
-** Concept 2
 
 * Annotations

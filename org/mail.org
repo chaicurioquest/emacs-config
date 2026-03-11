@@ -9,102 +9,100 @@
 
 
 #+BEGIN_SRC emacs-lisp
-;; Load personal secrets (git-ignored file; no error if missing)
-(load (expand-file-name "secrets.el" user-emacs-directory) t t) ;; t t = no error, no message
+;; my-maildir and user-mail-address are defined in private.el
+;; which is loaded early in config.el before this file.
 
-(defvar my-maildir (expand-file-name "~/maildir/mbsync/gmail")
-  "Root Maildir mirrored by mbsync.")
-
-;; Add mu4e load-path from source install (adjust if not /usr/local/)
+;; mu4e load-path from source install
 (add-to-list 'load-path "/usr/local/share/emacs/site-lisp/mu4e")
 
-;; Only configure mu4e if mu is available
-(when (executable-find "mu")
-  ;; Set core vars EARLY (global, before mu4e load/validation/timers)
-  (setq mu4e-maildir my-maildir
-        mu4e-create-maildir-if-needed nil ;; NO prompts for missing folders
-        mu4e-get-mail-command "true" ;; No-op for timers (prevents "not defined" error)
-        mu4e-update-interval 0 ;; Disable timers
-        mu4e-headers-auto-update nil ;; No header auto-refresh
-        mu4e-view-prefer-html t
+;; Only configure if on laptop, mu is available, and my-maildir is defined
+(when (and (eq my-device 'laptop)
+           (executable-find "mu")
+           (boundp 'my-maildir))
+
+;; Set core vars EARLY — before mu4e load/validation/timers
+  (setq mu4e-maildir                my-maildir
+        mu4e-create-maildir-if-needed nil
+        mu4e-get-mail-command       "true"
+        mu4e-update-interval        0
+        mu4e-headers-auto-update    nil
+        mu4e-view-prefer-html       t
         mu4e-headers-include-related t
-        mu4e-view-show-images t
-        mu4e-inbox-folder "/INBOX") ;; Explicit for Gmail structure
+        mu4e-view-show-images       t
+        mu4e-inbox-folder           "/INBOX")
+
   (message "mail.el: mu4e-maildir set to %s" mu4e-maildir)
-  ;; Configure mu4e details
-  (use-package mu4e
-    :straight nil ; mu4e comes from mu installation; keep nil if provided by system
-    ;; No :defer t: Load immediately for early config application
+
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+(use-package mu4e
+    :straight nil
     :config
-    ;; Post-load folder paths (RELATIVE: mu4e prefixes with mu4e-maildir)
-    ;; Matches .mbsyncrc Patterns: INBOX, [Gmail]/Sent Mail, etc.
-    (setq mu4e-sent-folder "/[Gmail]/Sent Mail"
+    (setq mu4e-sent-folder   "/[Gmail]/Sent Mail"
           mu4e-drafts-folder "/[Gmail]/Drafts"
-          mu4e-trash-folder "/[Gmail]/Bin"
+          mu4e-trash-folder  "/[Gmail]/Bin"
           mu4e-maildir-shortcuts
-          '(("/INBOX" . ?i)
-            ("/[Gmail]/Sent Mail" . ?s)
-            ("/[Gmail]/Bin" . ?t)
-            ("/[Gmail]/Drafts" . ?d)))
-    ;; Cancel any existing refresh timer to prevent get-mail-command error
+          '(("/INBOX"              . ?i)
+            ("/[Gmail]/Sent Mail"  . ?s)
+            ("/[Gmail]/Bin"        . ?t)
+            ("/[Gmail]/Drafts"     . ?d)))
+
+    ;; Cancel refresh timer — using mbsync externally
     (when (boundp 'mu4e~refresh-timer)
       (cancel-timer mu4e~refresh-timer)
       (setq mu4e~refresh-timer nil)
-      (message "mu4e: Disabled refresh timer (using mbsync)"))))
+      (message "mail.el: mu4e refresh timer disabled (using mbsync)")))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-;; mu4e-org integration and capture template
-(use-package mu4e-org
-  :defer t
-  :after mu4e)
-  (message "Default dir: %s" default-directory)
-(with-eval-after-load 'mu4e-view
-  ;; store message meta and prompt capture quickly
-  (define-key mu4e-view-mode-map (kbd "C-c C-c") #'mu4e-org-store-and-capture))
+;; mu4e-org integration
+  (use-package mu4e-org
+    :defer t
+    :after mu4e)
+
+  (with-eval-after-load 'mu4e-view
+    (define-key mu4e-view-mode-map (kbd "C-c C-c") #'mu4e-org-store-and-capture))
+
 ;; Org capture template for mu4e messages
-(with-eval-after-load 'org
-  (require 'org-capture) ;; Ensure org-capture.el is loaded (defines org-capture-templates)
-  ;; Safely append to org-capture-templates (default to nil if unbound)
-  (let ((existing-templates (if (boundp 'org-capture-templates) org-capture-templates nil)))
+  (with-eval-after-load 'org
+    (require 'org-capture)
     (setq org-capture-templates
-          (append existing-templates
+          (append (bound-and-true-p org-capture-templates)
                   `(("m" "Email task (mu4e)" entry
-                     (file+headline, (expand-file-name "inbox.org" default-directory)"Emails")
-                     "* TODO [#A] %:subject :email:\n:PROPERTIES:\n:From: %:from\n:Message-ID: %:message-id\n:Mu4e-Message: %:id\n:END:\nLink: [[mu4e:msgid:%:message-id][Open email]]\n%?\n"
-                     :empty-lines 1 :prepend t))))))
+                     (file+headline ,(expand-file-name "inbox.org" my/notes-root-dir) "Emails")
+                     "* TODO [#A] %:subject :email:\n:PROPERTIES:\n:From: %:from\n:Message-ID: %:message-id\n:END:\nLink: [[mu4e:msgid:%:message-id][Open email]]\n%?\n"
+                     :empty-lines 1 :prepend t)))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-;; mu4e-alert + org-alert orchestration
-(use-package mu4e-alert
-  :straight (:host github :repo "iqbalansari/mu4e-alert") ;; Explicit for reliability
-  :defer t
-  :after mu4e
-  :config
-  ;; enable mode-line count and libnotify style
-  (mu4e-alert-enable-mode-line-display)
-  (mu4e-alert-set-default-style 'libnotify)
-  ;; tune: only notify for INBOX (or change to your preference)
-  (setq mu4e-alert-interesting-mail-query "maildir:/INBOX AND flag:unread")
-  ;; update frequency (optional): refresh mu4e-alert at interval (guard if mu4e active)
-  (when (and (boundp 'mu4e-maildir)
-             (fboundp 'mu4e-alert-refresh)
-             (not (zerop mu4e-update-interval))) ;; Already 0, so skips—fine for mbsync
-    (run-with-timer 10 300 #'mu4e-alert-refresh)))
-;; org-alert is already configured in your org config; make sure it doesn't double-notify.
-;; Add a guard: only enable mu4e-alert notifications if not on mobile device
-(with-eval-after-load 'org
-  (defun my-mu4e-alert-enable-guard ()
-    "Enable mu4e-alert notifications only for laptop devices."
-    (when (eq my-device 'laptop)
-      (require 'mu4e-alert)
-      (mu4e-alert-enable-notifications)))
-  (add-hook 'after-init-hook #'my-mu4e-alert-enable-guard))
-;; Compose/send: use msmtp (already configured in your setup)
-(with-eval-after-load 'message
-  (setq message-send-mail-function 'message-send-mail-with-sendmail
-        sendmail-program "/usr/bin/msmtp"
-        message-sendmail-extra-arguments '("--read-envelope-from")
-        message-sendmail-f-is-evil t))
+;; mu4e-alert — notifications for unread INBOX (laptop only)
+  (use-package mu4e-alert
+    :straight (:host github :repo "iqbalansari/mu4e-alert")
+    :defer t
+    :after mu4e
+    :config
+    (mu4e-alert-enable-mode-line-display)
+    (mu4e-alert-set-default-style 'libnotify)
+    (setq mu4e-alert-interesting-mail-query "maildir:/INBOX AND flag:unread"))
+
+  (with-eval-after-load 'org
+    (defun my/mu4e-alert-enable ()
+      "Enable mu4e-alert notifications on laptop only."
+      (when (eq my-device 'laptop)
+        (require 'mu4e-alert)
+        (mu4e-alert-enable-notifications)))
+    (add-hook 'after-init-hook #'my/mu4e-alert-enable))
+
+;;; Outgoing mail via msmtp
+  (with-eval-after-load 'message
+    (setq message-send-mail-function        'message-send-mail-with-sendmail
+          sendmail-program                  "/usr/bin/msmtp"
+          message-sendmail-extra-arguments  '("--read-envelope-from")
+          message-sendmail-f-is-evil        t)))
+
+(message "Default dir: %s" default-directory)
+
+(provide 'mail)
+;;; mail.el ends here
 #+END_SRC

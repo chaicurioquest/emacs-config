@@ -1,13 +1,15 @@
 # -*- mode: snippet -*-
-# name: header-general
-# key: ohead
+# name: header-math
+# key: omhead
 # --
 #+SETUPFILE: `(identity setupfile)`
 #+TITLE: ${1:Document Title}
 #+FILETAGS: :${2:tag}:
 
 #+OPTIONS: toc:nil num:2
+#+STARTUP: latexpreview
 #+PROPERTY: header-args :eval never-export
+#+LATEX_HEADER: \renewcommand{\makeglossaries}{}
 
 #+CREATED: [`(format-time-string "%Y-%m-%d %a %H:%M")`]
 #+LAST_MODIFIED: [`(format-time-string "%Y-%m-%d %a %H:%M")`]

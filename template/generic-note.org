@@ -1,21 +1,15 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: %^{Title}
-#+DATE: \today
 #+FILETAGS: :%^{Tags|generic|note|project|idea}:
-# ALERT: yes
+
 #+OPTIONS: toc:nil num:2
 #+PROPERTY: header-args :eval never-export
-#+BIBLIOGRAPHY: ${bib-path}
-#+CITE_EXPORT: biblatex authoryear
-#+ROAM_ALIASES:
-#+ROAM_REFS:
+#+LATEX_HEADER: \renewcommand{\makeglossaries}{}
+
 #+CREATED: %U
 #+LAST_MODIFIED: %U
 
-* %?  ;; Main content starts here
-
-* Acronyms / Glossary (optional)
-# LATEX: \printglossaries
+* %?
 
 * References (optional)
-# LATEX: \printbibliography
+# #+print_bibliography:

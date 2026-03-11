@@ -1,18 +1,18 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: ${title}
 #+FILETAGS: :permanent:
-#+OPTIONS: toc:nil
+
+#+OPTIONS: toc:nil num:2      
+
 #+ROAM_ALIASES:
 #+ROAM_REFS:
 #+CREATED: %U
 #+LAST_MODIFIED: %U
 
 * Idea Summary
-%?  ;; Core idea / thesis in 2–5 sentences
+%?
 
 * Connections
-;; Link to related permanent / fleeting / literature notes
-;; e.g. [[id:uuid][Related Concept]]   [[file:../functional_blocks.org][Functional Blocks]]
 
 * References (optional)
 # #+print_bibliography:

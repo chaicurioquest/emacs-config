@@ -59,6 +59,11 @@
 ;; Customize preview image directory to use temp dir
 (setq org-preview-latex-image-directory (concat temporary-file-directory "ltximg/"))
 
+;; Auto-toggle LaTeX fragment preview: renders on cursor-leave, un-renders on cursor-enter
+(use-package org-fragtog
+  :straight t
+  :hook (org-mode . org-fragtog-mode))
+
 ;; ------------------------------
 ;; Labels and References
 ;; ------------------------------

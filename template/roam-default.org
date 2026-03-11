@@ -1,17 +1,18 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: ${title}
 #+FILETAGS: :default:
-#+OPTIONS: toc:nil
+
+#+OPTIONS: toc:nil num:2     
+
 #+ROAM_ALIASES:
 #+ROAM_REFS:
 #+CREATED: %U
 #+LAST_MODIFIED: %U
 
 * Overview
-%?  ;; One-paragraph summary or purpose of the note
+%?
 
 * Details
-;; Main content, explanations, examples, data, code blocks, etc.
 
 * References (optional)
 # #+print_bibliography:

@@ -1,9 +1,9 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: ${title}
+
 #+FILETAGS: :journal:
 #+OPTIONS: toc:nil
-#+BIBLIOGRAPHY: bib/references.bib  ;; only if not already in setupfile
-#+CITE_EXPORT: biblatex authoryear
+
 #+ROAM_ALIASES:
 #+ROAM_REFS:
 #+CREATED: %U

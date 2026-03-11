@@ -4,71 +4,83 @@
 #+PROPERTY: header-args:emacs-lisp :tangle yes
 #+DATE: 2025-12-01
 #+CREATED: %U
-#+LAST_MODIFIED: [2026-02-07 Fri 06:56]
+#+LAST_MODIFIED: [2026-03-11 Wed 23:41]
 
 * Keymaps and global bindings
 
-This file centralises prefix maps and global keybindings. It assumes the corresponding commands (functions) are defined in other modules
-(e.g. config.el, orgxtn.el, notextn.el, roam.el, etc.).
+This file centralises prefix maps and global keybindings. Commands are
+defined in other modules (config.el, orgxtn.el, notextn.el, roam.el, etc.).
 
-* Keymap Reference :keymaps:
+* Keymap Reference                                                :keymaps:
 
-| Prefix / Key       | Command                                      | Description                                           | Scope / Notes          |
-|--------------------|----------------------------------------------|-------------------------------------------------------|------------------------|
-| **C-c i** (prefix) | —                                            | Citations, literature notes, timestamps, PDF tools    | Main bib & note workflow |
-| C-c i c            | citar-insert-citation                        | Insert citation @key                                  | Org-mode               |
-| C-c i C            | citar-insert-citation                        | Same as above (Shift for muscle memory)               | Org-mode               |
-| C-c i r            | citar-insert-reference                       | Insert formatted reference                            | Org-mode               |
-| C-c i k            | citar-insert-keys                            | Insert bare citation keys                             | Org-mode               |
-| C-c i n            | citar-create-note                            | Create new blank literature note                      | Any mode               |
-| C-c i N            | citar-open-note                              | Open/create note for citation at point                | Any mode               |
-| C-c i C-n          | citar-open-notes                             | Choose any entry → open its note                      | Any mode               |
-| C-c i o            | citar-open                                   | Open PDF/link/website                                 | Any mode               |
-| C-c i O            | citar-open-files                             | Open all attached files                               | Any mode               |
-| C-c i a            | my/open-pdf-and-note                         | Open PDF + start org-noter session                    | Any mode               |
-| C-c i p            | my/pdf-view-fit-height                       | Fit PDF to window height                              | PDF buffer             |
-| C-c i s            | my/save-pdf-region-to-datestamp              | Save PDF region as image (rectangular with Shift)     | PDF buffer             |
-| C-c i S            | my/save-pdf-region-to-datestamp (rect)       | Rectangular region save                               | PDF buffer             |
-| C-c i t            | my-insert-timestamp                          | Insert YYYY-MM-DD HH:MM:SS                            | Any mode               |
-| C-c i d            | my-insert-datestamp                          | Insert YYYY-MM-DD                                     | Any mode               |
-| C-c i o            | my-insert-org-timestamp                      | Insert [YYYY-MM-DD Day HH:MM]                         | Org-mode               |
-| C-c i i            | org-toggle-item                              | Toggle item/bullet in Org                             | Org-mode               |
-| C-c i R            | my-org-refile-to-tag-targets                 | Refile to :TAG_TARGET: headings (new: 2026-02-18)     | Org-mode               |
-| **C-c r** (prefix) | —                                            | Org-Roam navigation, capture, dailies                 | Roam workflow          |
-| C-c r f            | org-roam-node-find                           | Find node by title/tags/ID                            | Any mode               |
-| C-c r i            | org-roam-node-insert                         | Insert link to node                                   | Org-mode               |
-| C-c r n            | org-roam-capture                             | Capture new note                                      | Any mode               |
-| C-c r d            | org-roam-dailies-capture-today               | Capture daily note                                    | Any mode               |
-| C-c r T            | org-roam-dailies-goto-today                  | Goto today's daily                                    | Any mode               |
-| C-c r P            | org-roam-dailies-goto-previous-note          | Goto previous daily                                   | Any mode               |
-| C-c r N            | org-roam-dailies-goto-next-note              | Goto next daily                                       | Any mode               |
-| C-c r D            | org-roam-dailies-goto-date                   | Goto specific date daily                              | Any mode               |
-| C-c r t            | my-org-roam-tag-add                          | Add tag from .filetags                                | Org-mode               |
-| C-c r r            | my-org-roam-tag-remove                       | Remove tag                                            | Org-mode               |
-| C-c r s            | my/org-roam-safe-rebuild                     | Safe DB rebuild                                       | Any mode               |
-| C-c r g            | org-roam-ui-open                             | Open graph UI (laptop only)                           | Laptop                 |
-| C-c r x            | my/org-insert-transclude-from-id-with-front-author | Insert transclusion (new: 2026-02-18)           | Org-mode               |
-| **C-c g** (prefix) | —                                            | Git operations on Org notes                           | Git workflow           |
-| C-c g p            | magit-pull-org-repo                          | Pull Org repo                                         | Any mode               |
-| C-c g u            | magit-push-org-repo                          | Push Org repo                                         | Any mode               |
-| **Global**         |                                              |                                                       |                        |
-| C-c t              | my-tangle-config-org                         | Tangle current .org file                              | Org-mode               |
-| C-c T              | my-tangle-all                                | Tangle all modular .org files                         | Any mode               |
-| C-c c              | org-capture                                  | Org capture                                           | Any mode               |
-| C-c a              | org-agenda                                   | Org agenda                                            | Any mode               |
-| C-c v              | my/org-pdf-vertical-view                     | Open PDF vertically                                   | Org-mode               |
-| C-c f t            | my-org-set-filetags                          | Set filetags                                          | Org-mode               |
-| C-x g              | magit-status                                 | Magit status                                          | Any mode               |
-| C-c m              | mu4e                                         | Open mu4e (laptop only)                               | Laptop                 |
-| C-z                | undo                                         | Undo (simple)                                         | Any mode               |
-| M-o                | ace-window                                   | Switch windows                                        | Any mode               |
-| TAB (in Org)       | my/org-smart-tab                             | Yasnippet → CDLaTeX → Org-cycle                       | Org-mode               |
-| C-s                | consult-line                                 | Search line (Consult)                                 | Any mode               |
-| C-c h              | consult-org-heading                          | Search Org headings                                   | Org-mode               |
-| C-c k              | consult-ripgrep                              | Ripgrep search                                        | Any mode               |
-| C-c b              | consult-buffer                               | Switch buffer                                         | Any mode               |
-| C-c p              | consult-find                                 | Find file                                             | Any mode               |
-| C-c C-c (mu4e)     | mu4e-org-store-and-capture                   | Capture email to Org                                  | mu4e-view              |
+| Prefix / Key   | Command                                      | Description                             | Scope         |
+|----------------+----------------------------------------------+-----------------------------------------+---------------|
+| C-c i          | —                                            | Citations · PDF · Timestamps (prefix)   | Main workflow |
+| C-c i c        | citar-insert-citation                        | Insert citation @key                    | org-mode      |
+| C-c i C        | citar-insert-citation                        | Same (Shift variant for muscle memory)  | org-mode      |
+| C-c i r        | citar-insert-reference                       | Insert formatted reference              | org-mode      |
+| C-c i k        | citar-insert-keys                            | Insert bare citation keys               | org-mode      |
+| C-c i n        | citar-create-note                            | Create new blank literature note        | Any mode      |
+| C-c i N        | citar-open-note                              | Open/create note for citation at point  | Any mode      |
+| C-c i C-n      | citar-open-notes                             | Choose any entry → open its note       | Any mode      |
+| C-c i o        | citar-open                                   | Open PDF / link / website               | Any mode      |
+| C-c i O        | citar-open-files                             | Open all attached files                 | Any mode      |
+| C-c i a        | my/open-pdf-and-note                         | Open PDF + start org-noter session      | Any mode      |
+| C-c i g        | my/open-pdf-and-note 'generic                | Same, generic (no special handling)     | Any mode      |
+| C-c i p        | my/pdf-insert-selection-to-note              | Insert selected PDF text into note      | pdf-view-mode |
+| C-c i A        | org-noter-pdftools-insert-annotations        | Insert PDF annotations into note        | pdf-view-mode |
+| C-c i s        | my/pdf-screenshot-region-and-save            | Save PDF region as image → insert      | pdf-view-mode |
+| C-c i S        | my/pdf-extract-whole-page-and-save           | Save whole PDF page as image → insert  | pdf-view-mode |
+| C-c i b        | my/open-calibre-book-and-note                | Open Calibre book + note                | Laptop only   |
+| C-c i t        | my-insert-timestamp                          | Insert ~YYYY-MM-DD HH:MM:SS~            | Any mode      |
+| C-c i d        | my-insert-datestamp                          | Insert ~YYYY-MM-DD~                     | Any mode      |
+| C-c i T        | my-insert-org-timestamp                      | Insert ~[YYYY-MM-DD Day HH:MM]~         | Any mode      |
+| C-c i i        | org-toggle-item                              | Toggle item/bullet in Org               | org-mode      |
+| C-c i R        | my-org-refile-to-tag-targets                 | Refile to :TAG_TARGET: headings         | org-mode      |
+| C-c i G        | org-glossary-mode                            | Toggle glossary mode                    | org-mode      |
+|----------------+----------------------------------------------+-----------------------------------------+---------------|
+| C-c r          | —                                            | Org-Roam navigation & dailies (prefix)  | Roam workflow |
+| C-c r f        | org-roam-node-find                           | Find node by title/tags/ID              | Any mode      |
+| C-c r i        | org-roam-node-insert                         | Insert link to node                     | org-mode      |
+| C-c r n        | org-roam-capture                             | Capture new note                        | Any mode      |
+| C-c r d        | org-roam-dailies-capture-today               | Capture daily note                      | Any mode      |
+| C-c r T        | org-roam-dailies-goto-today                  | Go to today's daily                     | Any mode      |
+| C-c r P        | org-roam-dailies-goto-previous-note          | Go to previous daily                    | Any mode      |
+| C-c r N        | org-roam-dailies-goto-next-note              | Go to next daily                        | Any mode      |
+| C-c r D        | org-roam-dailies-goto-date                   | Go to specific date daily               | Any mode      |
+| C-c r t        | my-org-roam-tag-add                          | Add tag from .filetags                  | org-mode      |
+| C-c r r        | my-org-roam-tag-remove                       | Remove tag                              | org-mode      |
+| C-c r s        | my/org-roam-safe-rebuild                     | Safe DB rebuild                         | Any mode      |
+| C-c r g        | org-roam-ui-open                             | Open graph UI                           | Laptop only   |
+| C-c r x        | my/org-insert-transclude-from-id-with-front-author | Insert transclusion            | org-mode      |
+|----------------+----------------------------------------------+-----------------------------------------+---------------|
+| C-c g          | —                                            | Git operations on Org notes (prefix)    | Git workflow  |
+| C-c g p        | magit-pull-org-repo                          | Pull Org repo                           | Any mode      |
+| C-c g u        | magit-push-org-repo                          | Push Org repo                           | Any mode      |
+|----------------+----------------------------------------------+-----------------------------------------+---------------|
+| C-c t          | my-tangle-config-org                         | Tangle config.org only                  | Any mode      |
+| C-c T          | my-tangle-all                                | Tangle all modular org files            | Any mode      |
+| C-c c          | org-capture                                  | Quick capture                           | Any mode      |
+| C-c a          | org-agenda                                   | Agenda view                             | Any mode      |
+| C-c v          | my/org-pdf-vertical-view                     | Side-by-side PDF preview                | Any mode      |
+| C-c f t        | my-org-set-filetags                          | Set file-level tags                     | org-mode      |
+| C-c h          | consult-org-heading                          | Search Org headings                     | Any mode      |
+| C-c k          | consult-ripgrep                              | Ripgrep full-text search                | Any mode      |
+| C-c b          | consult-buffer                               | Switch buffer                           | Any mode      |
+| C-c p          | consult-find                                 | Find file                               | Any mode      |
+| C-c R          | consult-recent-file                          | Open recent file                        | Any mode      |
+| C-c O          | my/consult-recent-org-file                   | Open recent .org file                   | Any mode      |
+| C-c m          | mu4e                                         | Open email                              | Laptop only   |
+| C-x C-b        | ibuffer                                      | Buffer list                             | Any mode      |
+| C-x g          | magit-status                                 | Full Magit status                       | Any mode      |
+| C-s            | consult-line                                 | Search lines in buffer                  | Global        |
+| C-s (PDF)      | isearch-forward                              | Incremental search in PDF               | pdf-view-mode |
+| C-r (PDF)      | isearch-backward                             | Reverse search in PDF                   | pdf-view-mode |
+| C-z            | undo                                         | Undo                                    | Any mode      |
+| M-o            | ace-window                                   | Fast window switching                   | Any mode      |
+| M-$            | flyspell-correct-word-before-point           | Spell correct word                      | Any mode      |
+| TAB (Org)      | my/org-smart-tab                             | Snippet → CDLaTeX → Org-cycle          | org-mode      |
+| C-c C-c (mu4e) | mu4e-org-store-and-capture                   | Capture email to Org                    | mu4e-view     |
 
 #+BEGIN_SRC emacs-lisp
 ;;; keymaps.el --- Central keymaps and global bindings -*- lexical-binding: t; -*-
@@ -81,7 +93,7 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
 (global-set-key (kbd "C-c i") my/citar-map)
 
 (defvar my/roam-map (make-sparse-keymap)
-  "Prefix C-c r → pure Org-roam navigation & dailies.")
+  "Prefix C-c r → Org-roam navigation & dailies.")
 (global-set-key (kbd "C-c r") my/roam-map)
 
 (defvar git-org-map (make-sparse-keymap)
@@ -91,54 +103,58 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
 ;; ─────────────────────────────────────────────────────────────
 ;; Global single-key bindings
 ;; ─────────────────────────────────────────────────────────────
-(global-set-key (kbd "C-c t") #'my-tangle-config-org)
-(global-set-key (kbd "C-c T") #'my-tangle-all)
-(global-set-key (kbd "C-c c") #'org-capture)
-(global-set-key (kbd "C-c a") #'org-agenda)
-(global-set-key (kbd "C-c v") #'my/org-pdf-vertical-view)
+(global-set-key (kbd "C-c t")   #'my-tangle-config-org)
+(global-set-key (kbd "C-c T")   #'my-tangle-all)
+(global-set-key (kbd "C-c c")   #'org-capture)
+(global-set-key (kbd "C-c a")   #'org-agenda)
+(global-set-key (kbd "C-c v")   #'my/org-pdf-vertical-view)
 (global-set-key (kbd "C-c f t") #'my-org-set-filetags)
-(global-set-key (kbd "C-x g") #'magit-status)
-(global-set-key (kbd "C-c m") #'mu4e)
-(global-set-key (kbd "C-z") #'undo)
-(global-set-key (kbd "M-o") #'ace-window)
+(global-set-key (kbd "C-x g")   #'magit-status)
+(global-set-key (kbd "C-c m")   #'mu4e)
+(global-set-key (kbd "C-z")     #'undo)
+(global-set-key (kbd "M-o")     #'ace-window)
 
 ;; ─────────────────────────────────────────────────────────────
 ;; C-c i → Citations, literature, timestamps, PDF tools
 ;; ─────────────────────────────────────────────────────────────
-;; Timestamps
+
+;; Timestamps — no package dependency, bind immediately
 (define-key my/citar-map (kbd "t") #'my-insert-timestamp)
 (define-key my/citar-map (kbd "d") #'my-insert-datestamp)
-(define-key my/citar-map (kbd "o") #'my-insert-org-timestamp)
+(define-key my/citar-map (kbd "T") #'my-insert-org-timestamp)  ; was "o" — fixed 2026-03-11
 
 ;; Core Citar actions
 (with-eval-after-load 'citar
-  (define-key my/citar-map (kbd "c") #'citar-insert-citation)   ; C-c i c
-  (define-key my/citar-map (kbd "C") #'citar-insert-citation)   ; Shift variant
-  (define-key my/citar-map (kbd "r") #'citar-insert-reference)
-  (define-key my/citar-map (kbd "k") #'citar-insert-keys)
-  (define-key my/citar-map (kbd "n") #'citar-create-note)
-  (define-key my/citar-map (kbd "N") #'citar-open-note)
+  (define-key my/citar-map (kbd "c")   #'citar-insert-citation)
+  (define-key my/citar-map (kbd "C")   #'citar-insert-citation)  ; Shift variant
+  (define-key my/citar-map (kbd "r")   #'citar-insert-reference)
+  (define-key my/citar-map (kbd "k")   #'citar-insert-keys)
+  (define-key my/citar-map (kbd "n")   #'citar-create-note)
+  (define-key my/citar-map (kbd "N")   #'citar-open-note)
   (define-key my/citar-map (kbd "C-n") #'citar-open-notes)
-  (define-key my/citar-map (kbd "O") #'citar-open-files))
+  (define-key my/citar-map (kbd "o")   #'citar-open)             ; added 2026-03-11
+  (define-key my/citar-map (kbd "O")   #'citar-open-files))
 
 ;; PDF + Org-noter annotation helpers
 (with-eval-after-load 'org-noter
   (define-key my/citar-map (kbd "a") #'my/open-pdf-and-note)
-  (define-key my/citar-map (kbd "g") (lambda () (interactive)
+  (define-key my/citar-map (kbd "g") (lambda ()
+                                       (interactive)
                                        (my/open-pdf-and-note 'generic)))
   (define-key my/citar-map (kbd "A") #'org-noter-pdftools-insert-annotations)
   (define-key my/citar-map (kbd "f") #'my/fix-duplicated-noter-paths))
 
-;; Glossary toggle — NEW (added 2026-02-18)
+;; Glossary toggle
 (with-eval-after-load 'org-glossary
-  (define-key my/citar-map (kbd "G") #'org-glossary-mode))      ; C-c i G
+  (define-key my/citar-map (kbd "G") #'org-glossary-mode))
 
 ;; PDF view bindings
 (with-eval-after-load 'pdf-view
+  (define-key pdf-view-mode-map (kbd "C-c i p") #'my/pdf-insert-selection-to-note)
   (define-key pdf-view-mode-map (kbd "C-c i s") #'my/pdf-screenshot-region-and-save)
-   (define-key pdf-view-mode-map (kbd "C-c i S") #'my/pdf-extract-whole-page-and-save)
-  (define-key pdf-view-mode-map (kbd "C-s") #'isearch-forward)
-  (define-key pdf-view-mode-map (kbd "C-r") #'isearch-backward))
+  (define-key pdf-view-mode-map (kbd "C-c i S") #'my/pdf-extract-whole-page-and-save)
+  (define-key pdf-view-mode-map (kbd "C-s")     #'isearch-forward)
+  (define-key pdf-view-mode-map (kbd "C-r")     #'isearch-backward))
 
 ;; Calibre (laptop only)
 (when (eq my-device 'laptop)
@@ -159,8 +175,7 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
   (define-key my/roam-map (kbd "t") #'my-org-roam-tag-add)
   (define-key my/roam-map (kbd "r") #'my-org-roam-tag-remove)
   (define-key my/roam-map (kbd "s") #'my/org-roam-safe-rebuild)
-  ;; Transclude — NEW (added 2026-02-18)
-  (define-key my/roam-map (kbd "x") #'my/org-insert-transclude-from-id-with-front-author)  ; C-c r x
+  (define-key my/roam-map (kbd "x") #'my/org-insert-transclude-from-id-with-front-author)
   (when (eq my-device 'laptop)
     (define-key my/roam-map (kbd "g") #'org-roam-ui-open)))
 
@@ -174,10 +189,9 @@ This file centralises prefix maps and global keybindings. It assumes the corresp
 ;; Org-mode local overrides
 ;; ─────────────────────────────────────────────────────────────
 (with-eval-after-load 'org
-  (define-key org-mode-map (kbd "TAB") #'my/org-smart-tab)
+  (define-key org-mode-map (kbd "TAB")    #'my/org-smart-tab)
   (define-key org-mode-map (kbd "C-c i i") #'org-toggle-item)
-  ;; Tag-target refile — NEW (added 2026-02-18)
-  (define-key org-mode-map (kbd "C-c i R") #'my-org-refile-to-tag-targets))  ; C-c i R
+  (define-key org-mode-map (kbd "C-c i R") #'my-org-refile-to-tag-targets))
 
 (with-eval-after-load 'mu4e-view
   (define-key mu4e-view-mode-map (kbd "C-c C-c") #'mu4e-org-store-and-capture))

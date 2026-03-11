@@ -17,30 +17,32 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 - *Synced*       · GitHub + Syncthing.
 - *Modular*      · All extensions live in org/*.org files.
 
-* My Digital Workflow :workflow:
-| Purpose                         | Solution                              | Notes (device-specific in brackets)                              | Keybindings                          |
-|---------------------------------|---------------------------------------|------------------------------------------------------------------|--------------------------------------|
-| Package management              | use-package + straight.el             | Lazy loading, reproducible installs (all devices)                | —                                    |
-| Filter Org headings             | sparse trees                          | Built-in Org (all devices)                                       | C-c /                                |
-| Focus on subtree                | org-tree-to-indirect-buffer           | Built-in Org (all devices)                                       | C-c C-x b                            |
-| Completion & search             | vertico + orderless                   | Fast, fuzzy, vertical UI (all devices)                           | —                                    |
-| Buffer switching                | ibuffer                               | Better than default list (all devices)                           | C-x C-b                              |
-| Insert timestamps               | custom functions                      | Various formats (all devices)                                    | C-c i t/d/o                          |
-| Export to PDF                   | Org → LaTeX (AUCTeX)                  | pdf-tools for viewing (laptop preferred)                         | C-c C-e l p                          |
-| Encrypt sections                | org-crypt                             | GPG-encrypted headings (all devices)                             | —                                    |
-| Snippet management              | yankpad + yasnippet                   | Org-style snippets (all devices)                                 | C-c y / C-c Y                        |
-| Spell checking                  | flyspell + Hunspell                   | UK English dictionary (all devices)                              | M-$                                  |
-| PDF viewing & annotation        | pdf-tools + org-noter                 | Highlighting & synced notes (laptop preferred)                   | M-x org-noter                        |
-| PDF side-by-side preview        | my/org-pdf-vertical-view              | Quick reference while writing (all devices)                      | C-c v                                |
-| Zettelkasten / note-taking      | org-roam                              | Dailies, backlinks, UI on laptop                                 | C-c r n/f/i/d/T/P/N/D/t/r/s/g        |
-| Bibliography & citations        | citar + org-roam integration          | Zotero sync, literature notes in roam (all devices)              | C-c i c/n/N/o/O                      |
-| File-level tags                 | filetags                              | Vertico-powered tag completion (all devices)                     | C-c f t                              |
-| Config tangling                 | org-babel-tangle + custom helpers     | Single or all files (all devices)                                | C-c t / C-c T                        |
-| Quick capture                   | org-capture                           | Templates for notes/tasks (all devices)                          | C-c c                                |
-| Toggle list items               | org-toggle-item                       | Convert text ↔ list (all devices)                                | C-c i i                              |
-| Window navigation               | windmove + winner-mode + ace-window   | Move, undo/redo, jump (all devices)                              | Shift+Arrow / M-o                    |
-| Execute code blocks             | Org Babel                             | Run shell/LaTeX/Python inline (all devices)                      | C-c C-c                              |
-| Git sync for notes              | Magit                                 | Pull/push repo changes (all devices)                             | C-c g p / u                          |
+* My Digital Workflow                                              :workflow:
+| Purpose                    | Solution                          | Notes                                          | Keybindings          |
+|----------------------------+-----------------------------------+------------------------------------------------+----------------------|
+| Package management         | use-package + straight.el         | Lazy loading, reproducible installs            | —                    |
+| Filter Org headings        | sparse trees                      | Built-in Org (all devices)                     | C-c /                |
+| Focus on subtree           | org-tree-to-indirect-buffer       | Built-in Org (all devices)                     | C-c C-x b            |
+| Completion & search        | vertico + orderless               | Fast, fuzzy, vertical UI (all devices)         | —                    |
+| Buffer switching           | ibuffer                           | (all devices)                                  | C-x C-b              |
+| Insert timestamps          | custom functions                  | Plain / date / Org format (all devices)        | C-c i t / d / T      |
+| Open PDF / bib entry       | citar-open                        | PDF, link, or website (all devices)            | C-c i o              |
+| Export to PDF              | Org → LaTeX (AUCTeX)              | pdf-tools for viewing (laptop preferred)       | C-c C-e l p          |
+| Encrypt sections           | org-crypt                         | GPG-encrypted headings (all devices)           | —                    |
+| Snippet management         | yankpad + yasnippet               | Org-style snippets (all devices)               | C-c y / C-c Y        |
+| Spell checking             | flyspell + Hunspell               | UK English dictionary (all devices)            | M-$                  |
+| PDF viewing & annotation   | pdf-tools + org-noter             | Highlighting & synced notes (laptop preferred) | C-c i a              |
+| PDF side-by-side preview   | my/org-pdf-vertical-view          | Quick reference while writing (all devices)    | C-c v                |
+| Save PDF region as image   | my/save-pdf-region-to-datestamp   | Rectangular or freeform (pdf-view-mode)        | C-c i s / S          |
+| Zettelkasten / notes       | org-roam                          | Dailies, backlinks, graph UI (laptop)          | C-c r n/f/i/d/T/P/N/D|
+| Bibliography & citations   | citar + org-roam                  | Zotero sync, literature notes (all devices)    | C-c i c/n/N/o/O      |
+| File-level tags            | filetags                          | Vertico-powered completion (all devices)       | C-c f t              |
+| Config tangling            | org-babel-tangle + helpers        | Single or all files (all devices)              | C-c t / C-c T        |
+| Quick capture              | org-capture                       | Templates for notes/tasks (all devices)        | C-c c                |
+| Toggle list items          | org-toggle-item                   | Convert text ↔ list (all devices)             | C-c i i              |
+| Window navigation          | windmove + winner-mode + ace      | Move, undo/redo, jump (all devices)            | Shift+Arrow / M-o    |
+| Execute code blocks        | Org Babel                         | Run shell/LaTeX/Python inline (all devices)    | C-c C-c              |
+| Git sync for notes         | Magit                             | Pull/push repo changes (all devices)           | C-c g p / u          |
 
 * ACTIVE Core Setup
 
@@ -75,7 +77,6 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 ;;                 (message "ORG-OPEN: %s\nCALLER:\n%s"
 ;;                          filename
 ;;                          (with-output-to-string (backtrace))))))
-
 #+END_SRC
 
 ** Disable startup screen.
@@ -93,18 +94,24 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 (setq straight-vc-git-default-clone-depth 1)  ; shallow clones = faster + less noise
 #+END_SRC
 
-** Load device detection (with fallback)
+** Bootstrap: Device Identity and Private Config
 #+BEGIN_SRC emacs-lisp
+;; 1. Device detection
 (condition-case err
     (load (expand-file-name "device.el" user-emacs-directory))
   (error (message "Failed to load device.el: %S" err)))
 
-;; Fallback if device.el missing or failed
+;; 2. Fallback — must run before ANYTHING that uses my-device
 (unless (boundp 'my-device)
   (defvar my-device 'laptop)
   (message "my-device not set → defaulting to 'laptop"))
 
 (message "Device: %s" my-device)
+
+;; 3. Private identity — loaded AFTER my-device is guaranteed set
+;; Contains ONLY: user-full-name, user-mail-address, mu4e credentials.
+;; Never put package config here — use workflow.el etc. instead.
+(load (expand-file-name "private.el" user-emacs-directory) t t)
 #+END_SRC
 
 ** Set default directory per device.
@@ -167,12 +174,13 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
               (file-newer-than-file-p org-full el-full))
       (require 'org)
       (let ((was-open (find-buffer-visiting org-full))
-            (recentf-mode nil))          ; ← suppress recentf during tangle
+            (recentf-mode nil))          ; suppress recentf during tangle
         (org-babel-tangle-file org-full el-full "emacs-lisp")
+        (set-file-times el-full)  ; stamps el AFTER tangle wins mtime rac
         (unless was-open
           (when-let (b (find-buffer-visiting org-full))
             (with-current-buffer b
-              (set-buffer-modified-p nil)) ; ← prevent "modified buffer" kill prompt
+              (set-buffer-modified-p nil)) ;  prevent "modified buffer" kill prompt
             (kill-buffer b))))
       (message "Tangled: %s → %s" org-file el-file))))
 #+END_SRC
@@ -249,65 +257,75 @@ plus recursive .org files from the 'roam' subdirectory, excluding unwanted dirs.
 #+END_SRC
 
 * ACTIVE Package Management
-Configure package managers and lightweight, universal packages with lazy loading.
-Heavy or laptop-specific packages are in org/workflows.org; org-roam and bibliographic tools in org/roam.org; filetags in org/filetags.org.
+Configure package managers and lightweight universal packages with lazy loading.
+Heavy/laptop-specific packages → =org/workflow.org=; Roam/bib → =org/roam.org=; filetags → =org/filetags.org=.
 
-| Prefix / Key  | Command                               | Description                                          | Scope / Notes            |
-| ------------- | ------------------------------------- | ---------------------------------------------------- | ------------------------ |
-| C-c i(prefix) | —                                     | Citations, literature notes, timestamps, PDF tools   | Main bib & note workflow |
-| C-c i c       | citar-insert-citation                 | Insert citation @key                                 | Org-mode                 |
-| C-c i C       | citar-insert-citation                 | Same as above (Shift for muscle memory)              | Org-mode                 |
-| C-c i r       | citar-insert-reference                | Insert formatted reference                           | Org-mode                 |
-| C-c i k       | citar-insert-keys                     | Insert bare citation keys                            | Org-mode                 |
-| C-c i n       | citar-create-note                     | Create new blank literature note                     | Any mode                 |
-| C-c i N       | citar-open-note                       | Open/create note for citation at point               | Any mode                 |
-| C-c i C-n     | citar-open-notes                      | Choose any entry → open its note                     | Any mode                 |
-| C-c i o       | citar-open                            | Open PDF/link/website                                | Any mode                 |
-| C-c i O       | citar-open-files                      | Open all attached files                              | Any mode                 |
-| C-c i a       | my/open-pdf-and-note                  | Open PDF + start org-noter session                   | Any mode                 |
-| C-c i g       | my/open-pdf-and-note 'generic         | Same but generic (no special handling)               | Any mode                 |
-| C-c i p       | my/pdf-insert-selection-to-note       | Insert selected PDF text into note                   | pdf-view-mode            |
-| C-c i A       | org-noter-pdftools-insert-annotations | Insert PDF annotations into note                     | pdf-view-mode            |
-| C-c i b       | my/open-calibre-book-and-note         | Open Calibre book + note (laptop only)               | Laptop only              |
-| C-c i t       | my-insert-timestamp                   | Insert YYYY-MM-DD HH:MM:SS                           | Any mode                 |
-| C-c i d       | my-insert-datestamp                   | Insert YYYY-MM-DD                                    | Any mode                 |
-| C-c i o       | my-insert-org-timestamp               | Insert Org timestamp [YYYY-MM-DD Day HH:MM]          | Any mode                 |
-| C-c r(prefix) | —                                     | Pure Org-roam navigation & dailies                   | —                        |
-| C-c r f       | org-roam-node-find                    | Find node                                            | Org-mode                 |
-| C-c r i       | org-roam-node-insert                  | Insert node link                                     | Org-mode                 |
-| C-c r n       | org-roam-capture                      | Capture new node                                     | Org-mode                 |
-| C-c r d       | org-roam-dailies-capture-today        | Capture today’s daily                                | Org-mode                 |
-| C-c r T       | org-roam-dailies-goto-today           | Go to today’s daily                                  | Org-mode                 |
-| C-c r P       | org-roam-dailies-goto-previous-note   | Previous daily                                       | Org-mode                 |
-| C-c r N       | org-roam-dailies-goto-next-note       | Next daily                                           | Org-mode                 |
-| C-c r D       | org-roam-dailies-goto-date            | Go to specific date                                  | Org-mode                 |
-| C-c r t       | my-org-roam-tag-add                   | Add tag to node                                      | Org-mode                 |
-| C-c r r       | my-org-roam-tag-remove                | Remove tag from node                                 | Org-mode                 |
-| C-c r s       | my/org-roam-safe-rebuild              | Safe DB rebuild                                      | Org-mode                 |
-| C-c r g       | org-roam-ui-open                      | Open graph UI (laptop only)                          | Laptop only              |
-| C-c g(prefix) | —                                     | Git sync for Org notes                               | —                        |
-| C-c g p       | magit-pull-org-repo                   | Pull changes from repo                               | Any mode                 |
-| C-c g u       | magit-push-org-repo                   | Push changes to repo                                 | Any mode                 |
-| Consult keys  | —                                     | Global keys for enhanced completion and navigation   | Global                   |
-| C-s           | consult-line                          | Search lines                                         | Global (overridden in pdf-view-mode)                   |
-| C-c h         | consult-org-heading                   | Search org headings                                  | Global                   |
-| C-c k         | consult-ripgrep                       | Search with ripgrep                                  | Global                   |
-| C-c b         | consult-buffer                        | Switch buffer                                        | Global                   |
-| C-c p         | consult-find                          | Find files                                           | Global                   |
-| C-s (PDF)     | pdf-isearch-forward                   | Incremental text search in current PDF               | pdf-view-mode only       |
-| C-r (PDF)     | pdf-isearch-backward                  | Reverse incremental search in current PDF            | pdf-view-mode only       |
-| C-c t         | my-tangle-config-org                  | Tangle only config.org                               | Any mode                 |
-| C-c T         | my-tangle-all                         | Tangle all modular files                             | Any mode                 |
-| C-c c         | org-capture                           | Quick capture                                        | Any mode                 |
-| C-c a         | org-agenda                            | Agenda view                                          | Any mode                 |
-| C-c v         | my/org-pdf-vertical-view              | Side-by-side PDF preview                             | Any mode                 |
-| C-c f t       | my-org-set-filetags                   | Set file-level tags                                  | Org-mode                 |
-| C-x g         | magit-status                          | Full Magit status                                    | Any mode                 |
-| C-c m         | mu4e                                  | Open email (Mu4e)                                    | Any mode                 |
-| C-z           | undo                                  | Undo                                                 | Any mode                 |
-| M-o           | ace-window                            | Fast window switching                                | Any mode                 |
-| TAB (Org)     | my/org-smart-tab                      | Smart TAB (yasnippet / CDLaTeX / visibility cycling) | Org-mode                 |
-| C-c i i (Org) | org-toggle-item                       | Toggle list item                                     | Org-mode                 |
+| Prefix / Key  | Command                                | Description                                    | Scope                |
+|---------------+----------------------------------------+------------------------------------------------+----------------------|
+| C-c i         | —                                      | Citations · PDF · Timestamps (prefix)          | Main bib workflow    |
+| C-c i c       | citar-insert-citation                  | Insert citation @key                           | org-mode             |
+| C-c i C       | citar-insert-citation                  | Same (Shift variant for muscle memory)         | org-mode             |
+| C-c i r       | citar-insert-reference                 | Insert formatted reference                     | org-mode             |
+| C-c i k       | citar-insert-keys                      | Insert bare citation keys                      | org-mode             |
+| C-c i n       | citar-create-note                      | Create new blank literature note               | Any mode             |
+| C-c i N       | citar-open-note                        | Open/create note for citation at point         | Any mode             |
+| C-c i C-n     | citar-open-notes                       | Choose any entry → open its note              | Any mode             |
+| C-c i o       | citar-open                             | Open PDF / link / website                      | Any mode             |
+| C-c i O       | citar-open-files                       | Open all attached files                        | Any mode             |
+| C-c i a       | my/open-pdf-and-note                   | Open PDF + start org-noter session             | Any mode             |
+| C-c i g       | my/open-pdf-and-note 'generic          | Same, generic (no special handling)            | Any mode             |
+| C-c i p       | my/pdf-insert-selection-to-note        | Insert selected PDF text into note             | pdf-view-mode        |
+| C-c i A       | org-noter-pdftools-insert-annotations  | Insert PDF annotations into note               | pdf-view-mode        |
+| C-c i b       | my/open-calibre-book-and-note          | Open Calibre book + note                       | Laptop only          |
+| C-c i s       | my/save-pdf-region-to-datestamp        | Save PDF region as image → insert in note     | pdf-view-mode        |
+| C-c i S       | my/save-pdf-region-to-datestamp (rect) | Rectangular region save → insert in note      | pdf-view-mode        |
+| C-c i t       | my-insert-timestamp                    | Insert ~YYYY-MM-DD HH:MM:SS~                   | Any mode             |
+| C-c i d       | my-insert-datestamp                    | Insert ~YYYY-MM-DD~                            | Any mode             |
+| C-c i T       | my-insert-org-timestamp                | Insert ~[YYYY-MM-DD Day HH:MM]~                | Any mode             |
+| C-c i i       | org-toggle-item                        | Toggle list item                               | org-mode             |
+| C-c i R       | my/org-refile-by-tag                   | Refile heading to tag target                   | org-mode             |
+| C-c r         | —                                      | Org-Roam navigation & dailies (prefix)         | —                    |
+| C-c r f       | org-roam-node-find                     | Find node                                      | org-mode             |
+| C-c r i       | org-roam-node-insert                   | Insert node link                               | org-mode             |
+| C-c r n       | org-roam-capture                       | Capture new node                               | org-mode             |
+| C-c r d       | org-roam-dailies-capture-today         | Capture today's daily                          | org-mode             |
+| C-c r T       | org-roam-dailies-goto-today            | Go to today's daily                            | org-mode             |
+| C-c r P       | org-roam-dailies-goto-previous-note    | Previous daily                                 | org-mode             |
+| C-c r N       | org-roam-dailies-goto-next-note        | Next daily                                     | org-mode             |
+| C-c r D       | org-roam-dailies-goto-date             | Go to specific date                            | org-mode             |
+| C-c r t       | my-org-roam-tag-add                    | Add tag to node                                | org-mode             |
+| C-c r r       | my-org-roam-tag-remove                 | Remove tag from node                           | org-mode             |
+| C-c r s       | my/org-roam-safe-rebuild               | Safe DB rebuild                                | org-mode             |
+| C-c r g       | org-roam-ui-open                       | Open graph UI                                  | Laptop only          |
+| C-c g         | —                                      | Git sync for Org notes (prefix)                | —                    |
+| C-c g p       | magit-pull-org-repo                    | Pull changes from repo                         | Any mode             |
+| C-c g u       | magit-push-org-repo                    | Push changes to repo                           | Any mode             |
+| C-s           | consult-line                           | Search lines in buffer                         | Global               |
+| C-s (PDF)     | pdf-isearch-forward                    | Incremental text search in PDF                 | pdf-view-mode        |
+| C-r (PDF)     | pdf-isearch-backward                   | Reverse incremental search in PDF              | pdf-view-mode        |
+| C-c h         | consult-org-heading                    | Search org headings                            | Global               |
+| C-c k         | consult-ripgrep                        | Search with ripgrep                            | Global               |
+| C-c b         | consult-buffer                         | Switch buffer                                  | Global               |
+| C-c p         | consult-find                           | Find files                                     | Global               |
+| C-c t         | my-tangle-config-org                   | Tangle config.org only                         | Any mode             |
+| C-c T         | my-tangle-all                          | Tangle all modular org files                   | Any mode             |
+| C-c c         | org-capture                            | Quick capture                                  | Any mode             |
+| C-c a         | org-agenda                             | Agenda view                                    | Any mode             |
+| C-c v         | my/org-pdf-vertical-view               | Side-by-side PDF preview                       | Any mode             |
+| C-c f t       | my-org-set-filetags                    | Set file-level tags                            | org-mode             |
+| C-c m         | mu4e                                   | Open email                                     | Laptop only          |
+| C-c s         | yas-insert-snippet                     | Insert YASnippet                               | Any mode             |
+| C-c y         | yankpad-insert                         | Insert yankpad snippet (plain)                 | Any mode             |
+| C-c Y         | yankpad-expand                         | Expand yankpad snippet (with eval)             | Any mode             |
+| C-x C-b       | ibuffer                                | Buffer list                                    | Any mode             |
+| C-x g         | magit-status                           | Full Magit status                              | Any mode             |
+| C-z           | undo                                   | Undo                                           | Any mode             |
+| M-o           | ace-window                             | Fast window switching                          | Any mode             |
+| M-$           | flyspell-correct-word-before-point     | Spell correct word                             | Any mode             |
+| TAB (Org)     | my/org-smart-tab                       | Smart TAB: snippet → CDLaTeX → visibility     | org-mode             |
+| C-c /         | org-sparse-tree                        | Filter headings (sparse tree)                  | org-mode             |
+| C-c C-x b     | org-tree-to-indirect-buffer            | Focus on subtree                               | org-mode             |
+| C-c C-c       | org-babel-execute-src-block            | Execute code block                             | org-mode             |
 
 ** Org Base Configuration
 #+BEGIN_SRC emacs-lisp

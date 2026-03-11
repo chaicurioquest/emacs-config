@@ -58,12 +58,6 @@
     (message "Tangled config.org → config.el"))
   (load config-el nil 'nomessage))
 
-;; Load private tweaks if present (won't error if missing)
-;; user files specific setting goes here 
-(let ((private-file (expand-file-name "private.el" user-emacs-directory)))
-  (when (file-exists-p private-file)
-    (load-file private-file)))
-
 ;; Start Emacs with Full Screen and Font Size for readability
 ;; Maximize the initial frame on startup
 (add-to-list 'initial-frame-alist '(fullscreen . maximized))
