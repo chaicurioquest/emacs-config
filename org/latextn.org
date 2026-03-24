@@ -63,6 +63,15 @@
 (use-package org-fragtog
   :straight t
   :hook (org-mode . org-fragtog-mode))
+  
+;; ------------------------------
+;; CDLaTeX Customizations
+;; ------------------------------
+(with-eval-after-load 'cdlatex
+  (add-to-list 'cdlatex-command-alist
+               '("df" "Insert dfrac" "\\dfrac{?}{}" cdlatex-position-cursor nil nil t))
+  (add-to-list 'cdlatex-command-alist
+               '("pd" "Partial derivative" "\\frac{\\partial ?}{\\partial }" cdlatex-position-cursor nil nil t)))
 
 ;; ------------------------------
 ;; Labels and References

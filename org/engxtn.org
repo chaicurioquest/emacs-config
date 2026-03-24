@@ -42,34 +42,36 @@ These should be loaded *after* general Org settings.
 * LaTeX Preview Setup (Including TikZ + CircuitTikZ)
 #+BEGIN_SRC emacs-lisp
     (setq org-format-latex-header
-           "\\documentclass[varwidth=true,border=0pt]{standalone}
-\\usepackage{fontspec}
-\\usepackage{amsmath,mathtools}
-\\DeclarePairedDelimiter{\\abs}{\\lvert}{\\rvert}
-\\usepackage{xcolor}
-\\usepackage{siunitx}
-\\usepackage{upgreek}
-\\usepackage{tikz}
-\\usetikzlibrary{calc,arrows.meta,positioning}
-\\usepackage[american]{circuitikz}
-\\usepackage[active,tightpage,displaymath,textmath]{preview}
+       "\\documentclass[varwidth=true,border=0pt]{standalone} % Fits image to content size
+\\usepackage{fontspec}           % System font support (XeLaTeX/LuaLaTeX)
+\\usepackage{amsmath,mathtools} % Standard math environments & extensions
+\\DeclarePairedDelimiter{\\abs}{\\lvert}{\\rvert} % Smart |x|: use \\abs* for auto-scaling
+\\usepackage{cancel}            % For striking through terms (e.g. \\cancel{L})
+\\renewcommand{\\CancelColor}{\\color{red}} % Makes strike-through lines red
+\\usepackage{xcolor}            % Basic color support
+\\usepackage{siunitx}           % Professional unit/number formatting
+\\usepackage{upgreek}           % Non-italicized Greek letters (\\upmu)
+\\usepackage{tikz}              % Vector graphics and diagrams
+\\usetikzlibrary{calc,arrows.meta,positioning} % Common TikZ utilities
+\\usepackage[american]{circuitikz} % Circuit diagram support
+\\usepackage[active,tightpage,displaymath,textmath]{preview} % Tight-crop fragment images
 
-\\setlength\\PreviewBorder{0pt}
-\\PreviewEnvironment{math}
-\\PreviewEnvironment{displaymath}
-\\PreviewEnvironment{equation}
-\\PreviewEnvironment{equation*}
-\\PreviewEnvironment{align}
-\\PreviewEnvironment{align*}
-\\PreviewEnvironment{subequations}
-\\PreviewEnvironment{tikzpicture}
-\\PreviewEnvironment{circuitikz}
+\\setlength\\PreviewBorder{0pt}  % No margin around preview images
+\\PreviewEnvironment{math}       % Render $...$
+\\PreviewEnvironment{displaymath} % Render \\[...\\]
+\\PreviewEnvironment{equation}   % Render numbered equations
+\\PreviewEnvironment{equation*}  % Render unnumbered equations
+\\PreviewEnvironment{align}      % Render aligned equations
+\\PreviewEnvironment{align*}     % Render unnumbered aligned equations
+\\PreviewEnvironment{subequations} % Render grouped sub-equations
+\\PreviewEnvironment{tikzpicture} % Render TikZ diagrams
+\\PreviewEnvironment{circuitikz} % Render circuit diagrams
 
-\\newcommand{\\pv}[1]{\\begin{preview}#1\\end{preview}}
-\\mathsurround=0pt
-\\setlength\\abovedisplayskip{0pt}
-\\setlength\\belowdisplayskip{0pt}
-\\setlength\\parindent{0pt}")
+\\newcommand{\\pv}[1]{\\begin{preview}#1\\end{preview}} % Manual preview wrapper
+\\mathsurround=0pt               % No extra space around math
+\\setlength\\abovedisplayskip{0pt} % Tighten space above equations
+\\setlength\\belowdisplayskip{0pt} % Tighten space below equations
+\\setlength\\parindent{0pt}      % Disable paragraph indentation")
 #+END_SRC
 
 
