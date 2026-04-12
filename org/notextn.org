@@ -673,6 +673,40 @@ Requires scrot (already installed per config). Draw rectangle over PDF region."
                :unnarrowed t :immediate-finish t))
 #+END_SRC
 
+#+BEGIN_SRC emacs-lisp
+;; ── Piper TTS — focused PDF reading (notextn.el) ──
+(defvar my/piper-bin   (expand-file-name "~/.local/venv/piper/bin/piper"))
+(defvar my/piper-model (expand-file-name "~/.local/share/piper-voices/en_US-ryan-high.onnx"))
+
+(defun my/piper-speak (text)
+  "Speak TEXT via Piper TTS, stopping any current speech first."
+  (ignore-errors (kill-process (get-process "tts")))
+  (let ((tmp (make-temp-file "tts" nil ".txt")))
+    (write-region text nil tmp)
+    (start-process-shell-command "tts" nil
+      (format "cat %s | %s --model %s --output_raw | aplay -r 22050 -f S16_LE -t raw -"
+              (shell-quote-argument tmp)
+              (shell-quote-argument my/piper-bin)
+              (shell-quote-argument my/piper-model)))))
+
+(defun my/speak-pdf-region ()
+  "Read selected PDF region aloud."
+  (interactive)
+  (if (pdf-view-active-region-p)
+      (my/piper-speak (mapconcat #'identity (pdf-view-active-region-text) " "))
+    (message "No text selected!")))
+
+(defun my/speak-pdf-page ()
+  "Read current PDF page aloud."
+  (interactive)
+  (my/piper-speak (pdf-info-gettext (pdf-view-current-page) '(0 0 1 1))))
+
+(defun my/speak-stop ()
+  "Stop speech."
+  (interactive)
+  (ignore-errors (kill-process (get-process "tts"))))
+#+END_SRC
+
 * Transclusion Settings
 
 #+BEGIN_SRC emacs-lisp

@@ -1,13 +1,13 @@
 ** %<%H:%M> %^{Title|New Thought} :fleeting:%^{Tags|web|emerging|ai|semiconductor|blog}:
 :PROPERTIES:
-:ID: %(org-id-new)
-:CREATED: %U
-:SOURCE: %^{URL or Source|https://}
+:ID:        %(org-id-new)
+:CREATED:   %U
+:SOURCE:    %^{URL or Source|https://}
 :END:
 %?  ;; Quick notes or details
 
 #+BEGIN_QUOTE
-%^{Pasted Quote/Selection (optional)}
+
 #+END_QUOTE
 
 *** Takeaways / Insights
