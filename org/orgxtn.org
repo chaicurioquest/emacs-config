@@ -9,13 +9,14 @@
 
 This file contains consolidated configurations for general Org-mode extensions, including attachments, smart TAB, hooks, capture templates, and LaTeX/PDF export processes. VLSI-specific diagram settings (TikZ, CircuitTikZ, ditaa) are in ~org/customxtn.org~ (optional). Tangled to ~org/orgxtn.el~ and loaded via ~my/tangle-if-needed~ in ~config.org~.
 
-Features:
+* Features:
 - Centralized attachments directory
 - Smart TAB integration (Yasnippet → CDLaTeX → Org-cycle)
 - Vertical PDF preview
-- Auto-update #+LAST_MODIFIED
+- Auto-update #+LAST_MODIFIED on save
+- External archiving to dedicated `archive/` folder (keeps main Org/Roam files clean and fast)
 - Simple Org-roam capture template loader
-- Minimal Babel support (shell)
+- Minimal Babel support (shell + LaTeX)
 - LaTeX/PDF export via latexmk
 
 * Quick Reference Table
@@ -28,6 +29,7 @@ Features:
 | Capture template loader        | `(my/load-template FILE)`                     | Replaces `${setupfile}` with actual path |
 | Babel shell blocks             | `#+BEGIN_SRC sh` … `#+END_SRC`                | No confirm on eval |
 | PDF export                     | `C-c C-e l o`                                 | Uses `latexmk` with `Fba` |
+| External Archiving             | C-c C-x C-s                                   | Moves subtree to archive/<file>.org_archive (no clutter) |
 
 * ACTIVE General Org Settings
 General Org-mode variables, functions, hooks, and templates that are not tightly coupled to export or Babel. These were moved from ~config.org~'s * ACTIVE General Settings and related sections, as they are Org-specific and have no external dependencies beyond Org itself (e.g., ~setupfile~ is assumed defined globally in ~config.org~).
@@ -61,6 +63,24 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
      (t (org-cycle))))
     (define-key org-mode-map (kbd "TAB") #'my/org-smart-tab))
 
+#+END_SRC
+
+* ACTIVE External Archiving (Clean)
+#+BEGIN_SRC emacs-lisp
+;; ── External Archiving — Cleanest & Recommended (no clutter) ─────────────
+;; All .org_archive files go into archive/ subdirectory.
+;; Keeps your root + roam/ perfectly clean. Fully compatible with
+;; your agenda scanner, recentf, roam, noter, etc.
+(unless (file-directory-p (expand-file-name "archive" my/notes-root-dir))
+  (make-directory (expand-file-name "archive" my/notes-root-dir) t))
+
+(setq org-archive-location
+      (concat (expand-file-name "archive/" my/notes-root-dir)
+              "%s_archive::* Archived Tasks"))
+
+(setq org-archive-preserve-subtree-state t)      ; keep TODO state, timestamps, etc.
+(setq org-archive-save-context-info '(time file olpath itags)) ; helpful context
+(setq org-cycle-open-archived-trees nil)         ; never auto-open
 #+END_SRC
 
 ** ACTIVE Smart Org + PDF vertical preview
