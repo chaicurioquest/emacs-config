@@ -118,8 +118,7 @@ Scans the buffer for existing #+NAME: lines with the prefix and a numeric suffix
 (let ((latexmkrc (expand-file-name ".latexmkrc" (file-name-directory setupfile))))
   (setq org-latex-pdf-process
         `(,(format "latexmk -lualatex -r %s -f %%f" latexmkrc)
-          "cp build/%b.pdf %b.pdf"
-          "find build -type f ! -name '*.log' -delete")))
+  "cp build/%b.pdf %b.pdf || echo '⚠️ PDF copy failed: check build/'")))
 
 ;; ------------------------------
 ;; Validation
