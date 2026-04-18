@@ -275,75 +275,57 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
 ;; Org-glossary package
 ;; Added: 2026-02-18
 ;; ========================================
-(use-package org-glossary
-  :straight (org-glossary :type git :host github :repo "tecosaur/org-glossary")
-  :after org
-  :commands (org-glossary-mode))
-  
-;; Fix: org-glossary infinite recursion in dependency watcher
-(defvar my/org-glossary--visiting nil
-  "Files currently being visited by register-buffer-dependencies.")
-
-(with-eval-after-load 'org-glossary
-  (advice-add 'org-glossary--register-buffer-dependencies :around
-              (lambda (orig &optional path-spec)
-                (let* ((path-spec (or path-spec
-                                      (org-glossary--complete-path-spec path-spec)))
-                       (file (plist-get path-spec :file)))
-                  (if (and file (member (expand-file-name file)
-                                        my/org-glossary--visiting))
-                      nil  ; already visiting — break cycle
-                    (let ((my/org-glossary--visiting
-                           (if file
-                               (cons (expand-file-name file)
-                                     my/org-glossary--visiting)
-                             my/org-glossary--visiting)))
-                      (funcall orig path-spec)))))))
-#+END_SRC
-
-* Org glossary package export behaviour                         :enhancement:
-#+BEGIN_SRC emacs-lisp
-;; ========================================
-;; Org-glossary export behavior
-;; Added: 2026-02-18
-;; ========================================
-(with-eval-after-load 'org-glossary
-  ;; Global term sources
-  (setq org-glossary-global-terms
-        (list
-         (expand-file-name "general_acronyms.org" org-roam-directory)
-         (expand-file-name "vlsi_acronyms.org" org-roam-directory)))
-
-  ;; Export behaviour
-  ;; Don't detect acronyms in section headings (cleaner TOC)
-  (setq org-glossary-autodetect-in-headings nil
-        org-glossary-print-on-export nil)
-
-  
-  ;; Acronyms: first-use expansion + \gls{} for LaTeX
-  (org-glossary-set-export-spec 'latex 'acronym
-    :first-use "%v (%t)"
-    :use "%t"
-    :definition-structure "\\newacronym{%k}{%t}{%v}") 
-
-  ;; Glossary terms
-  (org-glossary-set-export-spec 'latex 'glossary
-    :first-use "%t"
-    :use "%t"
-    :definition-structure "\\newglossaryentry{%k}{name={%t},description={%v}}"))
-
-
-  (defun my/org-glossary-safe-enable ()
-  "Enable org-glossary-mode unless this buffer IS a glossary source file."
+;; Defined at top-level so it exists when org-mode-hook fires,
+;; even before org-glossary has loaded.
+(defun my/org-glossary-safe-enable ()
+  "Enable `org-glossary-mode' unless buffer is a glossary source file."
   (when (and buffer-file-name
-             (boundp 'org-glossary-global-terms)  
-             org-glossary-global-terms
+             (boundp 'org-glossary-global-terms)
              (not (member (expand-file-name buffer-file-name)
-                          (if (listp org-glossary-global-terms)
-                              org-glossary-global-terms
-                            (list org-glossary-global-terms)))))
+                          (ensure-list org-glossary-global-terms))))
     (org-glossary-mode 1)))
 
+;; Top-level hook — fires on every Org buffer regardless of load order.
 (add-hook 'org-mode-hook #'my/org-glossary-safe-enable)
+
+(use-package org-glossary
+  :straight (org-glossary :type git :host github :repo "tecosaur/org-glossary")
+  :after org  ; load after org; no :commands to avoid indefinite deferral
+  :config
+
+  ;; Guard var for the recursion-breaking advice below.
+  (defvar my/org-glossary--visiting nil)
+
+  ;; Prevent infinite recursion when org-glossary resolves file dependencies.
+  (advice-add 'org-glossary--register-buffer-dependencies :around
+    (lambda (orig &optional path-spec)
+      (let* ((path-spec (or path-spec (org-glossary--complete-path-spec path-spec)))
+             (abs-file  (and (plist-get path-spec :file)
+                             (expand-file-name (plist-get path-spec :file)))))
+        (unless (member abs-file my/org-glossary--visiting)
+          (let ((my/org-glossary--visiting
+                 (if abs-file
+                     (cons abs-file my/org-glossary--visiting)
+                   my/org-glossary--visiting)))
+            (funcall orig path-spec))))))
+
+  ;; Source files for global term/acronym lookup.
+  (setq org-glossary-global-terms
+        (mapcar (lambda (f) (expand-file-name f org-roam-directory))
+                '("general_acronyms.org" "vlsi_acronyms.org"))
+        org-glossary-autodetect-in-headings nil  ; headings excluded from term scan
+        org-glossary-print-on-export        nil) ; suppress glossary section on export
+
+  ;; LaTeX export: acronym → \newacronym, first use expands to "long (short)".
+  (org-glossary-set-export-spec 'latex 'acronym
+    :first-use            "%v (%t)"
+    :use                  "%t"
+    :definition-structure "\\newacronym{%k}{%t}{%v}")
+
+  ;; LaTeX export: glossary → \newglossaryentry, term only (no expansion).
+  (org-glossary-set-export-spec 'latex 'glossary
+    :first-use            "%t"
+    :use                  "%t"
+    :definition-structure "\\newglossaryentry{%k}{name={%t},description={%v}}"))
 #+END_SRC
 

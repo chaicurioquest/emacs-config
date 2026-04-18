@@ -2,7 +2,7 @@
 #+ROAM_ALIASES: %s
 #+ROAM_REFS: cite:%s
 
-* Overview
+* Summary
 :PROPERTIES:
 :AUTHOR: %s
 :DOI: %s
@@ -11,5 +11,3 @@
 :END:
 
 * Annotations
-
-

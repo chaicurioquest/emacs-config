@@ -397,9 +397,15 @@ Heavy/laptop-specific packages → =org/workflow.org=; Roam/bib → =org/roam.or
 #+END_SRC
 
 ** Flyspell for spell checking (loaded on M-$).
+;; Flyspell + Hunspell (en_GB)
+;; ispell settings go in :init — must exist before flyspell loads
+;; so the first hook invocation already picks up the right backend.
 #+BEGIN_SRC emacs-lisp
 (use-package flyspell
-  :defer t
+  :straight nil  ; built-in with Emacs distribution
+;; Hooks registered by use-package at top-level — no deferral race.
+  (text-mode . flyspell-mode)       ; full spell-check for prose/org
+  (prog-mode . flyspell-prog-mode)  ; strings & comments only for code
   :bind ("M-$" . flyspell-correct-word-before-point)
   :init
   ;; Force Hunspell with UK English dictionary
@@ -411,16 +417,14 @@ Heavy/laptop-specific packages → =org/workflow.org=; Roam/bib → =org/roam.or
            ("-d" "en_GB") nil utf-8)))
   (unless (executable-find "hunspell") (message "Hunspell not found; spellcheck disabled."))
   :config
-  ;; Enable flyspell everywhere you write text
-  (add-hook 'text-mode-hook #'flyspell-mode)
-  ;; For code: only check strings & comments
-  (add-hook 'prog-mode-hook #'flyspell-prog-mode)
-  ;; Suppress "Invalid search bound" error from org-element-at-point on C-g
+  ;; Suppress "Invalid search bound" error on C-g inside Org buffers.
   (advice-add 'org-mode-flyspell-verify :around
               (lambda (orig &rest args)
-                (ignore-errors (apply orig args))))
-  ;; Correction interface for M-$
-  (use-package flyspell-correct :straight t))
+                (ignore-errors (apply orig args)))))
+  ;; Correction interface for M-$ (popup candidate list).
+  (use-package flyspell-correct
+  :straight t
+  :after flyspell)
 #+END_SRC
 
 ** CD Latex package for latex equations

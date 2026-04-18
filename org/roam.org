@@ -65,21 +65,30 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, dail
   :defer t
   :init
   (setq org-roam-completion-everywhere t
-        org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
+        org-roam-node-display-template
+        (concat "${title:*} "
+                (propertize "${tags:12}" 'face 'org-tag)
+                " "
+                (propertize "${filetitle:40}" 'face 'shadow)))
   ;; NOTE: all global keybindings for org-roam are in keymaps.el (C-c r prefix).
   :config
-  ;; Ensure directories exist
-  (dolist (d (list org-roam-directory org-roam-dailies-directory))
   ;; Set DB location local to notes dir for sync
   (setq org-roam-db-location (expand-file-name "org-roam.db" org-roam-directory))
+  (setq org-roam-db-gc-threshold most-positive-fixnum)
+  ;; Ensure directories exist
+  (dolist (d (list org-roam-directory org-roam-dailies-directory))
     (make-directory d t))
+
+  ;; Define ${filetitle} accessor for display template — not built-in, must be declared
+  (cl-defmethod org-roam-node-filetitle ((node org-roam-node))
+    "Return the #+TITLE of the file containing NODE."
+  (org-roam-node-file-title node))
   (add-hook 'org-roam-mode-hook
             (lambda ()
               (unless (bound-and-true-p my/org-roam-initialized)
                 (setq my/org-roam-initialized t)
                 (org-roam-db-autosync-mode 1)
-                (org-roam-db-sync))))
-                (setq org-roam-db-gc-threshold most-positive-fixnum))
+                (org-roam-db-sync)))))
 #+END_SRC
 
 ** Org roam templates
