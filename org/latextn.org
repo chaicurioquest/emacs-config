@@ -12,7 +12,7 @@
 
 ;; Prefer LuaLaTeX for export & Babel execution
 (setq org-latex-compiler "lualatex")  ;; Hardcode to avoid nil
-(setq org-babel-latex-compiler "lualatex")  ;; Hardcode to avoid nil
+;; (setq org-babel-latex-compiler "lualatex")  ;; Hardcode to avoid nil
 
 ;; Commented since setup latex file handle latex engine compatibility: Dated 2026-02-16
 ;; Remove inputenc and fontenc with exact match (fourth element is engine list)
@@ -78,7 +78,8 @@
 ;; ------------------------------
 
 ;; In cdlatex: Auto-generate labels for equations, figures, and tables without prompting (prompt only for sections)
-(setq reftex-insert-label-flags '("s" "s"))
+;; (setq reftex-insert-label-flags '("s" "s")) remove this line if the following is working
+(setq reftex-insert-label-flags '("sefhd" ""))
 
 ;; Prefer custom #+NAME labels in LaTeX export
 (setq org-latex-prefer-user-labels t)
@@ -117,8 +118,28 @@ Scans the buffer for existing #+NAME: lines with the prefix and a numeric suffix
 ;; Define LaTeX-to-PDF export commands with explicit multiple runs, without separate build dir
 (let ((latexmkrc (expand-file-name ".latexmkrc" (file-name-directory setupfile))))
   (setq org-latex-pdf-process
-        `(,(format "latexmk -lualatex -r %s -f %%f" latexmkrc)
-  "cp build/%b.pdf %b.pdf || echo '⚠️ PDF copy failed: check build/'")))
+        `(,(format "latexmk -lualatex -r %s -f %%f" latexmkrc))))
+
+;; ------------------------------
+;; Export output directory: send all Org exports to build/
+;; ------------------------------
+(defun my/org-export-to-build-dir (orig-fun extension &optional subtreep pub-dir)
+  "Force Org export outputs (.tex, .pdf, etc.) into a build/ subdir
+next to the current Org file, unless PUB-DIR is already specified."
+  (let* ((org-file (buffer-file-name))
+         (default-build-dir
+           (when org-file
+             (expand-file-name "build/"
+                               (file-name-directory org-file)))))
+    ;; If caller already provided a pub-dir (e.g. org-publish), respect it.
+    (unless pub-dir
+      (when default-build-dir
+        (unless (file-directory-p default-build-dir)
+          (make-directory default-build-dir t))
+        (setq pub-dir default-build-dir)))
+    (apply orig-fun extension subtreep pub-dir nil)))
+
+(advice-add 'org-export-output-file-name :around #'my/org-export-to-build-dir)
 
 ;; ------------------------------
 ;; Validation
