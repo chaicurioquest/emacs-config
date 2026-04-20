@@ -159,34 +159,42 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-;; Added 2025-07-28: Hook for #+LAST_MODIFIED: update while editing the org file.
-
+;; Added 2025-07-28: Hook for #+LAST_MODIFIED: update while editing the org file. Updated on 2026-04-20 
+;; for case insenstive,  preserves user-defined keyword case and instead of kill-line(unsafe) delete-region is used. 
 (defun my/org-update-last-modified ()
-  "Update #+LAST_MODIFIED: after #+CREATED: in current Org buffer."
+  "Update #+LAST_MODIFIED: on save, preserving the keyword case found in file."
   (when (derived-mode-p 'org-mode)
     (save-excursion
-      (goto-char (point-min))
-      (while (re-search-forward "^#\\+LAST_MODIFIED:.*$" nil t)
-        (beginning-of-line)
-        (kill-line 1))
-      (goto-char (point-min))
-      (if (re-search-forward "^#\\+CREATED:.*$" nil t)
-          (let ((created-end (line-end-position)))
-            (goto-char created-end)
-            (insert (format "\n#+LAST_MODIFIED: [%s]" (format-time-string "%Y-%m-%d %a %H:%M"))))
+      (let* ((case-fold-search t)
+             ;; Capture existing keyword case before deleting (default: uppercase)
+             (keyword
+              (progn
+                (goto-char (point-min))
+                (if (re-search-forward "^\\(#\\+last_modified:\\)" nil t)
+                    (match-string-no-properties 1)
+                  "#+LAST_MODIFIED:")))
+             (timestamp (format-time-string "%Y-%m-%d %a %H:%M")))
+        ;; Delete all existing lines — use delete-region, not kill-line
         (goto-char (point-min))
-        (let ((metadata-end (point)))
-          (while (looking-at "^\\(#\\|[ \t]*$\\)")
-            (setq metadata-end (line-end-position))
-            (forward-line 1))
-          (goto-char metadata-end)
-          (unless (looking-back "\n" nil) (insert "\n"))
-          (insert (format "#+LAST_MODIFIED: [%s]\n" (format-time-string "%Y-%m-%d %a %H:%M"))))))))
+        (while (re-search-forward "^#\\+last_modified:.*\n?" nil t)
+          (delete-region (match-beginning 0) (match-end 0)))
+        ;; Insert after #+created: if present, else at end of metadata block
+        (goto-char (point-min))
+        (if (re-search-forward "^#\\+created:.*$" nil t)
+            (progn
+              (end-of-line)
+              (insert (format "\n%s [%s]" keyword timestamp)))
+          (goto-char (point-min))
+          (let ((metadata-end (point-min)))
+            (while (looking-at "^\\(#\\|[ \t]*$\\)")
+              (setq metadata-end (line-end-position))
+              (forward-line 1))
+            (goto-char metadata-end)
+            (unless (bolp) (insert "\n"))
+            (insert (format "%s [%s]\n" keyword timestamp))))))))
 
-;; Hook timestamp update separately (cleaner, no bundling with other features)
 (add-hook 'org-mode-hook
           (lambda ()
-            ;; buffer-local add (nil t => append, make buffer-local)
             (add-hook 'before-save-hook #'my/org-update-last-modified nil t)))
 #+END_SRC
 
@@ -290,16 +298,17 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
   (defvar my/org-glossary--visiting nil)
 
   (advice-add 'org-glossary--register-buffer-dependencies :around
-    (lambda (orig &optional path-spec)
-      (let* ((path-spec (or path-spec (org-glossary--complete-path-spec path-spec)))
-             (abs-file  (and (plist-get path-spec :file)
-                             (expand-file-name (plist-get path-spec :file)))))
-        (unless (member abs-file my/org-glossary--visiting)
-          (let ((my/org-glossary--visiting
-                 (if abs-file
-                     (cons abs-file my/org-glossary--visiting)
-                   my/org-glossary--visiting)))
-            (funcall orig path-spec))))))
+  (lambda (orig &optional path-spec already-seen)
+    (let* ((path-spec (or path-spec
+                          (org-glossary--complete-path-spec path-spec)))
+           (abs-file  (and (plist-get path-spec :file)
+                           (expand-file-name (plist-get path-spec :file)))))
+      (unless (member abs-file my/org-glossary--visiting)
+        (let ((my/org-glossary--visiting
+               (if abs-file
+                   (cons abs-file my/org-glossary--visiting)
+                 my/org-glossary--visiting)))
+          (funcall orig path-spec already-seen))))))
  ;; --- Global settings ---
   (setq org-glossary-global-terms
         (mapcar (lambda (f) (expand-file-name f

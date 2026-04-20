@@ -1,13 +1,13 @@
-#+TITLE: %s
-#+ROAM_ALIASES: %s
-#+ROAM_REFS: cite:%s
+#+title: %s
+#+roam_aliases: %s
+#+roam_refs: cite:%s
 
 * Summary
-:PROPERTIES:
-:AUTHOR: %s
-:DOI: %s
-:YEAR: %s
-:NOTER_DOCUMENT: %s
-:END:
+:properties:
+:author: %s
+:doi: %s
+:year: %s
+:noter_document: %s
+:end:
 
 * Annotations

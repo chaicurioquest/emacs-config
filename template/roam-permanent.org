@@ -1,11 +1,11 @@
-#+SETUPFILE: ${setupfile}
-#+TITLE: ${title}
-#+FILETAGS: :permanent:
-#+OPTIONS: toc:nil num:2      
-#+ROAM_ALIASES:
-#+ROAM_REFS:
-#+CREATED: %U
-#+LAST_MODIFIED: %U
+#+setupfile: ${setupfile}
+#+title: ${title}
+#+filetags: :permanent:
+#+options: toc:nil num:2
+#+roam_aliases:
+#+roam_refs:
+#+created: %U
+#+last_modified: %U
 
 # Toggle TOC: uncomment next line to enable, comment to disable
 # #+TOC: headlines 2

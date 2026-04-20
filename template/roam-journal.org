@@ -1,20 +1,19 @@
-#+SETUPFILE: ${setupfile}
-#+TITLE: ${title}
-#+FILETAGS: :journal:
-#+OPTIONS: toc:nil
-#+ROAM_ALIASES:
-#+ROAM_REFS:
-#+CREATED: %U
-#+LAST_MODIFIED: %U
+#+setupfile: ${setupfile}
+#+title: ${title}
+#+filetags: :journal:
+#+options: toc:nil num:2
+#+roam_aliases:
+#+roam_refs:
+#+created: %U
+#+last_modified: %U
 
 # Toggle TOC: uncomment next line to enable, comment to disable
 # #+TOC: headlines 2
 
 * Journal Entry
-%?  ;; Free-form writing, thoughts, feelings, events
+%?
 
 * Takeaways / Insights
-;; One or two key things worth remembering
 
 * References (optional)
 # #+print_bibliography:
