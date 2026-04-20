@@ -2,16 +2,17 @@
 # name: header-math
 # key: omhead
 # --
-#+SETUPFILE: `(identity setupfile)`
-#+TITLE: ${1:Document Title}
-#+FILETAGS: :${2:tag}:
+#+setupfile: `(identity setupfile)`
+#+title: ${1:Document Title}
+#+filetags: :${2:tag}:
+#+options: toc:nil num:2
+#+startup: latexpreview
+#+property: header-args :eval never-export
+#+latex_header: \renewcommand{\makeglossaries}{}
+#+created: [`(format-time-string "%Y-%m-%d %a %H:%M")`]
+#+last_modified: [`(format-time-string "%Y-%m-%d %a %H:%M")`]
 
-#+OPTIONS: toc:nil num:2
-#+STARTUP: latexpreview
-#+PROPERTY: header-args :eval never-export
-#+LATEX_HEADER: \renewcommand{\makeglossaries}{}
-
-#+CREATED: [`(format-time-string "%Y-%m-%d %a %H:%M")`]
-#+LAST_MODIFIED: [`(format-time-string "%Y-%m-%d %a %H:%M")`]
+# Toggle TOC: uncomment next line to enable, comment to disable
+# #+TOC: headlines 2
 
 $0
