@@ -1,13 +1,14 @@
 #+SETUPFILE: ${setupfile}
 #+TITLE: %<%Y-%m-%d>
 #+FILETAGS: :daily:journal:
-
-#+OPTIONS: toc:nil num:2     
-
+#+OPTIONS: toc:nil num:nil
 #+ROAM_ALIASES:
 #+ROAM_REFS:
 #+CREATED: %U
 #+LAST_MODIFIED: %U
+
+# Toggle TOC: uncomment next line to enable, comment to disable
+# #+TOC: headlines 2
 
 * Morning Review
 ** %<%H:%M> %?
