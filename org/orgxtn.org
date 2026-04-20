@@ -4,8 +4,7 @@
 #+PROPERTY: header-args:emacs-lisp :tangle yes
 #+DATE: 2025-08-13
 #+CREATED: %U
-#+LAST_MODIFIED: [2026-02-18 Wed 16:50]
-#+LAST_MODIFIED: [2026-02-18 Wed 16:50]
+#+LAST_MODIFIED: [2026-04-19 Sun 00:18]
 
 This file contains consolidated configurations for general Org-mode extensions, including attachments, smart TAB, hooks, capture templates, and LaTeX/PDF export processes. VLSI-specific diagram settings (TikZ, CircuitTikZ, ditaa) are in ~org/customxtn.org~ (optional). Tangled to ~org/orgxtn.el~ and loaded via ~my/tangle-if-needed~ in ~config.org~.
 
@@ -269,14 +268,12 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
 ;;(setq org-edit-src-quote-special nil)  
 #+END_SRC
 
-** Glossary package for Acronmys                               :enhancement:
+** Glossary package for Acronyms                    :enhancement:bug:future:
 #+BEGIN_SRC emacs-lisp
 ;; ========================================
 ;; Org-glossary package
 ;; Added: 2026-02-18
 ;; ========================================
-;; Defined at top-level so it exists when org-mode-hook fires,
-;; even before org-glossary has loaded.
 (defun my/org-glossary-safe-enable ()
   "Enable `org-glossary-mode' unless buffer is a glossary source file."
   (when (and buffer-file-name
@@ -285,18 +282,13 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
                           (ensure-list org-glossary-global-terms))))
     (org-glossary-mode 1)))
 
-;; Top-level hook — fires on every Org buffer regardless of load order.
-(add-hook 'org-mode-hook #'my/org-glossary-safe-enable)
-
 (use-package org-glossary
   :straight (org-glossary :type git :host github :repo "tecosaur/org-glossary")
-  :after org  ; load after org; no :commands to avoid indefinite deferral
+  :after org
   :config
-
-  ;; Guard var for the recursion-breaking advice below.
+  ;; --- Recursion guard for buffer dependency registration ---
   (defvar my/org-glossary--visiting nil)
 
-  ;; Prevent infinite recursion when org-glossary resolves file dependencies.
   (advice-add 'org-glossary--register-buffer-dependencies :around
     (lambda (orig &optional path-spec)
       (let* ((path-spec (or path-spec (org-glossary--complete-path-spec path-spec)))
@@ -308,24 +300,150 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
                      (cons abs-file my/org-glossary--visiting)
                    my/org-glossary--visiting)))
             (funcall orig path-spec))))))
-
-  ;; Source files for global term/acronym lookup.
+ ;; --- Global settings ---
   (setq org-glossary-global-terms
-        (mapcar (lambda (f) (expand-file-name f org-roam-directory))
-                '("general_acronyms.org" "vlsi_acronyms.org"))
-        org-glossary-autodetect-in-headings nil  ; headings excluded from term scan
-        org-glossary-print-on-export        nil) ; suppress glossary section on export
+        (mapcar (lambda (f) (expand-file-name f
+                              (expand-file-name "glossary/" my/notes-root-dir)))
+                '("gen_acronyms.org" "tech_acronyms.org"))
+        org-glossary-autodetect-in-headings nil
+        org-glossary-print-on-export        nil ;;; use #+print_glossary: per-doc
+        org-glossary-collection-root        
+         (file-name-as-directory org-roam-directory))
+  ;; ----------------------------------------
+  ;; LaTeX Export Specs
+  ;; ----------------------------------------
+(org-glossary-set-export-spec 'latex 'acronym
+  :first-use "\\acrfull{%k}"
+  :use       "\\acrshort{%k}"
+  ;; :definition-structure is Org-phase: suppress entirely, glossaries-extra handles it
+  :definition-structure ""
+  :heading   "")
 
-  ;; LaTeX export: acronym → \newacronym, first use expands to "long (short)".
-  (org-glossary-set-export-spec 'latex 'acronym
-    :first-use            "%v (%t)"
-    :use                  "%t"
-    :definition-structure "\\newacronym{%k}{%t}{%v}")
-
-  ;; LaTeX export: glossary → \newglossaryentry, term only (no expansion).
-  (org-glossary-set-export-spec 'latex 'glossary
-    :first-use            "%t"
-    :use                  "%t"
-    :definition-structure "\\newglossaryentry{%k}{name={%t},description={%v}}"))
+(org-glossary-set-export-spec 'latex 'glossary
+  :first-use "\\gls{%k}"
+  :use       "\\gls{%k}"
+  :definition-structure ""
+  :heading   "")
+ ;; Hook for org-glossary-mode enables safely defined in config block
+  (add-hook 'org-mode-hook #'my/org-glossary-safe-enable))
 #+END_SRC
 
+** Org glossaries to Latex glossaries conversion 
+#+BEGIN_SRC emacs-lisp
+;; ========================================
+;; Org-glossary -> LaTeX .tex sync
+;; Single source of truth: edit .org files only.
+;; The .tex files are auto-derived on save.
+;; Source : glossary/{gen,tech}_acronyms.org
+;; Output : latex/{gen,tech}-acronyms.tex
+;; Added  : 2026-04-20
+;; ========================================
+
+(defvar my/org-acronym-short-overrides
+  ;; Extend only when (upcase key) gives the wrong SHORT form.
+  '(("bsc"     . "BSc")
+    ("msc"     . "MSc")
+    ("phd"     . "PhD")
+    ("poc"     . "PoC")
+    ("pnr"     . "PnR")
+    ("finfet"  . "FinFET")
+    ("gaa-fet" . "GAAFET")
+    ("fd-soi"  . "FD-SOI"))
+  "Alist of (key . SHORT) for acronyms where `(upcase key)` is incorrect.")
+
+(defun my/org-acronym-short (key)
+  "Return SHORT display form for KEY.
+Check `my/org-acronym-short-overrides' first, else fall back to `(upcase key)`."
+  (or (cdr (assoc key my/org-acronym-short-overrides))
+      (upcase key)))
+
+(defun my/org-acronyms-to-tex (org-file tex-file)
+  "Generate \\newacronym and \\newglossaryentry entries in TEX-FILE
+from * Acronyms and * Glossary sections in ORG-FILE.
+Acronyms -> \\acronymtype; Glossary -> main type (default).
+Aborts with an error if any key appears in both sections.
+Skips regeneration when TEX-FILE is up to date."
+  (when (and (file-exists-p org-file)
+             (or (not (file-exists-p tex-file))
+                 (file-newer-than-file-p org-file tex-file)))
+    (let (acronyms glossary)
+      (with-temp-buffer
+        (insert-file-contents org-file)
+        (goto-char (point-min))
+
+        ;; Each section parsed as "- key :: Full description" lines.
+        (when (re-search-forward "^\\* Acronyms" nil t)
+          (forward-line 1)
+          (while (looking-at "^[ \t]*$") (forward-line 1))
+          (while (looking-at "^- \\([^ ]+\\) :: \\(.*\\)")
+            (push (list (match-string 1) (match-string 2)) acronyms)
+            (forward-line 1)))
+
+        (goto-char (point-min))
+        (when (re-search-forward "^\\* Glossary" nil t)
+          (forward-line 1)
+          (while (looking-at "^[ \t]*$") (forward-line 1))
+          (while (looking-at "^- \\([^ ]+\\) :: \\(.*\\)")
+            (push (list (match-string 1) (match-string 2)) glossary)
+            (forward-line 1))))
+
+      ;; Guard: abort if any key exists in both sections.
+      ;; Duplicate labels cause a fatal LaTeX error; fix the .org source.
+      (let ((dupes (seq-filter (lambda (k) (assoc k glossary))
+                               (mapcar #'car acronyms))))
+        (when dupes
+          (display-warning
+           'org-glossary-sync
+           (format "%s: duplicate key(s) in both Acronyms and Glossary: %s\nFix the source -- .tex NOT regenerated."
+                   (file-name-nondirectory org-file) dupes)
+           :error)
+          (throw 'org-glossary-sync-abort nil)))
+
+      (with-temp-file tex-file
+        (insert "%% Auto-generated from "
+                (file-name-nondirectory org-file) "\n")
+        (insert "%% Do not edit manually -- edit the .org source instead\n\n")
+
+        (when acronyms
+          (insert "%% --- Acronyms (type: acronymtype) ---\n")
+          (dolist (e (nreverse acronyms))
+            (let* ((key   (nth 0 e))
+                   (full  (nth 1 e))
+                   (short (my/org-acronym-short key)))
+              (insert (format "\\newacronym{%s}{%s}{%s}\n"
+                              key short full))))
+          (insert "\n"))
+
+        ;; Glossary entries go into the main (default) glossary type,
+        ;; separate from acronyms. Print on demand:
+        ;;   #+latex: \printglossary[title={Glossary},style=index]
+        (when glossary
+          (insert "%% --- Glossary (type: main) ---\n")
+          (dolist (e (nreverse glossary))
+            (let* ((key  (nth 0 e))
+                   (desc (nth 1 e)))
+              (insert
+               (format "\\newglossaryentry{%s}{name={%s},description={%s}}\n"
+                       key key desc))))))
+
+      (message "org-glossary sync: regenerated %s"
+               (file-name-nondirectory tex-file)))))
+
+(defun my/org-glossary-sync-tex ()
+  "Regenerate .tex glossary file when a glossary source Org file is saved.
+Resolves paths from `my/notes-root-dir'; no absolute paths."
+  (when buffer-file-name
+    (let* ((f      (expand-file-name buffer-file-name))
+           (gdir   (expand-file-name "glossary/" my/notes-root-dir))
+           (texdir (expand-file-name "latex/"    my/notes-root-dir)))
+      ;; catch wraps the cond so a duplicate-key abort exits cleanly.
+      (catch 'org-glossary-sync-abort
+        (cond
+         ((string= f (expand-file-name "gen_acronyms.org"  gdir))
+          (my/org-acronyms-to-tex f (expand-file-name "gen-acronyms.tex"  texdir)))
+         ((string= f (expand-file-name "tech_acronyms.org" gdir))
+          (my/org-acronyms-to-tex f (expand-file-name "tech-acronyms.tex" texdir))))))))
+
+;; Fires only on C-x C-s; silent for all non-glossary files.
+(add-hook 'after-save-hook #'my/org-glossary-sync-tex)
+#+END_SRC
