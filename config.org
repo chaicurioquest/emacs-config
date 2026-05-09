@@ -141,7 +141,7 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 (defvar bib-path (expand-file-name "bib/references.bib" default-directory))
 (defvar books-bib-path (expand-file-name "bib/books-references.bib" default-directory))
 (defvar my-citar-library-paths '("/wspace/src/zotero-kbase/storage"))
-(defvar setupfile (expand-file-name "latex/setup-latex.org" default-directory))
+(defvar setupfile (expand-file-name "latex/setup-latex.org" my/notes-root-dir))
 (defvar org-roam-directory (expand-file-name "roam" default-directory))
 (defvar org-roam-dailies-directory (expand-file-name "daily" org-roam-directory))
 (defvar my-calibre-library-dir "/wspace/src/calibre-ebooks")
@@ -403,9 +403,10 @@ Heavy/laptop-specific packages → =org/workflow.org=; Roam/bib → =org/roam.or
 #+BEGIN_SRC emacs-lisp
 (use-package flyspell
   :straight nil  ; built-in with Emacs distribution
-;; Hooks registered by use-package at top-level — no deferral race.
-  (text-mode . flyspell-mode)       ; full spell-check for prose/org
-  (prog-mode . flyspell-prog-mode)  ; strings & comments only for code
+  :hook
+  ;; Hooks registered by use-package at top-level — no deferral race.
+  ((text-mode . flyspell-mode)       ; full spell-check for prose/org
+  (prog-mode . flyspell-prog-mode))  ; strings & comments only for code
   :bind ("M-$" . flyspell-correct-word-before-point)
   :init
   ;; Force Hunspell with UK English dictionary

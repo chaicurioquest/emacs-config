@@ -224,12 +224,17 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
     (buffer-string)))   
 
 (setq org-capture-templates
-  `(("n" "Generic Note" plain
+  `(("i" "Inbox Entry" entry                                      
+     (file ,(expand-file-name "inbox.org" my/notes-root-dir))    
+     "* %? :%^{Tags}:\n:PROPERTIES:\n:CREATED: %U\n:SOURCE: %x\n:END:\n\n"
+     :empty-lines 1 :prepend nil)                                 
+
+    ("n" "Generic Note" plain                                     
      (file (lambda () (read-file-name "New Note File: " default-directory nil nil ".org")))
      ,my/generic-note-template
      :empty-lines 1 :prepend t)
 
-     ("s" "Sidecar Note (PPTX/Doc)" plain
+    ("s" "Sidecar Note (PPTX/Doc)" plain                         
      (file (lambda () (read-file-name "New Sidecar File: " default-directory nil nil ".org")))
      ,my/sidecar-note-template
      :empty-lines 1 :prepend t)))

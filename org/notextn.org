@@ -391,7 +391,7 @@ with metadata and a NOTER_DOCUMENT property."
            (book-path (or (calibredb-get-file-path candidate t)
                           (calibredb-get-file-path candidate nil)))
            ;; Notes directory under your default-directory (~/org/).
-           (books-notes-dir (expand-file-name "books" default-directory))
+           (books-notes-dir (expand-file-name "books" my/notes-root-dir))
            ;; Slug for filename: first-author-title, lowercased and cleaned.
            (slug (downcase (replace-regexp-in-string "[^a-z0-9 ]" "" (format "%s - %s" file-author title*))))
            (slug (replace-regexp-in-string " " "-" slug))
@@ -407,7 +407,7 @@ with metadata and a NOTER_DOCUMENT property."
         (with-temp-file note-file
           (insert
            (format
-            "#+TITLE: %s\n#+AUTHOR: %s\n#+CREATED: %s\n#+ROAM_TAGS: book\n\n* Overview\n:PROPERTIES:\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n\n* Analysis and Inference\n\n"
+            "#+TITLE: %s\n#+AUTHOR: %s\n#+CREATED: %s\n\n* Overview\n:PROPERTIES:\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n\n* Analysis and Inference\n\n"
             title* author* 
             (format-time-string "%Y-%m-%d")
             (expand-file-name book-path)
