@@ -11,6 +11,10 @@
 This file centralises prefix maps and global keybindings. Commands are
 defined in other modules (config.el, orgxtn.el, notextn.el, roam.el, etc.).
 
+Bindings marked /config.el/ are set via =use-package :bind= in =config.el= and
+are documented here for reference only — they must not be duplicated in the
+src block below.
+
 * Keymap Reference                                                :keymaps:
 
 | Prefix / Key   | Command                                            | Description                                            | Scope         |
@@ -68,7 +72,7 @@ defined in other modules (config.el, orgxtn.el, notextn.el, roam.el, etc.).
 |                | ↳ [i] Inbox Entry                                  | Heading → inbox.org; :TAG: prompted; feeds auto-refile | Any mode      |
 |                | ↳ [n] Generic Note                                 | New .org file; add #+ID: to make Roam-visible          | Any mode      |
 |                | ↳ [s] Sidecar Note                                 | New .org file with #+NOTER_DOCUMENT: for PDF sessions  | Any mode      |
-|                | ↳ [m] Email Task                                   | mu4e email → inbox.org Emails section                  | mu4e          |
+|                | ↳ [m] Email Task                                   | mu4e email → inbox.org Emails section                  | Laptop only   |
 | C-c a          | org-agenda                                         | Agenda view                                            | Any mode      |
 | C-c v          | my/org-pdf-vertical-view                           | Side-by-side PDF preview                               | Any mode      |
 | C-c f t        | my-org-set-filetags                                | Set file-level tags                                    | org-mode      |
@@ -78,15 +82,22 @@ defined in other modules (config.el, orgxtn.el, notextn.el, roam.el, etc.).
 | C-c p          | consult-find                                       | Find file                                              | Any mode      |
 | C-c R          | consult-recent-file                                | Open recent file                                       | Any mode      |
 | C-c O          | my/consult-recent-org-file                         | Open recent .org file                                  | Any mode      |
+| C-c s          | yas-insert-snippet                                 | Pop-up snippet selector (tbl, fig, …) [config.el]      | Any mode      |
+| C-c y          | yankpad-insert                                     | Insert yankpad snippet as plain text [config.el]       | Any mode      |
+| C-c Y          | yankpad-expand                                     | Expand yankpad snippet with yasnippet eval [config.el] | Any mode      |
 | C-c m          | mu4e                                               | Open email                                             | Laptop only   |
-| C-x C-b        | ibuffer                                            | Buffer list                                            | Any mode      |
+| C-x C-b        | ibuffer                                            | Buffer list [config.el]                                | Any mode      |
 | C-x g          | magit-status                                       | Full Magit status                                      | Any mode      |
 | C-s            | consult-line                                       | Search lines in buffer                                 | Global        |
 | C-s (PDF)      | isearch-forward                                    | Incremental search in PDF                              | pdf-view-mode |
 | C-r (PDF)      | isearch-backward                                   | Reverse search in PDF                                  | pdf-view-mode |
 | C-z            | undo                                               | Undo                                                   | Any mode      |
 | M-o            | ace-window                                         | Fast window switching                                  | Any mode      |
-| M-$            | flyspell-correct-word-before-point                 | Spell correct word                                     | Any mode      |
+| C-.            | embark-act                                         | Embark contextual action menu [config.el]              | Any mode      |
+| C-;            | embark-dwim                                        | Embark default action [config.el]                      | Any mode      |
+| M-$            | flyspell-correct-word-before-point                 | Spell correct word [config.el]                         | Any mode      |
+| M-Q            | my/unfill-paragraph                                | Join paragraph into one line (opposite of M-q)         | Any mode      |
+| $              | math-delimiters-insert                             | Smart \( \) / \[ \] insertion [config.el]              | org-mode      |
 | TAB (Org)      | my/org-smart-tab                                   | Snippet → CDLaTeX → Org-cycle                          | org-mode      |
 | C-c C-c (mu4e) | mu4e-org-store-and-capture                         | Capture email to Org                                   | mu4e-view     |
 
@@ -122,6 +133,18 @@ defined in other modules (config.el, orgxtn.el, notextn.el, roam.el, etc.).
 (global-set-key (kbd "C-z")     #'undo)
 (global-set-key (kbd "M-o")     #'ace-window)
 
+;; NOTE: The following are bound via `use-package :bind' or `global-set-key'
+;; directly in config.el — do NOT duplicate here to avoid conflicts:
+;;   C-x C-b  → ibuffer                             (use-package ibuffer)
+;;   M-$      → flyspell-correct-word-before-point  (use-package flyspell)
+;;   M-Q      → my/unfill-paragraph                 (global-set-key in config.el)
+;;   C-c s    → yas-insert-snippet                  (use-package yasnippet)
+;;   C-c y    → yankpad-insert                      (use-package yankpad)
+;;   C-c Y    → yankpad-expand                      (use-package yankpad)
+;;   C-.      → embark-act                          (use-package embark)
+;;   C-;      → embark-dwim                         (use-package embark)
+;;   $        → math-delimiters-insert              (use-package math-delimiters)
+
 ;; ─────────────────────────────────────────────────────────────
 ;; C-c i → Citations, literature, timestamps, PDF tools
 ;; ─────────────────────────────────────────────────────────────
@@ -152,7 +175,7 @@ defined in other modules (config.el, orgxtn.el, notextn.el, roam.el, etc.).
 
 (defun my/open-pdf-and-note-generic ()
   "Open a non-bibliography PDF and start an org-noter session.
-Calls `my/open-pdf-and-note' with argument \\='generic, bypassing
+Calls `my/open-pdf-and-note' with argument \\'generic, bypassing
 citar key lookup and using `my/select-pdf-project-or-browse' instead."
   (interactive)
   (my/open-pdf-and-note 'generic))
