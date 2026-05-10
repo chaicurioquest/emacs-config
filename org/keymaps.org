@@ -4,7 +4,7 @@
 #+PROPERTY: header-args:emacs-lisp :tangle yes
 #+DATE: 2025-12-01
 #+CREATED: %U
-#+LAST_MODIFIED: [2026-05-09 Sat 19:37]
+#+LAST_MODIFIED: [2026-05-10 Sun]
 
 * Keymaps and global bindings
 
@@ -25,8 +25,8 @@ defined in other modules (config.el, orgxtn.el, notextn.el, roam.el, etc.).
 | C-c i C-n      | citar-open-notes                                   | Choose any entry → open its note                       | Any mode      |
 | C-c i o        | citar-open                                         | Open PDF / link / website                              | Any mode      |
 | C-c i O        | citar-open-files                                   | Open all attached files                                | Any mode      |
-| C-c i a        | my/open-pdf-and-note                               | Open PDF + start org-noter session                     | Any mode      |
-| C-c i g        | my/open-pdf-and-note 'generic                      | Same, generic (no special handling)                    | Any mode      |
+| C-c i a        | my/open-pdf-and-note                               | Open bib PDF + start org-noter session                 | Any mode      |
+| C-c i g        | my/open-pdf-and-note-generic                       | Same, generic mode (no bib lookup)                     | Any mode      |
 | C-c i p        | my/pdf-insert-selection-to-note                    | Insert selected PDF text into note                     | pdf-view-mode |
 | C-c i A        | org-noter-pdftools-insert-annotations              | Insert PDF annotations into note                       | pdf-view-mode |
 | C-c i s        | my/pdf-screenshot-region-and-save                  | Save PDF region as image → insert                      | pdf-view-mode |
@@ -143,12 +143,23 @@ defined in other modules (config.el, orgxtn.el, notextn.el, roam.el, etc.).
   (define-key my/citar-map (kbd "o")   #'citar-open)
   (define-key my/citar-map (kbd "O")   #'citar-open-files))
 
-;; PDF + Org-noter annotation helpers
+;; PDF + Org-noter helpers
+;; C-c i a — bib PDF+note  C-c i g — generic PDF+note (no bib lookup)
+;; Bound at top level (not inside with-eval-after-load 'org-noter) so they
+;; are available immediately; my/open-pdf-and-note loads citar/org-noter
+;; internally via (require ...) when invoked.
+(define-key my/citar-map (kbd "a") #'my/open-pdf-and-note)
+
+(defun my/open-pdf-and-note-generic ()
+  "Open a non-bibliography PDF and start an org-noter session.
+Calls `my/open-pdf-and-note' with argument \\='generic, bypassing
+citar key lookup and using `my/select-pdf-project-or-browse' instead."
+  (interactive)
+  (my/open-pdf-and-note 'generic))
+(define-key my/citar-map (kbd "g") #'my/open-pdf-and-note-generic)
+
+;; A and f genuinely need org-noter already loaded (they call its internals)
 (with-eval-after-load 'org-noter
-  (define-key my/citar-map (kbd "a") #'my/open-pdf-and-note)
-  (define-key my/citar-map (kbd "g") (lambda ()
-                                       (interactive)
-                                       (my/open-pdf-and-note 'generic)))
   (define-key my/citar-map (kbd "A") #'org-noter-pdftools-insert-annotations)
   (define-key my/citar-map (kbd "f") #'my/fix-duplicated-noter-paths))
 
@@ -205,6 +216,7 @@ defined in other modules (config.el, orgxtn.el, notextn.el, roam.el, etc.).
   (define-key org-mode-map (kbd "C-c i i") #'org-toggle-item)
   (define-key org-mode-map (kbd "C-c i R") #'my-org-refile-to-tag-targets))
 
+;; mu4e email capture — canonical definition here; not duplicated in mail.el
 (with-eval-after-load 'mu4e-view
   (define-key mu4e-view-mode-map (kbd "C-c C-c") #'mu4e-org-store-and-capture))
 

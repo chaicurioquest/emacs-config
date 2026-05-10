@@ -213,16 +213,24 @@ Kills buffer after saving only if this function opened it."
 
 #+BEGIN_SRC emacs-lisp
 ;; Select PDF from project or browse
+;; ── notextn.el: replace my/select-pdf-project-or-browse ──────────────
 (defun my/select-pdf-project-or-browse ()
-  "Select PDF project-wide (recursive, includes .attach) or browse manually."
-  (interactive)
-  (let* ((root (read-directory-name "Project root directory: " default-directory))
-         (find-cmd (format "find %s \\( -type f -o -type l \\) -name '*.pdf'" root))
-         (pdf-list (split-string (shell-command-to-string find-cmd) "\n" t))
-         (choice (completing-read "Select project PDF (or type * for browser): "
-                                  (append pdf-list '("* Browse anywhere...")) nil t)))
+  "Select PDF under notes root (recursive) or browse manually.
+Uses `my/notes-root-dir' as the search root — no directory prompt.
+Offers a '* Browse anywhere...' escape hatch to pick any file."
+  (let* ((root (file-name-as-directory (expand-file-name my/notes-root-dir)))
+         ;; Use process-lines to avoid shell quoting issues with spaces
+         (pdf-list (ignore-errors
+                     (process-lines "find" root
+                                    "(" "-type" "f" "-o" "-type" "l" ")"
+                                    "-name" "*.pdf")))
+         (choice (completing-read
+                  (format "Select PDF [root: %s] (or * to browse): "
+                          (abbreviate-file-name root))
+                  (append (or pdf-list '()) '("* Browse anywhere..."))
+                  nil t)))
     (if (string= choice "* Browse anywhere...")
-        (read-file-name "Select any file: " nil nil t)
+        (read-file-name "Select any file: " root nil t)
       choice)))
 #+END_SRC
 
@@ -261,9 +269,9 @@ Kills buffer after saving only if this function opened it."
                         (expand-file-name (concat key ".org")
                                           (expand-file-name "literature" org-roam-directory))
                       ;; Prompt to save generic note in default-directory
-                      (let ((default-dir default-directory))
-                        (make-directory default-dir t)
-                        (read-file-name "Save note as: " default-dir nil nil (concat suggested-name ".org"))))))
+                      (let ((pdf-dir (file-name-directory (expand-file-name pdf))))
+                            (read-file-name "Save note as: " pdf-dir nil nil
+                                  (concat suggested-name ".org"))))))
     (unless (file-directory-p (file-name-directory note-file))
       (make-directory (file-name-directory note-file) t))
     (unless (file-exists-p note-file)
@@ -275,14 +283,14 @@ Kills buffer after saving only if this function opened it."
       (my/bibnote-normalize-file note-file pdf title))
       
     (find-file note-file)
-    (delete-other-windows)
     (goto-char (point-min))
-    (re-search-forward "^\\*\\s-+Overview" nil t)
-    (org-entry-put (point) "NOTER_DOCUMENT" (expand-file-name pdf))
-    ;; Pre-split: notes=left (current), doc=right — org-noter reuses both
-    (set-window-buffer (split-window-right) (find-file-noselect pdf))
-    (let ((switch-to-buffer-obey-display-actions nil))  
-      (org-noter))
+    (when (re-search-forward "^\\* \\S-" nil t)
+    (org-entry-put (point) "NOTER_DOCUMENT" (expand-file-name pdf)))
+    (display-buffer (find-file-noselect pdf))  ; display-buffer-alist routes it right
+    (org-noter)
+    (message "Opened %s note → %s"
+         (if is-bib "bibliography" "generic")
+         (file-name-nondirectory note-file))
     (message "Opened %s note → %s"
              (if is-bib "bibliography" "generic")
              (file-name-nondirectory note-file))))

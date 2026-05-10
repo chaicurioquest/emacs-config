@@ -108,18 +108,17 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-;;my-org-update-tag-targets function scans all agenda files for headings with :TAG_TARGET: properties
-;;constructing the mapping by prefixing tags with "+" (Org's match syntax for tags) and associating them with generated IDs
-(defun my-org-update-tag-targets ()
+;; my-org-update-tag-targets builds my-org-refile-to-ids alist of ("+tag" . "heading-id") pairs
+;; from TAG_TARGET properties in agenda files. Run once after adding a new target heading.
+(defun my-org-refile-to-tag-targets ()
+  "Refile tagged headings from current Org buffer (or inbox.org) to TAG_TARGET headings."
   (interactive)
-  (setq my-org-refile-to-ids
-        (let (list)
-          (org-map-entries
-           (lambda ()
-             (cons (concat "+" (org-entry-get (point) "TAG_TARGET"))
-                   (org-id-get-create)))
-           "TAG_TARGET={.}" 'agenda)))
-  (customize-save-variable 'my-org-refile-to-ids my-org-refile-to-ids))
+  (let ((scope (if (and (derived-mode-p 'org-mode) buffer-file-name)
+                   'file                                         ; current org file if visiting one
+                 (list (expand-file-name "inbox.org"            ; fallback to inbox
+                                         my/notes-root-dir)))))
+    (dolist (rule my-org-refile-to-ids)
+      (my-org-refile-matches-to-heading (car rule) (cdr rule) scope))))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
@@ -149,13 +148,6 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
          (nreverse headings-to-copy))
         (message "%s %d headings!" (if copy "Copied" "Refiled") (length headings-to-copy)))
      (warn "Could not find target %S" target-heading-id)))
-
-;; my-org-refile-to-tag-targets iterates over all rules to execute batch refiles
-
-(defun my-org-refile-to-tag-targets ()
-  (interactive)
-  (dolist (rule my-org-refile-to-ids)
-    (my-org-refile-matches-to-heading (car rule) (cdr rule) 'file)))  ; Scope to inbox.org
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp

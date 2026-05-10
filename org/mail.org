@@ -61,9 +61,6 @@
     :defer t
     :after mu4e)
 
-  (with-eval-after-load 'mu4e-view
-    (define-key mu4e-view-mode-map (kbd "C-c C-c") #'mu4e-org-store-and-capture))
-
 ;; Org capture template for mu4e messages
   (with-eval-after-load 'org
     (require 'org-capture)

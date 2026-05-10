@@ -1,144 +1,390 @@
 # emacs-config
 
-My Emacs Configurations for Laptop and Android Devices
+Modular, literate Emacs configuration for **laptop (Ubuntu/Debian)** and
+**Android (Termux)**. Built around a structured IC-design and VLSI research
+workflow: PDF annotation, Zotero bibliography, Zettelkasten notes, and LaTeX
+export — all from Org mode.
 
-## Overview
-
-This repository contains a modular, portable Emacs configuration optimized for:
-- **Multi-device support**: Laptop, Termux (Android), and tablet via device.el.
-- **Fast startup**: Lazy loading, optimized hooks, and straight.el for packages.
-- **Literate programming**: Single `config.org` with tangled .el files for readability.
-- **Reliable & reproducible**: Declarative packages with use-package; no external dependencies beyond Emacs 30.
-- **Synced workflow**: GitHub + Syncthing for cross-device consistency.
-
-Tested on Emacs 30+ as of November 26, 2025.
+**Emacs 30+ · Branch: `testing`**
 
 ---
 
-## 🛠 Installation Instructions
+## What This Configuration Is
 
-### Prerequisites
+This is not a starter kit. It is a personal, opinionated configuration for a
+specific research and writing workflow:
 
-- **Emacs Version**: 30 or later (tested on 30.0.50+).
-- **Dependencies**:
-  - Git (`sudo apt install git` on Ubuntu).
-  - Hunspell for spell-checking (`sudo apt install hunspell`).
-  - Zotero + Better BibTeX add-on for bibliography (optional, for Citar/Org-roam integration).
-  - TeX Live + latexmk for LaTeX/PDF export (`sudo apt install texlive-full latexmk`).
-  - Initial internet for straight.el bootstrap (subsequent runs use local copies).
+- Reading and annotating technical PDFs (datasheets, papers, Vivado UGs) with `org-noter`
+- Maintaining a structured IC-design knowledge base in Org files
+- Writing and exporting LaTeX documents with bibliography, acronyms, and glossaries
+- Capturing and refiling notes, citations, and tasks across multiple devices
 
-### Step 1: Clone the Repository
+If that matches your use case, this gives you a working baseline. The modular
+structure makes it easy to take only what you need.
+
+---
+
+## Repository Layout
+
+```
+~/.emacs.d/
+├── config.org           # Master literate config — single source of truth
+├── config.el            # Tangled from config.org — do not edit directly
+├── device.el            # Device detection: laptop / termux / tablet / phone
+├── private.el           # Identity only (name, email, mu4e creds) — git-ignored
+├── early-init.el        # UI suppression + GC tuning — loads before packages
+│
+├── org/
+│   ├── keymaps.org      # All custom keybindings → keymaps.el
+│   ├── orgxtn.org       # Org extensions → orgxtn.el
+│   ├── notextn.org      # PDF/noter/Calibre extensions → notextn.el
+│   ├── roam.org         # Org-Roam setup → roam.el
+│   ├── filetags.org     # Tag taxonomy → filetags.el
+│   ├── workflow.org     # GTD / org-alert → workflow.el
+│   ├── latextn.org      # LaTeX/AUCTeX/CDLaTeX → latextn.el
+│   ├── engxtn.org       # Engineering extensions → engxtn.el
+│   ├── mail.org         # mu4e (laptop only) → mail.el
+│   └── inbox.org        # Capture landing zone (runtime, not config)
+│
+├── template/
+│   ├── generic-note.org   # Template for C-c c → [n] KB files
+│   ├── sidecar-note.org   # Template for C-c c → [s] sidecar files
+│   ├── roam-default.org   # Roam default capture template
+│   ├── roam-fleeting.org  # Fleeting note template
+│   ├── roam-permanent.org # Permanent note template
+│   ├── roam-journal.org   # Journal entry template
+│   ├── roam-dailies.org   # Daily note template
+│   └── roam-bib.org       # Literature note template (Citar integration)
+│
+└── latex/               # LaTeX support files for export
+    ├── setup-latex.org  # Shared #+SETUPFILE for all exportable Org files
+    ├── gen-acronyms.tex # Auto-generated — do not edit
+    └── tech-acronyms.tex# Auto-generated — do not edit
+```
+
+> **Rule**: always edit `.org` source files, never the generated `.el` files
+> directly. Generated files are overwritten on the next tangle (`C-c t` / `C-c T`).
+
+---
+
+## Prerequisites
+
+| Requirement | Purpose | Install (Ubuntu/Debian) |
+|---|---|---|
+| Emacs 30+ | Core | `sudo apt install emacs` |
+| Git | straight.el package management | `sudo apt install git` |
+| Hunspell | Spell checking | `sudo apt install hunspell` |
+| TeX Live + latexmk | LaTeX/PDF export | `sudo apt install texlive-full latexmk` |
+| ripgrep (`rg`) | `C-c k` full-text search | `sudo apt install ripgrep` |
+| poppler-utils | Full-page PDF capture (`pdftoppm`) | `sudo apt install poppler-utils` |
+| Zotero + Better BibTeX | Bibliography (optional) | [zotero.org](https://www.zotero.org) |
+| Calibre | Book management, laptop only (optional) | `sudo apt install calibre` |
+| mbsync + msmtp | Email, laptop only (optional) | `sudo apt install isync msmtp` |
+| Piper TTS + aplay | PDF text-to-speech (optional) | see `notextn.el` for model paths |
+
+Internet is required only for the **first run** (straight.el bootstraps
+packages). All subsequent startups are fully offline.
+
+---
+
+## Installation
+
+### 1 — Clone
 
 ```bash
 git clone https://github.com/chaicurioquest/emacs-config.git ~/.emacs.d
+cd ~/.emacs.d && git checkout testing
 ```
 
-This places the config in Emacs' default directory for seamless integration.
+### 2 — Configure `device.el`
 
-### Step 2: Customize device.el
-
-Detects device type for paths/settings. Edit `~/.emacs.d/device.el`:
+`device.el` controls all device-specific paths. Edit it before starting Emacs:
 
 ```elisp
 (defvar my-device-configs
   (let ((table (make-hash-table :test 'equal)))
-    (puthash "your-laptop-hostname" 'laptop table)  ; Replace with (system-name)
-    (puthash "termux" 'termux table)                ; For Android Termux
-    (puthash "your-tablet-hostname" 'tablet table)  ; Replace with tablet's (system-name)
-    table)
-  "Map system names to device types.")
+    (puthash "your-laptop-hostname" 'laptop table)  ; get via M-: (system-name)
+    (puthash "termux"               'termux table)
+    table))
 
 (defvar my-device
   (or (gethash system-name my-device-configs)
-      (if (string-match "termux" system-configuration) 'termux 'laptop))
-  "Current device type.")
+      (if (string-match "termux" system-configuration) 'termux 'laptop)))
+
 (provide 'device)
 ```
 
-- Get hostname: `M-: system-name`.
-- Save and restart Emacs.
+Device-dependent paths set automatically from `my-device`:
 
-### Step 3: Set Up Zotero Integration (Optional)
+| Path variable | Laptop | Termux / tablet |
+|---|---|---|
+| `my/notes-root-dir` | `/wspace/org/` | `~/org/` |
+| `bib-path` | `<notes>/bib/references.bib` | same relative |
+| `org-roam-directory` | `<notes>/roam/` | same relative |
+| `my-citar-library-paths` | `/wspace/src/zotero-kbase/storage` | adjust |
+| `my-calibre-library-dir` | `/wspace/src/calibre-ebooks` | N/A |
 
-For Citar/Org-roam-bibtex:
-- Install Zotero + Better BibTeX.
-- Export library as Better BibLaTeX to `/wspace/org/bib/references.bib` (adjust path for devices).
-- Enable automatic export in Zotero: Preferences > Better BibTeX > Automatic Export ("On Change").
-- PDFs: Store in `/wspace/src/zotero-kbase/storage` (update in `config.org` if needed).
+All paths are derived from `my/notes-root-dir` — change that one variable to
+relocate everything.
 
-### Step 4: Install Packages and Tangle Config
+### 3 — Create `private.el`
 
-- Start Emacs — straight.el bootstraps packages (initial run ~1-2 minutes).
-- Open `~/.emacs.d/config.org` (`C-x C-f`).
-- Tangle: `C-c t` (or `M-x my-tangle-config-org`) for config.org only, or `C-c T` for all modular files.
+Create `~/.emacs.d/private.el` (git-ignored). Contains only identity:
 
-### Step 5: Verify Setup
+```elisp
+(setq user-full-name  "Your Name"
+      user-mail-address "you@example.com")
+;; mu4e credentials go here too (laptop only)
+```
 
-- Check `*Messages*` for "Device: laptop", "Citar ready", etc.
-- Test: `C-c r n` (new note), `C-c i c` (insert citation), `C-c v` (PDF preview).
+If missing, Emacs starts cleanly with a warning — nothing breaks.
+
+### 4 — First Emacs Start
+
+```bash
+emacs
+```
+
+straight.el bootstraps on first run (~2–5 minutes with internet). Watch
+`*Messages*` for:
+
+```
+Device: laptop
+Default directory: /wspace/org/
+Tangled: org/keymaps.org → org/keymaps.el
+...
+```
+
+If `*Messages*` shows `my-device not set → defaulting to 'laptop`, your
+hostname is not in `device.el` — add it and restart.
+
+### 5 — Tangle the Config
+
+The `.el` files are generated from `.org` sources. Tangle once after cloning:
+
+```
+C-x C-f ~/.emacs.d/config.org   (open config.org)
+C-c T                            (tangle all modular files)
+```
+
+Then restart Emacs. Subsequent tangles are incremental — only files newer than
+their `.el` output are retangled.
+
+### 6 — Zotero Setup (Optional)
+
+1. Install [Zotero](https://www.zotero.org) + [Better BibTeX](https://retorque.re/zotero-better-bibtex/).
+2. Export library: **File → Export Library → Better BibLaTeX** → save to `bib-path`.
+3. Enable auto-export: **Preferences → Better BibTeX → Automatic Export → On Change**.
+4. PDFs stored in `my-citar-library-paths` (set in `device.el`).
 
 ---
 
-## 📦 Configurations
+## Key Workflows
 
-### General Configurations
-- **Startup**: No splash screen, garbage collection reset, UI elements disabled in early-init.el.
-- **Package Management**: straight.el + use-package for declarative installs; lazy/deferred loading for speed.
-- **Keybindings**: Centralized in keymaps.el; prefixes like `C-c i` (citations/notes), `C-c r` (Org-roam), `C-c g` (Git).
-- **Backups**: Device-specific `.backups/` and `.autosaves/` (git-ignored for clean repos).
+### Capturing a Note
 
-### Org-Roam for Note-Taking
-- In `org/roam.org`: Zettelkasten with templates (default, fleeting, permanent, journal).
-- Dailies: In `roam/daily/`.
-- Keybindings: `C-c r f` (find), `C-c r n` (capture), `C-c r d` (daily), `C-c r g` (UI, laptop only).
-- Backlinks: Auto `:ID:` in templates.
-- Tags: `C-c r t` (add), `C-c r r` (remove) via filetags.
+| What | Command | Where it lands |
+|---|---|---|
+| Quick project note (SRAM, RTL, RISC-V…) | `C-c c → [i]` | Heading in `inbox.org` — no new file |
+| Sidecar for PPTX/slide deck | `C-c c → [s]` | New `.org` prompted beside source |
+| Structured KB file (LaTeX-exportable) | `C-c c → [n]` | New `.org` file from template |
+| Permanent Zettelkasten node | `C-c r n → [p]` | New file in `roam/` with `#+ID:` |
+| Fleeting thought / URL / quote | `C-c r n → [f]` | Appended to `roam/fleeting.org` |
+| Literature note from Citar | `C-c i n` | New file in `roam/literature/` |
+| Email → Org | `C-c C-c` in mu4e view | Captured via `mu4e-org-store-and-capture` |
 
-### Citar for Bibliography/Zotero
-- Bib: `references.bib` in bib/.
-- PDFs: `/wspace/src/zotero-kbase/storage`.
-- Keybindings: `C-c i c` (insert), `C-c i N` (open note), `C-c i o` (open PDF).
-- Integration: Org-roam for literature notes, Org-noter for annotations.
+Copy the relevant URL to clipboard **before** `C-c c` — the `[i]` template
+auto-captures it as `:SOURCE:` via `%x`.
 
-### Tags and Snippets
-- Tags: In `org/filetags.org`; `C-c f t` for completion.
-- Snippets: Yankpad + Yasnippet; `C-c y` (insert from yankpad.org).
+### PDF Annotation
 
-### GTD Workflow
-- In `org/workflow.org`: Device-specific alerts (libnotify on laptop, termux-notification on mobile).
-- Integrates with Org-agenda.
+| Situation | Command | New file? |
+|---|---|---|
+| 1–3 concepts only | `C-c c → [i]` | No |
+| PDF has a `.bib` entry, deep read | `C-c i a` | Yes — sidecar beside PDF |
+| PDF has no `.bib` entry (datasheet, manual) | `C-c i g` | Yes — sidecar beside PDF |
+| Book from Calibre library | `C-c i b` | Yes — in `<notes>/books/` |
+| Figure only, no session | `C-c i s` | No |
 
-### Mail Integration
-- In `org/mail.org`: mbsync for Gmail, msmtp for sending.
-- Keybindings: `C-c C-c` in mu4e-view for Org capture.
-- Alerts via mu4e-alert.
+Inside a PDF buffer during an org-noter session:
 
-### LaTeX Export
-- In `org/latextn.org`: latexmk for PDF, bibliography support.
-- Keybindings: `C-c C-e l p` (export).
+| Key | Action |
+|---|---|
+| `i` | Insert note heading at current page |
+| `C-c i s` | Drag-select figure → PNG saved in `images/`, link inserted |
+| `C-c i S` | Whole page → PNG (pdftoppm), link inserted |
+| `C-c i p` | Insert selected PDF text into note |
+| `C-c C-v s` | Read selected text aloud (Piper TTS) |
+| `C-c C-v p` | Read current page aloud |
+| `C-c C-v q` | Stop speech |
+| `v` | Jump from PDF page to Org note (org-noter-pdftools) |
+| `d` | Toggle dual-page sync view |
+
+### Auto-Refile by Tag
+
+Tag any captured heading (e.g. `:sram:`), then `C-c i R` moves it to the
+matching KB destination automatically.
+
+**Add a new refile target (one-time):**
+1. Open the destination KB file, position point on the target heading.
+2. `M-x my-org-add-tag-target` → type tag name.
+3. Done — the alist updates and persists immediately.
+
+### Weekly Maintenance (~15 min)
+
+1. `C-c i R` — batch-refile all tagged inbox headings to KB sections
+2. `C-c r f` → search "fleeting" — promote or delete fleeting notes
+3. `C-u C-c C-x C-s` in `task.org` — archive all DONE subtrees
+4. `C-c r s` — rebuild Org-Roam DB (`my/org-roam-safe-rebuild`)
+5. `C-c g u` — git push
 
 ---
 
-## 🧪 Testing and Troubleshooting
+## Custom Keybinding Prefixes
 
-### Test Setup
-- Check `*Messages*` for "Device: laptop", "Citar ready", etc.
-- Note: `C-c r n`.
-- Citation: `C-c i c`.
-- PDF annotation: `M-x org-noter`.
-- PDF export: `C-c C-e l p`.
+| Prefix | Domain |
+|---|---|
+| `C-c i` | Citations, PDF, org-noter, timestamps, refile, glossary |
+| `C-c r` | Org-Roam: notes, dailies, tags, graph, transclusion |
+| `C-c g` | Git: pull (`p`) and push (`u`) for Org repo |
+| `C-c f t` | Set filetags with completion |
+| `C-c m` | mu4e mail (laptop only) |
+| `C-c t` | Tangle current config file |
+| `C-c T` | Tangle all modular config files |
+| `C-c v` | Open corresponding PDF in vertical split |
+| `C-c a` | Org agenda |
+| `C-c c` | Org capture |
+| `C-c h` | Search headings across all agenda files |
+| `C-c k` | Full-text search with ripgrep |
+| `C-c b` | Switch buffer |
+| `C-c R` | Open recent file |
+| `C-c O` | Open recent `.org` file |
+| `M-o` | Jump to any window (ace-window) |
+| `C-x g` | Magit status |
+| `C-z` | Undo |
 
-### Common Issues
-- **Path Errors**: Verify `M-: default-directory` → fix in device.el.
-- **Packages Not Installed**: `M-x straight-pull-all`.
-- **Org-Roam Db Errors**: Delete `org-roam.db`, `M-x org-roam-db-sync`.
-- **Debug**: `export MY_DEBUG_DEVICE=1` for logs.
-- **LaTeX Issues**: Ensure TeX Live/latexmk installed.
+---
 
-### Customization
-- Templates: Edit `~/.emacs.d/template/` (e.g., generic-note.org).
-- Capture: Add templates in `org/orgxtn.org`.
-- Enable Consult (uncomment in config.org for advanced search).
+## Package Architecture
 
-Happy hacking! Open issues on GitHub for feedback.  
-License: MIT
+All packages are managed by [straight.el](https://github.com/raxod502/straight.el)
+with `use-package` for declaration. Packages load lazily (`:defer t`) or on
+hooks for fast startup.
+
+| Package | Role |
+|---|---|
+| `org` (built-in) | Notes, tasks, export, Babel |
+| `org-roam` | Zettelkasten with backlinks, dailies, graph |
+| `citar` + `citar-org-roam` | Bibliography UI — Zotero ↔ Org |
+| `org-noter` + `org-noter-pdftools` | Synchronized PDF annotation |
+| `pdf-tools` | PDF rendering in Emacs |
+| `consult` + `vertico` + `orderless` | Completion and incremental search |
+| `embark` | Contextual actions on completions |
+| `magit` | Git interface |
+| `cdlatex` + `auctex` + `reftex` | LaTeX authoring in Org and `.tex` files |
+| `org-glossary` | Acronyms and glossaries for Org + LaTeX export |
+| `mu4e` + `mu4e-alert` | Email (laptop only) |
+| `calibredb` | Calibre book management (laptop only) |
+| `ace-window` | Label-based window switching (`M-o`) |
+| `winner-mode` (built-in) | Window layout undo/redo |
+| `flyspell` + `flyspell-correct` | Spell checking (`M-$`) |
+| `yasnippet` + `yankpad` | Snippet expansion in Org |
+| `org-transclusion` | Embed content from other Org nodes |
+| `org-roam-ui` | Interactive graph (laptop only) |
+
+---
+
+## Important Design Decisions
+
+**Tangle is incremental.** `my/tangle-if-needed` compares `.org` vs `.el`
+mtimestamps — only files that changed are retangled. `C-c T` is safe to run
+at any time.
+
+**Agenda file scanning is dynamic.** `my/update-agenda-files` scans
+`my/notes-root-dir` (top-level `.org` files) and `roam/` (recursive) on
+startup and after every Org save. Excluded dirs: `build`, `ltximg`, `images`,
+`.attach`, `.autosaves`, `.backups`, `bib`, `latex`, `.git`. No hardcoded
+file list to maintain.
+
+**org-alert uses a timer, not `org-alert-enable`.** `(org-alert-enable)` opens
+every agenda file at startup — never use it. Use
+`run-with-timer interval interval #'org-alert-check` instead. Files opt in
+individually with `#+ALERT: yes` in the header.
+
+**Every PDF opens on the right.** `display-buffer-alist` routes all
+`pdf-view-mode` buffers to a right-side vertical split, regardless of how
+they are opened (link, `C-x C-f`, org-noter, Calibre, or export preview).
+
+**Glossary `.tex` files are auto-generated.** Edit only
+`glossary/gen_acronyms.org` and `glossary/tech_acronyms.org`. The `.tex` files
+in `latex/` regenerate automatically on `C-x C-s` via `my/org-glossary-sync-tex`.
+Duplicate keys between `* Acronyms` and `* Glossary` sections abort generation
+with a warning.
+
+**Org-noter uses relative paths.** `notextn.el` advises `org-noter--add-doc`
+to store `NOTER_DOCUMENT` as a relative path when the sidecar and PDF are in
+the same directory tree — making notes portable across machines.
+
+---
+
+## Device-Specific Features
+
+| Feature | Laptop | Termux (Android) | Tablet |
+|---|---|---|---|
+| mu4e mail (`C-c m`) | ✓ | — | — |
+| Org-Roam graph UI (`C-c r g`) | ✓ | — | — |
+| Calibre integration (`C-c i b`) | ✓ | — | — |
+| Calibre auto-bib export | ✓ | — | — |
+| LaTeX/PDF export | ✓ | — | ✓ |
+| PDF annotation (org-noter) | ✓ | limited | ✓ |
+| Piper TTS (`C-c C-v s/p`) | ✓ | — | — |
+| Git sync (`C-c g u`) | ✓ | ✓ | ✓ |
+
+---
+
+## Customising This Config
+
+| Task | How |
+|---|---|
+| Add a capture template | Edit `org/orgxtn.org` → add to `org-capture-templates` → `C-c t` |
+| Add a Roam template | Edit `org/roam.org` → add to `org-roam-capture-templates` → `C-c t` |
+| Add a refile target | `M-x my-org-add-tag-target` on the target heading |
+| Add a note snippet | Edit `yankpad.org` in your notes root |
+| Change a keybinding | Edit `org/keymaps.org` → `C-c t` to retangle |
+| Add a new device | `(puthash "hostname" 'device-type table)` in `device.el` |
+| Add an acronym/glossary entry | Edit `glossary/gen_acronyms.org` or `glossary/tech_acronyms.org` |
+
+---
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `my-device not set → defaulting to 'laptop` | Add hostname to `device.el`; check `M-: (system-name)` |
+| Wrong notes path | Verify `M-: my/notes-root-dir`; fix `device.el` |
+| Packages not installed | `M-x straight-pull-all` |
+| Org-Roam DB errors | `C-c r s` (`my/org-roam-safe-rebuild`) |
+| LaTeX export fails | Check `texlive-full` and `latexmk` are installed |
+| Glossary `.tex` not updating | Check `*Messages*` for duplicate-key warning; fix `.org` source |
+| Alert fires at startup, opens files | Remove `(org-alert-enable)`; use timer pattern (see `workflow.org`) |
+| Emacs crashed, lock file prompt | `M-x recover-this-file`; press `s` at lock prompt |
+| Config change not taking effect | `C-c t` to retangle → `M-x load-file ~/.emacs.d/config.el` |
+| `*Messages*` full of `ORG-OPEN` traces | Uncommented diagnostic `advice-add` in `config.el` — re-comment it |
+| Debug device/path detection | `MY_DEBUG_DEVICE=1 emacs` |
+
+---
+
+## Syncing Across Devices
+
+- **Git** (`C-c g p` pull / `C-c g u` push): config files and Org KB files.
+- **Syncthing** (recommended for notes): real-time sync of `roam/`, `bib/`,
+  `archive/` between devices without going through GitHub.
+
+The `.gitignore` excludes: `.backups/`, `.autosaves/`, `org-roam.db`,
+`private.el`, generated `.tex` files, and `*.org_archive` files.
+
+---
+
+## License
+
+MIT. Open issues or PRs on GitHub for feedback.
