@@ -108,17 +108,24 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-;; my-org-update-tag-targets builds my-org-refile-to-ids alist of ("+tag" . "heading-id") pairs
-;; from TAG_TARGET properties in agenda files. Run once after adding a new target heading.
-(defun my-org-refile-to-tag-targets ()
-  "Refile tagged headings from current Org buffer (or inbox.org) to TAG_TARGET headings."
+;; ── Tag-based auto-refile (Sacha Chua, simplified) ────────────
+;; Step 1 (once per new target): M-x my-org-update-tag-targets
+;; Step 2 (weekly, from inbox):  M-x my-org-refile-to-tag-targets
+
+(defun my-org-update-tag-targets ()
+  "Scan agenda files for :TAG_TARGET: and rebuild `my-org-refile-to-ids'.
+Run once after adding or changing any TAG_TARGET property."
   (interactive)
-  (let ((scope (if (and (derived-mode-p 'org-mode) buffer-file-name)
-                   'file                                         ; current org file if visiting one
-                 (list (expand-file-name "inbox.org"            ; fallback to inbox
-                                         my/notes-root-dir)))))
-    (dolist (rule my-org-refile-to-ids)
-      (my-org-refile-matches-to-heading (car rule) (cdr rule) scope))))
+  (setq my-org-refile-to-ids
+        (let (list)
+          (org-map-entries
+           (lambda ()
+             (cons (concat "+" (org-entry-get (point) "TAG_TARGET"))
+                   (org-id-get-create)))
+           "TAG_TARGET={.}"
+           'agenda)))
+  (customize-save-variable 'my-org-refile-to-ids my-org-refile-to-ids)
+  (message "Tag targets rebuilt: %d rules" (length my-org-refile-to-ids)))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
