@@ -1,16 +1,20 @@
-#+setupfile: ${setupfile}
-#+title: %^{Title}
-#+filetags: :%^{Tags|generic|note|project|idea}:
-#+options: toc:nil num:2
-#+property: header-args :eval never-export
-#+latex_header: \renewcommand{\makeglossaries}{}
-#+created: %U
-#+last_modified: %U
-
-# Toggle TOC: uncomment next line to enable, comment to disable
-# #+TOC: headlines 2
+#+SETUPFILE: ${setupfile}
+#+TITLE: %^{Title}
+#+LANGUAGE: en
+#+FILETAGS: :%^{Tags|generic|note|project|idea}:
+#+OPTIONS: toc:nil num:2 ^:{} ':t broken-links:mark
+#+PROPERTY: header-args :eval never-export
+#+BIBLIOGRAPHY: ${bib-path}
+#+CITE_EXPORT: biblatex authoryear
+#+ROAM_ALIASES:
+#+ROAM_REFS:
+#+CREATED: %U
+#+LAST_MODIFIED: %U
 
 * %?
 
+* Acronyms / Glossary (optional)
+# #+PRINT_GLOSSARY:
+
 * References (optional)
-# #+print_bibliography:
+# #+PRINT_BIBLIOGRAPHY:
