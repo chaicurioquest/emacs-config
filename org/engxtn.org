@@ -13,9 +13,9 @@ This file contains engineering-specific Org extensions:
 These should be loaded *after* general Org settings.
 
 * Basic LaTeX Preview Settings
-#+BEGIN_SRC emacs-lisp
-(setq org-preview-latex-default-process 'pdftoppm) ;;; fallback if nothing better found
-#+END_SRC
+;; #+BEGIN_SRC emacs-lisp
+;;(setq org-preview-latex-default-process 'pdftoppm) ;;; fallback if nothing better found
+;; #+END_SRC
 
 
 ;; * Helper: Construct LaTeX Command

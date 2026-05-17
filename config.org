@@ -340,6 +340,20 @@ Heavy/laptop-specific packages → =org/workflow.org=; Roam/bib → =org/roam.or
   ;; Core requires
   (require 'oc)
   (require 'oc-biblatex)
+  (require 'ox-beamer))
+
+  ;; Beamer class for slides
+(with-eval-after-load 'ox-latex
+  (add-to-list 'org-latex-classes
+    '("beamer-digital"
+      "[NO-DEFAULT-PACKAGES][NO-PACKAGES]
+\\documentclass[presentation,aspectratio=169,12pt]{beamer}
+\\usepackage{amsmath}
+\\usepackage{graphicx}
+\\usepackage{hyperref}"
+      ("\\section{%s}" . "\\section{%s}")
+      ("\\begin{frame}[t,fragile]{%s}" . "\\end{frame}")
+      ("\\begin{block}{%s}" . "\\end{block}")))
   
  ;; Org-cite export processors: use biblatex for LaTeX
  (setq org-cite-export-processors

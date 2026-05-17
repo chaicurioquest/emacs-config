@@ -158,40 +158,51 @@ Run once after adding or changing any TAG_TARGET property."
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
-;; Added 2025-07-28: Hook for #+LAST_MODIFIED: update while editing the org file. Updated on 2026-04-20 
-;; for case insenstive,  preserves user-defined keyword case and instead of kill-line(unsafe) delete-region is used. 
+;;; #+LAST_MODIFIED: auto-update on save
+;;; Added: 2025-07-28 | Updated: 2026-05-12
+;;; Fixes: eobp guard, presence-check, buffer-local hook, re-entrancy guard
+
+(defvar my/org-update-last-modified--active nil
+  "Non-nil while `my/org-update-last-modified' is running. Prevents re-entrancy.")
+
 (defun my/org-update-last-modified ()
   "Update #+LAST_MODIFIED: on save, preserving the keyword case found in file."
-  (when (derived-mode-p 'org-mode)
-    (save-excursion
-      (let* ((case-fold-search t)
-             ;; Capture existing keyword case before deleting (default: uppercase)
-             (keyword
-              (progn
-                (goto-char (point-min))
-                (if (re-search-forward "^\\(#\\+last_modified:\\)" nil t)
-                    (match-string-no-properties 1)
-                  "#+LAST_MODIFIED:")))
-             (timestamp (format-time-string "%Y-%m-%d %a %H:%M")))
-        ;; Delete all existing lines — use delete-region, not kill-line
-        (goto-char (point-min))
-        (while (re-search-forward "^#\\+last_modified:.*\n?" nil t)
-          (delete-region (match-beginning 0) (match-end 0)))
-        ;; Insert after #+created: if present, else at end of metadata block
-        (goto-char (point-min))
-        (if (re-search-forward "^#\\+created:.*$" nil t)
-            (progn
-              (end-of-line)
-              (insert (format "\n%s [%s]" keyword timestamp)))
+  (when (and (derived-mode-p 'org-mode)
+             (not (bound-and-true-p my/org-update-last-modified--active)))
+    (let ((my/org-update-last-modified--active t))
+      (save-excursion
+        (let* ((case-fold-search t)
+               (keyword
+                (progn
+                  (goto-char (point-min))
+                  (if (re-search-forward "^\\(#\\+last_modified:\\)" nil t)
+                      (match-string-no-properties 1)
+                    "#+LAST_MODIFIED:")))
+               (timestamp (format-time-string "%Y-%m-%d %a %H:%M")))
+          ;; Only run if #+LAST_MODIFIED: is already declared in this file
           (goto-char (point-min))
-          (let ((metadata-end (point-min)))
-            (while (looking-at "^\\(#\\|[ \t]*$\\)")
-              (setq metadata-end (line-end-position))
-              (forward-line 1))
-            (goto-char metadata-end)
-            (unless (bolp) (insert "\n"))
-            (insert (format "%s [%s]\n" keyword timestamp))))))))
+          (when (re-search-forward "^#\\+last_modified:" nil t)
+            (goto-char (point-min))
+            (while (re-search-forward "^#\\+last_modified:.*\n?" nil t)
+              (delete-region (match-beginning 0) (match-end 0)))
+            (goto-char (point-min))
+            (if (re-search-forward "^#\\+created:.*$" nil t)
+                (progn
+                  (end-of-line)
+                  (insert (format "\n%s [%s]" keyword timestamp)))
+              (goto-char (point-min))
+              (let ((metadata-end (point-min)))
+                ;; (not (eobp)) must be first: prevents infinite loop on
+                ;; empty files where (looking-at "^[ \t]*$") matches forever
+                (while (and (not (eobp))
+                            (looking-at "^\\(#\\|[ \t]*$\\)"))
+                  (setq metadata-end (line-end-position))
+                  (forward-line 1))
+                (goto-char metadata-end)
+                (unless (bolp) (insert "\n"))
+                (insert (format "%s [%s]\n" keyword timestamp))))))))))
 
+;; nil t = do not prepend, t = buffer-local (only fires in org buffers)
 (add-hook 'org-mode-hook
           (lambda ()
             (add-hook 'before-save-hook #'my/org-update-last-modified nil t)))
@@ -337,6 +348,19 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
   :use       "\\gls{%k}"
   :definition-structure ""
   :heading   "")
+
+  ;; ── Beamer export: suppress glossaries-extra macros ──────────────
+  ;; Must be registered BEFORE the latex spec in org-glossary-export-specs
+  ;; because org-export-derived-backend-p matches beamer as a latex child.
+  ;; Terms render as plain text on slides — no \acrfull / \gls calls.
+  (org-glossary-set-export-spec 'beamer 'acronym
+    :first-use "%t"    ; plain text, no \acrfull{}
+    :use       "%t")   ; plain text, no \acrshort{}
+
+  (org-glossary-set-export-spec 'beamer 'glossary
+    :first-use "%t"
+    :use       "%t")
+
  ;; Hook for org-glossary-mode enables safely defined in config block
   (add-hook 'org-mode-hook #'my/org-glossary-safe-enable))
 #+END_SRC
