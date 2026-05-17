@@ -327,22 +327,29 @@ Heavy/laptop-specific packages → =org/workflow.org=; Roam/bib → =org/roam.or
 | C-c C-x b     | org-tree-to-indirect-buffer            | Focus on subtree                               | org-mode             |
 | C-c C-c       | org-babel-execute-src-block            | Execute code block                             | org-mode             |
 
+** Ensure use-package is available.
+#+BEGIN_SRC emacs-lisp
+(eval-when-compile
+  (require 'use-package))
+#+END_SRC
+
 ** Org Base Configuration
 #+BEGIN_SRC emacs-lisp
 (use-package org
   :straight (:type built-in)
   :ensure nil
   :config
-
-  ;; Minimal fix: preserve indentation in source blocks (prevents comma escaping)
   (setq org-src-preserve-indentation t)
-  
-  ;; Core requires
+  (setq org-refile-targets '((org-agenda-files :maxlevel . 5)))
+  (setq org-refile-use-outline-path 'file)
+  (setq org-outline-path-complete-in-steps nil)
+  (setq org-refile-allow-creating-parent-nodes 'confirm)
+  (setq org-refile-use-cache t)
+  (add-hook 'org-after-refile-insert-hook #'org-refile-cache-clear)
   (require 'oc)
   (require 'oc-biblatex)
   (require 'ox-beamer))
 
-  ;; Beamer class for slides
 (with-eval-after-load 'ox-latex
   (add-to-list 'org-latex-classes
     '("beamer-digital"
@@ -354,28 +361,10 @@ Heavy/laptop-specific packages → =org/workflow.org=; Roam/bib → =org/roam.or
       ("\\section{%s}" . "\\section{%s}")
       ("\\begin{frame}[t,fragile]{%s}" . "\\end{frame}")
       ("\\begin{block}{%s}" . "\\end{block}")))
-  
- ;; Org-cite export processors: use biblatex for LaTeX
- (setq org-cite-export-processors
-      '((latex biblatex)
-        (html csl)
-        (t csl)))
-
-  ;; Enable refiling to any heading in agenda files (incl. roam/notes/mobile)
-  (setq org-refile-targets '((org-agenda-files :maxlevel . 5)))
-  (setq org-refile-use-outline-path 'file) ;; Show file paths in prompt
-  (setq org-outline-path-complete-in-steps nil) ;; Complete in one step (Vertico fuzzy)
-  (setq org-refile-allow-creating-parent-nodes 'confirm)
-  (setq org-refile-use-cache t)  ;; Cache targets for speed
-
-  ;; Clear stale cache when agenda is opened (prevents missing targets)
-  (add-hook 'org-after-refile-insert-hook #'org-refile-cache-clear)) 
-#+END_SRC
-
-** Ensure use-package is available.
-#+BEGIN_SRC emacs-lisp
-(eval-when-compile
-  (require 'use-package))
+  (setq org-cite-export-processors
+        '((latex biblatex)
+          (html csl)
+          (t csl))))
 #+END_SRC
 
 ** File manipulation library (loaded on demand).

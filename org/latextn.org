@@ -120,6 +120,9 @@ Scans the buffer for existing #+NAME: lines with the prefix and a numeric suffix
   (setq org-latex-pdf-process
         `(,(format "latexmk -lualatex -r %s -f %%f" latexmkrc))))
 
+;; Use minted (Pygments) for syntax-highlighted source blocks in LaTeX/PDF export
+(setq org-latex-listings 'minted)
+
 ;; ------------------------------
 ;; Export output directory: send all Org exports to build/
 ;; ------------------------------

@@ -89,7 +89,7 @@ These should be loaded *after* general Org settings.
                                  :description "Fast pdftoppm preview"
                                  :image-input-type "pdf"
                                  :image-output-type "png"
-                                 :latex-compiler ("lualatex -interaction=nonstopmode -halt-on-error -output-directory %o %f")
+                                 :latex-compiler ("lualatex --shell-escape -interaction=nonstopmode -halt-on-error -output-directory %o %f")
                                  :image-converter ("pdftoppm -png -singlefile -r 150 %f | convert -trim - %O")))
     (setq org-preview-latex-default-process 'pdftoppm-fast))
 
@@ -100,7 +100,7 @@ These should be loaded *after* general Org settings.
                                :description "ImageMagick fallback"
                                :image-input-type "pdf"
                                :image-output-type "png"
-                               :latex-compiler ("lualatex -interaction=nonstopmode -halt-on-error -output-directory %o %f")
+                               :latex-compiler ("lualatex --shell-escape -interaction=nonstopmode -halt-on-error -output-directory %o %f")
                                :image-converter ("convert -density 300 %f -trim -flatten %O")))
     (setq org-preview-latex-default-process 'imagemagick))))
 #+END_SRC

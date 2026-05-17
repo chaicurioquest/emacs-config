@@ -277,8 +277,6 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
 ;; Optional: Python explicit mapping (auto-detects, but can help in edge cases)
 ;;(add-to-list 'org-src-lang-modes '("python" . python))
 
-
-
 ;; Better source code editing experience
 (setq org-src-fontify-natively t)         ; Syntax highlight code blocks directly in Org buffers
 ;;(setq org-src-tab-acts-natively t)        ; TAB indents/completes as in the language's major mode
@@ -484,3 +482,37 @@ Resolves paths from `my/notes-root-dir'; no absolute paths."
 ;; Fires only on C-x C-s; silent for all non-glossary files.
 (add-hook 'after-save-hook #'my/org-glossary-sync-tex)
 #+END_SRC
+
+** Org file Appearance Setting for clean reading
+
+#+BEGIN_SRC emacs-lisp
+;; ========================================
+;; Clean Reading / Note-Taking View
+;; Added: 2026-05-17
+;; ========================================
+
+;; Hide property drawers on file open — org-fold API (Org 9.6+)
+(add-hook 'org-mode-hook #'org-fold-hide-drawer-all)
+
+;; Fold #+begin_src / #+end_src blocks at file open
+(setq org-hide-block-startup t)
+
+;; Hide *bold* /italic/ =code= markers; org-appear reveals on cursor entry
+(setq org-hide-emphasis-markers t)
+
+;; org-modern: visual de-emphasis of #+KEYWORD lines and block delimiters
+(use-package org-modern
+  :straight (org-modern :type git :host github :repo "minad/org-modern")
+  :hook
+  (org-mode            . org-modern-mode)
+  (org-agenda-finalize . org-modern-agenda))
+
+;; org-appear: reveal hidden markers only when cursor is inside them
+(use-package org-appear
+  :straight (org-appear :type git :host github :repo "awth13/org-appear")
+  :hook (org-mode . org-appear-mode)
+  :custom
+  (org-appear-autolinks    t)
+  (org-appear-autoentities t)
+  (org-appear-autokeywords t))
+ #+END_SRC 
