@@ -23,18 +23,6 @@ Hello, ${1:Name}! Welcome to Yankpad!
 
 ** Scripting
 
-*** spice
-:PROPERTIES:
-:yankpad-trigger: spice
-:END:
-
-#+BEGIN_SRC spice
-V1 in 0 DC ${2:5}
-R1 in out ${3:1k}
-C1 out 0 ${4:1u}
-.tran 1u 10m
-#+END_SRC
-
 *** tcl
 :PROPERTIES:
 :yankpad-trigger: tcl
@@ -45,6 +33,15 @@ proc ${1:name} {${2:args}} {
     ${3:# body}
     puts "${4:result}"
 }
+#+END_SRC
+
+*** verilog
+:PROPERTIES:
+:yankpad-trigger: vlog
+:END:
+
+#+BEGIN_SRC verilog
+${1:}
 #+END_SRC
 
 *** linux
@@ -65,6 +62,18 @@ proc ${1:name} {${2:args}} {
 def ${1:func_name}(${2:args}):
     """${3:Docstring}"""
     ${4:pass}
+#+END_SRC
+
+*** spice
+:PROPERTIES:
+:yankpad-trigger: spice
+:END:
+
+#+BEGIN_SRC spice
+V1 in 0 DC ${2:5}
+R1 in out ${3:1k}
+C1 out 0 ${4:1u}
+.tran 1u 10m
 #+END_SRC
 
 ** Tasks
