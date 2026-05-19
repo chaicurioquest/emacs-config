@@ -279,7 +279,7 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
 
 ;; Better source code editing experience
 (setq org-src-fontify-natively t)         ; Syntax highlight code blocks directly in Org buffers
-;;(setq org-src-tab-acts-natively t)        ; TAB indents/completes as in the language's major mode
+(setq org-src-tab-acts-natively t)        ; TAB indents/completes as in the language's major mode
 
 ;; Preserve indents without comma quoting for ALL source blocks (global default) 
 ;; for indentation-sensitive languages like Verilog, VHDL, or Python
@@ -329,6 +329,7 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
                 '("gen_acronyms.org" "tech_acronyms.org"))
         org-glossary-autodetect-in-headings nil
         org-glossary-print-on-export        nil ;;; use #+print_glossary: per-doc
+        org-glossary-automatic nil 
         org-glossary-collection-root        
          (file-name-as-directory org-roam-directory))
   ;; ----------------------------------------

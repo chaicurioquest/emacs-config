@@ -384,7 +384,7 @@ Heavy/laptop-specific packages → =org/workflow.org=; Roam/bib → =org/roam.or
 ** Ibuffer for buffer management (loaded on C-x C-b).
 #+BEGIN_SRC emacs-lisp
 (use-package ibuffer
-  :straight t
+  :straight nil
   :defer t
   :bind ("C-x C-b" . ibuffer))
 #+END_SRC
@@ -471,7 +471,8 @@ Heavy/laptop-specific packages → =org/workflow.org=; Roam/bib → =org/roam.or
 (use-package auctex
   :straight t
   :defer t  ;; Load on demand
-  :hook (LaTeX-mode . (lambda () (turn-on-reftex) (flyspell-mode)))  ;; Optional: RefTeX for refs, spell-check
+  :hook ((LaTeX-mode . turn-on-reftex)
+       (LaTeX-mode . flyspell-mode))  ;; Optional: RefTeX for refs, spell-check
   :config
   (setq TeX-auto-save t
         TeX-parse-self t)
@@ -820,9 +821,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 **  Content inclusion from other Org Mode file
 #+BEGIN_SRC emacs-lisp
-;; Define and localize the indent variable once
-(defvar org-transclusion-indent-mode nil
-  "Non-nil means org-transclusion indents transcluded contents.")
 
 (with-eval-after-load 'org-transclusion
   (make-variable-buffer-local 'org-transclusion-indent-mode))
@@ -836,6 +834,9 @@ If using AUCTeX for LaTeX exports, add reftex package.
   ;; (add-hook 'org-mode-hook
   ;;            (lambda ()
   ;;              (setq-local org-transclusion-indent-mode t)))
+  ;; Define and localize the indent variable once
+  (defvar org-transclusion-indent-mode nil
+  "Non-nil means org-transclusion indents transcluded contents.")
   )
 
 #+END_SRC
