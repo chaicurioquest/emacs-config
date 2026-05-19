@@ -8,6 +8,7 @@
 :doi: %s
 :year: %s
 :noter_document: %s
+:id: %s
 :end:
 
 * Annotations
