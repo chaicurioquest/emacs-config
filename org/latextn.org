@@ -50,8 +50,8 @@
 ;; Tweak preview scale and other options
 (with-eval-after-load 'org
   (plist-put org-format-latex-options :scale 1.0)
-  (plist-put org-format-latex-options :foreground 'default) 
-  (plist-put org-format-latex-options :background 'default)  
+  (plist-put org-format-latex-options :foreground "White") 
+  (plist-put org-format-latex-options :background "Transparent")  
   (setq org-highlight-latex-and-related '(native latex script))
   (setq org-startup-with-latex-preview nil))
 
@@ -122,6 +122,15 @@ Scans the buffer for existing #+NAME: lines with the prefix and a numeric suffix
 
 ;; Use minted (Pygments) for syntax-highlighted source blocks in LaTeX/PDF export
 (setq org-latex-listings 'minted)
+
+;; minted language name overrides for LaTeX/PDF export
+(setq org-latex-minted-langs
+      '((emacs-lisp "common-lisp")
+        (systemverilog "systemverilog")   ;; Pygments knows 'systemverilog'
+        (verilog "verilog")
+        (tcl "tcl")
+        (sh "bash")
+        (shell "bash")))
 
 ;; ------------------------------
 ;; Export output directory: send all Org exports to build/

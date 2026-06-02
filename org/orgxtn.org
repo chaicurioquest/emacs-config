@@ -35,7 +35,7 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 
 #+BEGIN_SRC emacs-lisp
 ;; Attachments relative to org file, in `.attach` folder
-;;(setq org-attach-directory ".attach")
+  (setq org-attach-directory ".attach")
 
 
 (with-eval-after-load 'org
@@ -211,18 +211,21 @@ Run once after adding or changing any TAG_TARGET property."
 #+BEGIN_SRC emacs-lisp
 ;; Added 2025-07-28: capture template, loading content from generic-note.org.
 (defvar my/generic-note-template
-  (with-temp-buffer
-    (insert-file-contents (expand-file-name "template/generic-note.org" user-emacs-directory))
-    (goto-char (point-min))
-    (while (search-forward "${setupfile}" nil t)
-      (replace-match setupfile t t))
-    (goto-char (point-min))
-    (while (search-forward "${bib-path}" nil t) ;; added 2025-10-28 bib path
-      (replace-match bib-path t t))
-    (buffer-string)))
- 
+  (condition-case err
+    (with-temp-buffer
+      (insert-file-contents (expand-file-name "template/generic-note.org" user-emacs-directory))
+      (goto-char (point-min))
+      (while (search-forward "${setupfile}" nil t) (replace-match setupfile t t))
+      (goto-char (point-min))
+      (while (search-forward "${bib-path}" nil t) (replace-match bib-path t t))
+      (buffer-string))
+    (error
+     (message "WARNING: template/generic-note.org missing: %S" err)
+     "")))
+
  ;; The sidecar template definition
  (defvar my/sidecar-note-template
+  (condition-case err
   (with-temp-buffer
     (insert-file-contents (expand-file-name "template/sidecar-note.org" user-emacs-directory))
     (goto-char (point-min))
@@ -231,7 +234,10 @@ Run once after adding or changing any TAG_TARGET property."
     (goto-char (point-min))
     (while (search-forward "${bib-path}" nil t)
       (replace-match bib-path t t))
-    (buffer-string)))   
+    (buffer-string))
+  (error
+     (message "WARNING: template/sidecar-note.org missing: %S" err)
+     "")))   
 
 (setq org-capture-templates
   `(("i" "Inbox Entry" entry                                      
@@ -256,11 +262,19 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
 #+BEGIN_SRC emacs-lisp
 ;; Enable bash/shell  for general-purpose code and latex block code execution.
 (with-eval-after-load 'org
-  (org-babel-do-load-languages 'org-babel-load-languages '((shell . t) (latex . t)))) 
-   
-  ;; Add future Babel settings here, e.g.:
-  ;; (org-babel-do-load-languages 'org-babel-load-languages '((python . t) (emacs-lisp . t)))
-  ;; (setq org-confirm-babel-evaluate nil) ;; No confirmation for code evaluation
+  (condition-case err
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((shell  . t)
+       (latex  . t)
+       (python . t)))
+    (file-error
+     (message "Babel language load failed: %S" err)))
+  ;; Safer: skip confirmation only for your own files
+    (setq org-confirm-babel-evaluate
+      (lambda (lang body)
+        (not (string-prefix-p my/notes-root-dir
+                               (or buffer-file-name ""))))))   
 #+END_SRC
 
 * Org source block language mappings
@@ -273,6 +287,11 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
 (add-to-list 'org-src-lang-modes '("ngspice" . fundamental))  ; ngspice-specific blocks
 (add-to-list 'org-src-lang-modes '("verilog" . verilog))      ; Verilog HDL syntax
 (add-to-list 'org-src-lang-modes '("vhdl" . vhdl))            ; VHDL syntax
+;; SystemVerilog → uses verilog-mode (handles both SV and V)
+(add-to-list 'org-src-lang-modes '("systemverilog" . verilog))
+(add-to-list 'org-src-lang-modes '("sv" . verilog))  ; short alias
+;; Tcl → tcl-mode (built-in, no package needed)
+(add-to-list 'org-src-lang-modes '("tcl" . tcl))
 
 ;; Optional: Python explicit mapping (auto-detects, but can help in edge cases)
 ;;(add-to-list 'org-src-lang-modes '("python" . python))
@@ -496,10 +515,10 @@ Resolves paths from `my/notes-root-dir'; no absolute paths."
 (add-hook 'org-mode-hook #'org-fold-hide-drawer-all)
 
 ;; Fold #+begin_src / #+end_src blocks at file open
-(setq org-hide-block-startup t)
-
 ;; Hide *bold* /italic/ =code= markers; org-appear reveals on cursor entry
-(setq org-hide-emphasis-markers t)
+(with-eval-after-load 'org
+  (setq org-hide-block-startup t)
+  (setq org-hide-emphasis-markers t))
 
 ;; org-modern: visual de-emphasis of #+KEYWORD lines and block delimiters
 (use-package org-modern

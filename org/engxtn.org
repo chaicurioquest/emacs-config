@@ -35,7 +35,12 @@ These should be loaded *after* general Org settings.
   (when (file-directory-p dir)
     (add-to-list 'exec-path dir)))
 
-(setenv "PATH" (concat (mapconcat #'identity exec-path ":") ":" (getenv "PATH")))
+;; Only add the TeX Live path that is likely missing from the shell PATH
+(let ((texlive-bin "/usr/local/texlive/2025/bin/x86_64-linux"))
+  (when (and (file-directory-p texlive-bin)
+             (not (string-match-p (regexp-quote texlive-bin)
+                                  (or (getenv "PATH") ""))))
+    (setenv "PATH" (concat texlive-bin ":" (getenv "PATH")))))
 #+END_SRC
 
 
@@ -85,13 +90,16 @@ These should be loaded *after* general Org settings.
    ;; 1. Best: pdftoppm → super fast, crisp PNGs
    (pdftoppm
     (add-to-list 'org-preview-latex-process-alist
-                 '(pdftoppm-fast :programs ("lualatex" "pdftoppm" "convert")
-                                 :description "Fast pdftoppm preview"
-                                 :image-input-type "pdf"
-                                 :image-output-type "png"
-                                 :latex-compiler ("lualatex --shell-escape -interaction=nonstopmode -halt-on-error -output-directory %o %f")
-                                 :image-converter ("pdftoppm -png -singlefile -r 150 %f | convert -trim - %O")))
-    (setq org-preview-latex-default-process 'pdftoppm-fast))
+      '(pdftoppm-fast
+       :programs ("lualatex" "pdftoppm")
+        :description "Fast pdftoppm preview"
+        :image-input-type "pdf"
+        :image-output-type "png"
+        :latex-compiler
+          ("lualatex --shell-escape -interaction=nonstopmode -halt-on-error -output-directory %o %f")
+        :image-converter
+          ("pdftoppm -png -singlefile -r 150 %f %b" "mv %b-1.png %O")))
+        (setq org-preview-latex-default-process 'pdftoppm-fast))
 
    ;; 2. Fallback: ImageMagick (convert/magick) + Ghostscript
    ((and magick gs)

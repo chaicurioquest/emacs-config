@@ -158,8 +158,6 @@ Kills buffer after saving only if this function opened it."
         (goto-char (point-min))
         (re-search-forward "^\\*\\s-+\\S-")
         (unless (org-entry-get (point) "ID") (org-id-get-create))
-        (when pdf
-          (org-entry-put (point) "NOTER_DOCUMENT" (expand-file-name pdf)))
         (goto-char (point-min))
         (unless (re-search-forward "^\\*+\\s-+Analysis and Inference\\b" nil t)
           (goto-char (point-max))
@@ -172,18 +170,18 @@ Kills buffer after saving only if this function opened it."
 
 ** Templates
 
-#+BEGIN_SRC emacs-lisp
-;; ──────────────────────────────────────────────────────────────
-;; Templates & helpers (no dead Bib Entry)
-;; ──────────────────────────────────────────────────────────────
-(defun my/load-template (filename)
-  "Load template or return clean fallback."
-  (let ((path (expand-file-name filename (expand-file-name "template" user-emacs-directory))))
-    (if (file-exists-p path)
-        (with-temp-buffer (insert-file-contents path) (buffer-string))
-      (message "Template %s not found; using fallback." path)
-      "#+TITLE: %s\n#+ROAM_ALIASES: %s\n#+ROAM_REFS: cite:%s\n* Overview\n:PROPERTIES:\n:AUTHOR: %s\n:DOI: %s\n:YEAR: %s\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n* Analysis and Inference\n")))
-#+END_SRC
+;; #+BEGIN_SRC emacs-lisp
+;; ;; ──────────────────────────────────────────────────────────────
+;; ;; Templates & helpers (no dead Bib Entry)
+;; ;; ──────────────────────────────────────────────────────────────
+;; (defun my/load-template (filename)
+;;   "Load template or return clean fallback."
+;;   (let ((path (expand-file-name filename (expand-file-name "template" user-emacs-directory))))
+;;     (if (file-exists-p path)
+;;         (with-temp-buffer (insert-file-contents path) (buffer-string))
+;;       (message "Template %s not found; using fallback." path)
+;;       "#+TITLE: %s\n#+ROAM_ALIASES: %s\n#+ROAM_REFS: cite:%s\n* Overview\n:PROPERTIES:\n:AUTHOR: %s\n:DOI: %s\n:YEAR: %s\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n* Analysis and Inference\n")))
+;; #+END_SRC
 
 #+BEGIN_SRC emacs-lisp
 ;; ──────────────────────────────────────────────────────────────
@@ -248,19 +246,15 @@ Offers a '* Browse anywhere...' escape hatch to pick any file."
          (key (if is-bib
                   (substring (or key-or-pdf (concat "@" (citar-select-ref))) 1)
                 nil))
-         ;; Use robust selector for generic PDFs
-          (pdf-raw (if is-bib
-             (or (my/citar-extract-first-path (citar-get-files key))
-                 (my/select-pdf-project-or-browse))  ; ← fallback added
-           (my/select-pdf-project-or-browse)))
-
-         ;; Defensive conversion: buffer or string to path
+         (pdf-raw (if is-bib
+                      (or (my/citar-extract-first-path (citar-get-files key))
+                          (my/select-pdf-project-or-browse))
+                    (my/select-pdf-project-or-browse)))
          (pdf (cond
                ((bufferp pdf-raw) (buffer-file-name pdf-raw))
                ((stringp pdf-raw) pdf-raw)
                (t (user-error "PDF selection did not yield a valid path or buffer."))))
          (entry (when is-bib (ignore-errors (citar-get-entry key))))
-         ;; Defensive: only use file-name-base if pdf is a string
          (title (or (when entry (cdr (assoc "title" entry)))
                     (and (stringp pdf) (file-name-base pdf))
                     "Overview"))
@@ -268,10 +262,9 @@ Offers a '* Browse anywhere...' escape hatch to pick any file."
          (note-file (if is-bib
                         (expand-file-name (concat key ".org")
                                           (expand-file-name "literature" org-roam-directory))
-                      ;; Prompt to save generic note in default-directory
                       (let ((pdf-dir (file-name-directory (expand-file-name pdf))))
-                            (read-file-name "Save note as: " pdf-dir nil nil
-                                  (concat suggested-name ".org"))))))
+                        (read-file-name "Save note as: " pdf-dir nil nil
+                                        (concat suggested-name ".org"))))))
     (unless (file-directory-p (file-name-directory note-file))
       (make-directory (file-name-directory note-file) t))
     (unless (file-exists-p note-file)
@@ -281,17 +274,12 @@ Offers a '* Browse anywhere...' escape hatch to pick any file."
           (insert (format "#+TITLE: %s\n* Overview\n:PROPERTIES:\n:ID: %s\n:NOTER_DOCUMENT: %s\n:END:\n* Analysis and Inference\n"
                           title (org-id-new) (or pdf "")))))
       (my/bibnote-normalize-file note-file pdf title))
-      
     (find-file note-file)
     (goto-char (point-min))
-    (when (re-search-forward "^\\* \\S-" nil t)
-    (org-entry-put (point) "NOTER_DOCUMENT" (expand-file-name pdf)))
-    (display-buffer (find-file-noselect pdf))  ; display-buffer-alist routes it right
+    (display-buffer (find-file-noselect pdf))
+    (pop-to-buffer (get-file-buffer note-file))  ; ← CHANGE: notes buf must be current for org-noter
     (org-noter)
-    (message "Opened %s note → %s"
-         (if is-bib "bibliography" "generic")
-         (file-name-nondirectory note-file))
-    (message "Opened %s note → %s"
+    (message "Opened %s note → %s"               ; ← CHANGE: removed duplicate
              (if is-bib "bibliography" "generic")
              (file-name-nondirectory note-file))))
 #+END_SRC
@@ -344,15 +332,15 @@ Offers a '* Browse anywhere...' escape hatch to pick any file."
                         (insert (format "    file = \"%s\",\n" pdf))))))
                 (write-file bib-file))))
           (message "Updated %s" bib-file)))))
-          (with-eval-after-load 'calibredb
-  (add-hook 'calibredb-search-mode-hook
-            (lambda ()
-              (when (and (fboundp 'my/calibredb-export-books-bib)
-                         (file-newer-than-file-p
-                          (expand-file-name "metadata.db" my-calibre-library-dir)
-                          (expand-file-name books-bib-path)))
-                (my/calibredb-export-books-bib)
-                (message "Bib auto-updated (DB newer than bib)"))))))
+  (with-eval-after-load 'calibredb
+    (add-hook 'calibredb-search-mode-hook
+              (lambda ()
+                (when (and (fboundp 'my/calibredb-export-books-bib)
+                           (file-newer-than-file-p
+                            (expand-file-name "metadata.db" my-calibre-library-dir)
+                            (expand-file-name books-bib-path)))
+                  (my/calibredb-export-books-bib)
+                  (message "Bib auto-updated (DB newer than bib)"))))))
 #+END_SRC
 
 ** Calibre Book Opener
@@ -375,7 +363,7 @@ with metadata and a NOTER_DOCUMENT property."
     (interactive)
     (require 'calibredb)
     (unless (derived-mode-p 'calibredb-search-mode 'calibredb-show-mode)
-      (call-interactively #'calibredb))
+      (user-error "Run this from the calibredb buffer (M-x calibredb first)"))
     (let* (;; Book entry at point in *calibredb-search* / *calibredb-show*.
            (candidate (car (calibredb-find-candidate-at-point)))
            ;; (message "CANDIDATE: %S" candidate) ; Uncomment for debugging.
@@ -416,7 +404,7 @@ with metadata and a NOTER_DOCUMENT property."
           (insert
            (format
             "#+TITLE: %s\n#+AUTHOR: %s\n#+CREATED: %s\n\n* Overview\n:PROPERTIES:\n:NOTER_DOCUMENT: %s\n:ID: %s\n:END:\n\n* Analysis and Inference\n\n"
-            title* author* 
+            title* author*
             (format-time-string "%Y-%m-%d")
             (expand-file-name book-path)
             (org-id-new)))))
@@ -430,8 +418,9 @@ with metadata and a NOTER_DOCUMENT property."
      (if (re-search-forward "^\\* Overview" nil t)
          (progn
            ;; Pre-split: notes=left (current), doc=right — org-noter reuses both
-           (set-window-buffer (split-window-right) (find-file-noselect book-path))
-           (org-noter)
+          (display-buffer (find-file-noselect book-path))
+          (pop-to-buffer (current-buffer))
+          (org-noter)
            (message "Opened: %s by %s with Org-noter session" title* author*))
        (message "Warning: No Overview heading found in %s — Org-noter not started."
                 (file-name-nondirectory note-file))))))
@@ -675,10 +664,11 @@ Requires scrot (already installed per config). Draw rectangle over PDF region."
 * Org-roam Capture Template
 
 #+BEGIN_SRC emacs-lisp
-(add-to-list 'org-roam-capture-templates
-             '("b" "bibliography note" plain #'my/load-roam-bib-template
-               :target (file+head "literature/${citar-citekey}.org" "")
-               :unnarrowed t :immediate-finish t))
+(with-eval-after-load 'org-roam
+  (add-to-list 'org-roam-capture-templates
+    '("b" "bibliography note" plain #'my/load-roam-bib-template
+      :target (file+head "literature/${citar-citekey}.org" "")
+      :unnarrowed t :immediate-finish t)))
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp

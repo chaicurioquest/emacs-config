@@ -55,8 +55,6 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 ** Garbage collection
 #+BEGIN_SRC emacs-lisp
 ;; Fast startup: Temp raise GC, disable file handlers, tune process I/O
-(defvar my--old-gc-cons-threshold gc-cons-threshold
-  "Saved value of `gc-cons-threshold` to restore after init.")
 (defvar my--old-file-name-handler-alist file-name-handler-alist
   "Saved value of `file-name-handler-alist` to restore after init.")
 
@@ -67,8 +65,11 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 
 (add-hook 'emacs-startup-hook
           (lambda ()
-            (setq gc-cons-threshold (or my--old-gc-cons-threshold (* 16 1024 1024))
-                  file-name-handler-alist my--old-file-name-handler-alist)))
+            (setq gc-cons-threshold (* 16 1024 1024)
+                  file-name-handler-alist my--old-file-name-handler-alist)
+            (message "Emacs ready in %.2fs | GC runs: %d"
+                     (float-time (time-subtract after-init-time before-init-time))
+                     gcs-done)))
 ;; ;; ── DIAGNOSTIC: trace org file opens (REMOVE AFTER DIAGNOSIS) ──
 ;; (advice-add 'find-file-noselect :before
 ;;             (lambda (filename &rest _)
@@ -112,7 +113,14 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 ;; Contains ONLY: user-full-name, user-mail-address, mu4e credentials.
 ;; Never put package config here — use workflow.el etc. instead.
 (load (expand-file-name "private.el" user-emacs-directory) t t)
+
+;; Redirect Custom writes away from tangle-generated config.el
+(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+(load custom-file t t)
+
 #+END_SRC
+
+
 
 ** Set default directory per device.
 #+BEGIN_SRC emacs-lisp
@@ -190,7 +198,7 @@ This Org-mode configuration is the single source for my Emacs 30 setup, designed
 ;; automatically refiling (moving) Org headings based on their tags added on 2025-09-20
 (defcustom my-org-refile-to-ids nil
   "Tag to target ID mappings."
-  :group 'sacha
+  :group 'org
   :type '(repeat (cons string string)))
 #+END_SRC
 
@@ -892,16 +900,22 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 * ACTIVE General Settings
 
-** Profiling
-#+BEGIN_SRC emacs-lisp
-(defvar my-config-el-start-time (current-time) "Time when config.el was started")
-(setq my-config-el-start-time-iso (format-time-string "%Y-%m-%dT%T%:z"))
-#+END_SRC
-
 ** UI Theme, word wrap and other settings.
 #+BEGIN_SRC emacs-lisp
 ;;(load-theme 'tango-dark t)  ;;Dark theme for Emacs
-(global-visual-line-mode 1) ;;Wrap text in GUI Windows
+
+;; Wrap text only in Org/text; keep code buffers truncated (no soft-wrap).
+(global-visual-line-mode -1)
+(setq-default truncate-lines nil)
+
+(add-hook 'text-mode-hook #'visual-line-mode)
+(add-hook 'org-mode-hook  #'visual-line-mode)
+
+(add-hook 'prog-mode-hook
+          (lambda ()
+            (visual-line-mode -1)
+            (setq-local truncate-lines t)))
+
 (when (fboundp 'set-fringe-mode)
   (set-fringe-mode 10)) ;;Sets the width of the left and right fringes (the empty margin space at the edge of windows in Emacs) to 10 pixels.
 (setq-default cursor-type 'bar) ;;Changes the default cursor shape to a vertical bar (instead of the default box).
@@ -932,17 +946,11 @@ If using AUCTeX for LaTeX exports, add reftex package.
 ;; Sentences: No double space after periods
 (setq-default sentence-end-double-space nil)
 
-;; Truncate lines
-(setq-default truncate-lines t)
-
 ;; Read-only files in view mode
 (setq view-read-only t)
 
 ;; Added 2025-07-15: Allow alphabetical list continuation (1.a, 1.b, 1.c., ...)
 (setq org-list-allow-alphabetical t)
-
-;; Attachments relative to org file, in `.attach` folder
-(setq org-attach-directory ".attach")
 
 ;; Enable smart window navigation
 (winner-mode 1)                ;; C-c <left/right> undo/redo window layout
@@ -1021,7 +1029,6 @@ If using AUCTeX for LaTeX exports, add reftex package.
   (interactive)
   (let ((fill-column most-positive-fixnum))
     (fill-paragraph nil)))
-(global-set-key (kbd "M-Q") #'my/unfill-paragraph)
 #+END_SRC
 
 * ACTIVE Keybindings

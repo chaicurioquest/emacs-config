@@ -137,11 +137,7 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, dail
 (defun my-org-roam-tag-add ()
   "Add a tag to the current org-roam node with completion."
   (interactive)
-  (let* ((all-tags (my-org-read-filetags))
-         (completion-function (if (and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
-                                  (lambda (prompt coll) (ivy-completing-read prompt coll nil t))
-                                'completing-read))
-         (selected-tag (funcall completion-function "Select tag: " all-tags)))
+  (let ((selected-tag (completing-read "Select tag: " (my-org-read-filetags))))
     (when selected-tag (org-roam-tag-add (list selected-tag)))))
 #+END_SRC
 
@@ -150,11 +146,8 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, dail
 (defun my-org-roam-tag-remove ()
   "Remove a tag from the current org-roam node with completion."
   (interactive)
-  (let* ((current-tags (org-roam-node-tags (org-roam-node-at-point)))
-         (completion-function (if (and (eq my-device 'laptop) (fboundp 'ivy-completing-read))
-                                  (lambda (prompt coll) (ivy-completing-read prompt coll nil t))
-                                'completing-read))
-         (selected-tag (funcall completion-function "Remove tag: " current-tags)))
+  (let ((selected-tag (completing-read "Remove tag: "
+                        (org-roam-node-tags (org-roam-node-at-point)))))
     (when selected-tag (org-roam-tag-remove (list selected-tag)))))
 #+END_SRC
 

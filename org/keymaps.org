@@ -92,7 +92,8 @@ src block below.
 | C-s (PDF)      | isearch-forward                                    | Incremental search in PDF                              | pdf-view-mode |
 | C-r (PDF)      | isearch-backward                                   | Reverse search in PDF                                  | pdf-view-mode |
 | C-z            | undo                                               | Undo                                                   | Any mode      |
-| M-o            | ace-window                                         | Fast window switching                                  | Any mode      |
+| C-S-z          | undo-redo                                          | Redo (Emacs 28+ built-in)                              | Any mode      |
+|M-o             | ace-window                                         | Fast window switching                                  | Any mode      |
 | C-.            | embark-act                                         | Embark contextual action menu [config.el]              | Any mode      |
 | C-;            | embark-dwim                                        | Embark default action [config.el]                      | Any mode      |
 | M-$            | flyspell-correct-word-before-point                 | Spell correct word [config.el]                         | Any mode      |
@@ -100,6 +101,7 @@ src block below.
 | $              | math-delimiters-insert                             | Smart \( \) / \[ \] insertion [config.el]              | org-mode      |
 | TAB (Org)      | my/org-smart-tab                                   | Snippet → CDLaTeX → Org-cycle                          | org-mode      |
 | C-c C-c (mu4e) | mu4e-org-store-and-capture                         | Capture email to Org                                   | mu4e-view     |
+| C-c l          | comint-clear-buffer                                | Clear shell/REPL buffer (comint)                       | comint buffers |
 
 #+BEGIN_SRC emacs-lisp
 ;;; keymaps.el --- Central keymaps and global bindings -*- lexical-binding: t; -*-
@@ -131,7 +133,9 @@ src block below.
 (global-set-key (kbd "C-x g")   #'magit-status)
 (global-set-key (kbd "C-c m")   #'mu4e)
 (global-set-key (kbd "C-z")     #'undo)
+(global-set-key (kbd "C-S-z")   #'undo-redo)
 (global-set-key (kbd "M-o")     #'ace-window)
+(global-set-key (kbd "M-Q")     #'my/unfill-paragraph)  ; complement of M-q
 
 ;; NOTE: The following are bound via `use-package :bind' or `global-set-key'
 ;; directly in config.el — do NOT duplicate here to avoid conflicts:
@@ -254,6 +258,15 @@ citar key lookup and using `my/select-pdf-project-or-browse' instead."
   (global-set-key (kbd "C-c p") #'consult-find)
   (global-set-key (kbd "C-c R") #'consult-recent-file)
   (global-set-key (kbd "C-c O") #'my/consult-recent-org-file))
+
+;; ─────────────────────────────────────────────────────────────
+;; Enable buffer erasing and add a shortcut to clear shell outputs
+;; ─────────────────────────────────────────────────────────────
+;; erase-buffer guard removed (not needed for experienced users)
+(put 'erase-buffer 'disabled nil)
+
+;; C-c l: faster than default C-c M-o; covers shell, REPL, ielm, Python
+(define-key comint-mode-map (kbd "C-c l") #'comint-clear-buffer)
 
 (provide 'keymaps)
 ;;; keymaps.el ends here
