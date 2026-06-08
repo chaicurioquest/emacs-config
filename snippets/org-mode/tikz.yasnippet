@@ -1,0 +1,18 @@
+# -*- mode: snippet -*-
+# name: tikzfig
+# key: tikzfig
+# --
+#+NAME: `(org-auto-label "fig")`
+#+BEGIN_SRC emacs-lisp :results none :exports results
+(my/tikz-to-png
+  "${1:fig-name}"
+  "\\\\begin{tikzpicture}
+  $0
+  \\\\end{tikzpicture}"
+  )
+#+END_SRC
+
+#+CAPTION: ${2:Caption}
+#+ATTR_LATEX: :width ${3:0.5}\\textwidth :placement [h]
+#+ATTR_ORG: :width 200
+[[file:images/${1:$(identity yas-text)}.png]]
