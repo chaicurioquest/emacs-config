@@ -14,6 +14,10 @@
 (setq org-latex-compiler "lualatex")  ;; Hardcode to avoid nil
 ;; (setq org-babel-latex-compiler "lualatex")  ;; Hardcode to avoid nil
 
+;; ob-latex babel compilation -- never uses latexmk
+  (setq org-babel-latex-pdf-process
+      '("lualatex --shell-escape -interaction=nonstopmode -output-directory %o %f"))
+
 ;; Commented since setup latex file handle latex engine compatibility: Dated 2026-02-16
 ;; Remove inputenc and fontenc with exact match (fourth element is engine list)
 ;;(setq org-latex-default-packages-alist
@@ -50,8 +54,8 @@
 ;; Tweak preview scale and other options
 (with-eval-after-load 'org
   (plist-put org-format-latex-options :scale 1.0)
-  (plist-put org-format-latex-options :foreground "White") 
-  (plist-put org-format-latex-options :background "Transparent")  
+  (plist-put org-format-latex-options :foreground 'auto)  ; ✏️ was "White"
+  (plist-put org-format-latex-options :background 'auto)  ; ✏️ was "Transparent"
   (setq org-highlight-latex-and-related '(native latex script))
   (setq org-startup-with-latex-preview nil))
 
@@ -87,11 +91,11 @@
 ;; Custom function in native org reference. Auto-generate labels for equations, figures, and tables
 (defun org-auto-label (prefix)
   "Generate a unique label with PREFIX and an incrementing number.
-Scans the buffer for existing #+NAME: lines with the prefix and a numeric suffix."
+Scans the buffer for existing #+name: lines with the prefix and a numeric suffix."
   (save-excursion
     (goto-char (point-min))
     (let ((max-num 0))
-      (while (re-search-forward (format "#\\+NAME:[ \t]*%s:\\([0-9]+\\)" (regexp-quote prefix)) nil t)
+      (while (re-search-forward (format "#\\+name:[ \t]*%s:\\([0-9]+\\)" (regexp-quote prefix)) nil t)
         (let ((num (string-to-number (match-string 1))))
           (when (> num max-num)
             (setq max-num num))))
@@ -118,38 +122,45 @@ Scans the buffer for existing #+NAME: lines with the prefix and a numeric suffix
 ;; Define LaTeX-to-PDF export commands with explicit multiple runs, without separate build dir
 (let ((latexmkrc (expand-file-name ".latexmkrc" (file-name-directory setupfile))))
   (setq org-latex-pdf-process
-        `(,(format "latexmk -lualatex -r %s -f %%f" latexmkrc))))
+        `(,(format "latexmk -lualatex -r %s -output-directory=%%o -f %%f" latexmkrc))))
+
+;; Keep .log for error inspection; remove other intermediates
+(setq org-latex-logfiles-extensions
+      '("aux" "blg" "fdb_latexmk" "fls" "out" "toc"))        
 
 ;; Use minted (Pygments) for syntax-highlighted source blocks in LaTeX/PDF export
 (setq org-latex-listings 'minted)
 
 ;; minted language name overrides for LaTeX/PDF export
-(setq org-latex-minted-langs
-      '((emacs-lisp "common-lisp")
-        (systemverilog "systemverilog")   ;; Pygments knows 'systemverilog'
-        (verilog "verilog")
-        (tcl "tcl")
-        (sh "bash")
-        (shell "bash")))
+(with-eval-after-load 'ox-latex
+  (dolist (mapping '((emacs-lisp    "common-lisp")
+                     (systemverilog "systemverilog") ;; Pygments knows 'systemverilog'
+                     (verilog       "verilog")
+                     (tcl           "tcl")
+                     (sh            "bash")
+                     (shell         "bash")
+                     (spice         "spice")))  
+    (add-to-list 'org-latex-minted-langs mapping)))
 
 ;; ------------------------------
 ;; Export output directory: send all Org exports to build/
 ;; ------------------------------
 (defun my/org-export-to-build-dir (orig-fun extension &optional subtreep pub-dir)
   "Force Org export outputs (.tex, .pdf, etc.) into a build/ subdir
-next to the current Org file, unless PUB-DIR is already specified."
-  (let* ((org-file (buffer-file-name))
-         (default-build-dir
-           (when org-file
-             (expand-file-name "build/"
-                               (file-name-directory org-file)))))
-    ;; If caller already provided a pub-dir (e.g. org-publish), respect it.
-    (unless pub-dir
-      (when default-build-dir
-        (unless (file-directory-p default-build-dir)
-          (make-directory default-build-dir t))
-        (setq pub-dir default-build-dir)))
-    (apply orig-fun extension subtreep pub-dir nil)))
+    next to the current Org file, unless PUB-DIR is already specified."
+      (let* ((org-file (buffer-file-name))
+      (default-build-dir
+        (when org-file
+          (expand-file-name "build/"
+          (file-name-directory org-file)))))
+          ;; If caller already provided a pub-dir (e.g. org-publish), respect it.
+          (unless pub-dir
+          (when default-build-dir
+          (unless (file-directory-p default-build-dir)
+            (make-directory default-build-dir t))
+            (setq pub-dir default-build-dir)))
+(apply orig-fun extension subtreep pub-dir nil)))
+
 
 (advice-add 'org-export-output-file-name :around #'my/org-export-to-build-dir)
 

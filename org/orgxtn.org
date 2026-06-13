@@ -36,7 +36,9 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 #+BEGIN_SRC emacs-lisp
 ;; Attachments relative to org file, in `.attach` folder
   (setq org-attach-directory ".attach")
-
+;; Temporary babel directory for babel output
+(unless (file-directory-p "/tmp/org-babel")
+  (make-directory "/tmp/org-babel" t))
 
 (with-eval-after-load 'org
   (setq org-use-speed-commands t)   ;; single-key n/p/f/b/u navigation when point is on heading
@@ -60,7 +62,7 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
            (org-inside-LaTeX-fragment-p)) (cdlatex-tab))
      ;; Default: cycle
      (t (org-cycle))))
-    (define-key org-mode-map (kbd "TAB") #'my/org-smart-tab))
+  (define-key org-mode-map (kbd "TAB") #'my/org-smart-tab))
 
 #+END_SRC
 
@@ -84,14 +86,20 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 
 ** ACTIVE Smart Org + PDF vertical preview
 #+BEGIN_SRC emacs-lisp
+;; ✏️ CHANGE: look in build/ first, then alongside .org file
 (defun my/org-pdf-vertical-view ()
-  "Open corresponding PDF in vertical split right of current org buffer."
+  "Open corresponding PDF from per-file build/ dir in vertical split."
   (interactive)
-  (let ((pdf-file (concat (file-name-sans-extension (buffer-file-name)) ".pdf")))
-    (when (file-exists-p pdf-file)
-      (select-window (split-window-right))
-      (find-file pdf-file))))
-(global-set-key (kbd "C-c v") #'my/org-pdf-vertical-view)
+  (let* ((pdf-name (concat (file-name-sans-extension
+                            (file-name-nondirectory (buffer-file-name)))
+                           ".pdf"))
+         (build-dir (expand-file-name "build/"
+                                      (file-name-directory (buffer-file-name))))
+         (pdf-file (expand-file-name pdf-name build-dir)))
+    (if (file-exists-p pdf-file)
+        (progn (select-window (split-window-right))
+               (find-file pdf-file))
+      (message "No PDF found at %s" pdf-file))))
 #+END_SRC
 
 ** ACTIVE Org Hooks for file handling
@@ -260,6 +268,14 @@ Run once after adding or changing any TAG_TARGET property."
 Settings for Org Babel code execution. Currently enables shell blocks; expand here for future languages (e.g., Python, Emacs Lisp) without creating a new file unless it grows excessively.
 
 #+BEGIN_SRC emacs-lisp
+;; ── spice-mode: syntax highlight + C-c ' editing, no execution ───────────
+;; spice-mode: SPICE/ngspice/CDL netlist syntax highlight and editing
+(use-package spice-mode
+  :straight (:host github
+             :repo "snmishra/emacs-netlist-modes"
+             :files ("spice-mode/spice-mode.el"))
+  :mode ("\\.sp$" "\\.spice$" "\\.cir$" "\\.ckt$" "\\.cdl$" "\\.inp$"))
+
 ;; Enable bash/shell  for general-purpose code and latex block code execution.
 (with-eval-after-load 'org
   (condition-case err
@@ -267,14 +283,16 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
      'org-babel-load-languages
      '((shell  . t)
        (latex  . t)
-       (python . t)))
+       (python . t)
+       (emacs-lisp . t)))
     (file-error
      (message "Babel language load failed: %S" err)))
   ;; Safer: skip confirmation only for your own files
     (setq org-confirm-babel-evaluate
       (lambda (lang body)
-        (not (string-prefix-p my/notes-root-dir
-                               (or buffer-file-name ""))))))   
+        (not (member lang '("latex" "emacs-lisp")))))
+  ;; Auto-display inline images after C-c C-c on any babel block
+  (add-hook 'org-babel-after-execute-hook #'org-display-inline-images))   
 #+END_SRC
 
 * Org source block language mappings
@@ -283,15 +301,16 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
 ;; Only include non-default mappings or EDA/VLSI-specific needs
 
 ;; EDA/VLSI-focused mappings for circuit simulation and HDL workflows
-(add-to-list 'org-src-lang-modes '("spice" . fundamental))    ; ngspice/SPICE netlist fallback
-(add-to-list 'org-src-lang-modes '("ngspice" . fundamental))  ; ngspice-specific blocks
+(with-eval-after-load 'org
+(add-to-list 'org-src-lang-modes '("spice"         . spice))     ;; spice-mode, not fundamental
+(add-to-list 'org-src-lang-modes '("ngspice"        . spice))    ;; reuse same mode
 (add-to-list 'org-src-lang-modes '("verilog" . verilog))      ; Verilog HDL syntax
 (add-to-list 'org-src-lang-modes '("vhdl" . vhdl))            ; VHDL syntax
 ;; SystemVerilog → uses verilog-mode (handles both SV and V)
 (add-to-list 'org-src-lang-modes '("systemverilog" . verilog))
 (add-to-list 'org-src-lang-modes '("sv" . verilog))  ; short alias
 ;; Tcl → tcl-mode (built-in, no package needed)
-(add-to-list 'org-src-lang-modes '("tcl" . tcl))
+(add-to-list 'org-src-lang-modes '("tcl" . tcl)))
 
 ;; Optional: Python explicit mapping (auto-detects, but can help in edge cases)
 ;;(add-to-list 'org-src-lang-modes '("python" . python))
@@ -326,60 +345,67 @@ Settings for Org Babel code execution. Currently enables shell blocks; expand he
   :straight (org-glossary :type git :host github :repo "tecosaur/org-glossary")
   :after org
   :config
+
   ;; --- Recursion guard for buffer dependency registration ---
   (defvar my/org-glossary--visiting nil)
-
   (advice-add 'org-glossary--register-buffer-dependencies :around
-  (lambda (orig &optional path-spec already-seen)
-    (let* ((path-spec (or path-spec
-                          (org-glossary--complete-path-spec path-spec)))
-           (abs-file  (and (plist-get path-spec :file)
-                           (expand-file-name (plist-get path-spec :file)))))
-      (unless (member abs-file my/org-glossary--visiting)
-        (let ((my/org-glossary--visiting
-               (if abs-file
-                   (cons abs-file my/org-glossary--visiting)
-                 my/org-glossary--visiting)))
-          (funcall orig path-spec already-seen))))))
- ;; --- Global settings ---
+    (lambda (orig &optional path-spec already-seen)
+      (let ((abs-file (when (and (listp path-spec)
+                                 (plist-get path-spec :file))
+                        (expand-file-name (plist-get path-spec :file)))))
+        (if (member abs-file my/org-glossary--visiting)
+            nil
+          (let ((my/org-glossary--visiting
+                 (if abs-file
+                     (cons abs-file my/org-glossary--visiting)
+                   my/org-glossary--visiting)))
+            (funcall orig path-spec already-seen))))))
+
+  ;; --- Global settings ---
   (setq org-glossary-global-terms
         (mapcar (lambda (f) (expand-file-name f
                               (expand-file-name "glossary/" my/notes-root-dir)))
                 '("gen_acronyms.org" "tech_acronyms.org"))
         org-glossary-autodetect-in-headings nil
-        org-glossary-print-on-export        nil ;;; use #+print_glossary: per-doc
-        org-glossary-automatic nil 
-        org-glossary-collection-root        
-         (file-name-as-directory org-roam-directory))
-  ;; ----------------------------------------
-  ;; LaTeX Export Specs
-  ;; ----------------------------------------
-(org-glossary-set-export-spec 'latex 'acronym
-  :first-use "\\acrfull{%k}"
-  :use       "\\acrshort{%k}"
-  ;; :definition-structure is Org-phase: suppress entirely, glossaries-extra handles it
-  :definition-structure ""
-  :heading   "")
+        org-glossary-print-on-export        nil
+        org-glossary-collection-root
+        (file-name-as-directory                    ; CHANGED: guard org-roam-directory
+         (if (boundp 'org-roam-directory)
+             org-roam-directory
+           (expand-file-name "roam" my/notes-root-dir))))
 
-(org-glossary-set-export-spec 'latex 'glossary
-  :first-use "\\gls{%k}"
-  :use       "\\gls{%k}"
-  :definition-structure ""
-  :heading   "")
+  ;; ── Beamer specs FIRST — upstream requires derived backend before parent ──
+  (org-glossary-set-export-spec 'beamer 'acronym :first-use "%t" :use "%t")
+  (org-glossary-set-export-spec 'beamer 'glossary :first-use "%t" :use "%t")
 
-  ;; ── Beamer export: suppress glossaries-extra macros ──────────────
-  ;; Must be registered BEFORE the latex spec in org-glossary-export-specs
-  ;; because org-export-derived-backend-p matches beamer as a latex child.
-  ;; Terms render as plain text on slides — no \acrfull / \gls calls.
-  (org-glossary-set-export-spec 'beamer 'acronym
-    :first-use "%t"    ; plain text, no \acrfull{}
-    :use       "%t")   ; plain text, no \acrshort{}
+  ;; ── LaTeX specs ──
+  (org-glossary-set-export-spec 'latex 'acronym
+    :first-use "\\glsxtrfull{%k}"
+    :use       "\\glsxtrshort{%k}"
+    :definition-structure ""
+    :heading   "")
+  (org-glossary-set-export-spec 'latex 'glossary
+    :first-use "\\gls{%k}"
+    :use       "\\gls{%k}"
+    :definition-structure ""
+    :heading   "")
 
-  (org-glossary-set-export-spec 'beamer 'glossary
-    :first-use "%t"
-    :use       "%t")
+  ;; CHANGED: enforce beamer before latex in alist — set-export-spec does not reorder
+  (let ((b (assq 'beamer org-glossary-export-specs))
+        (l (assq 'latex  org-glossary-export-specs)))
+    (when (and b l)
+      (setq org-glossary-export-specs
+            (cons b (cons l (cl-remove-if
+                             (lambda (e) (memq (car e) '(beamer latex)))
+                             org-glossary-export-specs))))))
 
- ;; Hook for org-glossary-mode enables safely defined in config block
+  ;; ── Narrowed-buffer export guard ──
+  (advice-add 'org-glossary--get-terms-oneshot :around
+    (lambda (orig &rest args)
+      (if (buffer-narrowed-p)
+          (save-restriction (widen) (apply orig args))
+        (apply orig args))))
+
   (add-hook 'org-mode-hook #'my/org-glossary-safe-enable))
 #+END_SRC
 
@@ -430,9 +456,11 @@ Skips regeneration when TEX-FILE is up to date."
         (when (re-search-forward "^\\* Acronyms" nil t)
           (forward-line 1)
           (while (looking-at "^[ \t]*$") (forward-line 1))
-          (while (looking-at "^- \\([^ ]+\\) :: \\(.*\\)")
-            (push (list (match-string 1) (match-string 2)) acronyms)
-            (forward-line 1)))
+          (while (or (looking-at "^- \\([^ ]+\\) :: \\(.*\\)")
+          (looking-at "^[ \t]*$"))
+            (when (looking-at "^- \\([^ ]+\\) :: \\(.*\\)")
+              (push (list (match-string 1) (match-string 2)) acronyms))
+              (forward-line 1))
 
         (goto-char (point-min))
         (when (re-search-forward "^\\* Glossary" nil t)
