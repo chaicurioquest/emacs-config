@@ -48,7 +48,6 @@ These should be loaded *after* general Org settings.
 #+BEGIN_SRC emacs-lisp
     (setq org-format-latex-header
        "\\documentclass[varwidth=true,border=0pt]{standalone} % Fits image to content size
-\\usepackage{fontspec}           % System font support (XeLaTeX/LuaLaTeX)
 \\usepackage{amsmath,mathtools} % Standard math environments & extensions
 \\DeclarePairedDelimiter{\\abs}{\\lvert}{\\rvert} % Smart |x|: use \\abs* for auto-scaling
 \\usepackage{cancel}            % For striking through terms (e.g. \\cancel{L})
@@ -56,9 +55,6 @@ These should be loaded *after* general Org settings.
 \\usepackage{xcolor}            % Basic color support
 \\usepackage{siunitx}           % Professional unit/number formatting
 \\usepackage{upgreek}           % Non-italicized Greek letters (\\upmu)
-\\usepackage{tikz}              % Vector graphics and diagrams
-\\usetikzlibrary{calc,arrows.meta,positioning} % Common TikZ utilities
-\\usepackage[american]{circuitikz} % Circuit diagram support
 \\usepackage[active,tightpage,displaymath,textmath]{preview} % Tight-crop fragment images
 
 \\setlength\\PreviewBorder{0pt}  % No margin around preview images
@@ -69,10 +65,7 @@ These should be loaded *after* general Org settings.
 \\PreviewEnvironment{align}      % Render aligned equations
 \\PreviewEnvironment{align*}     % Render unnumbered aligned equations
 \\PreviewEnvironment{subequations} % Render grouped sub-equations
-\\PreviewEnvironment{tikzpicture} % Render TikZ diagrams
-\\PreviewEnvironment{circuitikz} % Render circuit diagrams
 
-\\newcommand{\\pv}[1]{\\begin{preview}#1\\end{preview}} % Manual preview wrapper
 \\mathsurround=0pt               % No extra space around math
 \\setlength\\abovedisplayskip{0pt} % Tighten space above equations
 \\setlength\\belowdisplayskip{0pt} % Tighten space below equations
@@ -82,35 +75,8 @@ These should be loaded *after* general Org settings.
 
 * Image Conversion Pipeline (pdftoppm → PNG)
 #+BEGIN_SRC emacs-lisp
-(let* ((engine   (or (bound-and-true-p my/org-latex-engine) "lualatex"))
-       (pdftoppm (executable-find "pdftoppm"))
-       (magick   (or (executable-find "magick") (executable-find "convert")))
-       (gs       (executable-find "gs")))
-  (cond
-   ;; 1. Best: pdftoppm → super fast, crisp PNGs
-   (pdftoppm
-    (add-to-list 'org-preview-latex-process-alist
-      '(pdftoppm-fast
-       :programs ("lualatex" "pdftoppm")
-        :description "Fast pdftoppm preview"
-        :image-input-type "pdf"
-        :image-output-type "png"
-        :latex-compiler
-          ("lualatex --shell-escape -interaction=nonstopmode -halt-on-error -output-directory %o %f")
-        :image-converter
-          ("pdftoppm -png -singlefile -r 150 %f %b" "mv %b-1.png %O")))
-        (setq org-preview-latex-default-process 'pdftoppm-fast))
-
-   ;; 2. Fallback: ImageMagick (convert/magick) + Ghostscript
-   ((and magick gs)
-    (add-to-list 'org-preview-latex-process-alist
-                 '(imagemagick :programs ("lualatex" "convert")
-                               :description "ImageMagick fallback"
-                               :image-input-type "pdf"
-                               :image-output-type "png"
-                               :latex-compiler ("lualatex --shell-escape -interaction=nonstopmode -halt-on-error -output-directory %o %f")
-                               :image-converter ("convert -density 300 %f -trim -flatten %O")))
-    (setq org-preview-latex-default-process 'imagemagick))))
+(with-eval-after-load 'org
+  (setq org-preview-latex-default-process 'dvipng))
 #+END_SRC
 
 * Theme-Aware Preview Refresh
@@ -118,13 +84,80 @@ These should be loaded *after* general Org settings.
 (defun my/org-latex-preview-refresh ()
   "Clear preview cache and refresh when theme changes."
   (interactive)
-  (shell-command "rm -rf /tmp/ltximg/")
-  (when (derived-mode-p 'org-mode)
-    (org-latex-preview '(64))))
+    (when (file-directory-p org-preview-latex-image-directory)
+      (delete-directory org-preview-latex-image-directory t))
+        (when (derived-mode-p 'org-mode)
+          (org-latex-preview '(64))))
 
 (add-hook 'after-load-theme-hook #'my/org-latex-preview-refresh)
 #+END_SRC
 
+* Native LaTeX Babel library - standalone LaTeX code within source blocks. 
+#+BEGIN_SRC emacs-lisp
+;; ── ob-latex PDF blocks: global defaults ─────────────────────────────────
+;; Used by #+BEGIN_SRC latex :results file :file *.pdf blocks.
+;; Separate from my/tikz-to-png which handles PNG output independently.
+(with-eval-after-load 'ob-latex
+  (setq org-babel-default-header-args:latex
+        '((:fit     . t)
+          (:headers . ("\\usepackage{tikz}"
+                       "\\usetikzlibrary{automata,positioning,arrows.meta,calc}"
+                       "\\usepackage[american,emptypmoscircle]{circuitikz}"
+                       "\\usepackage{pgfplots}"
+                       "\\usepgfplotslibrary{fillbetween,colormaps}"
+                       "\\pgfplotsset{compat=1.18}")))))
+#+END_SRC
+
+* Tikz/CircuitTikZ Integrations
+#+BEGIN_SRC emacs-lisp
+;; ── TikZ/CircuiTikZ → PNG pipeline ───────────────────────────────────────
+;; Call from any Org emacs-lisp block:
+;;   (my/tikz-to-png "fig-name" "\\begin{circuitikz}...\\end{circuitikz}")
+(defun my/tikz-to-png (name tikz-body)
+  "Compile TIKZ-BODY to images/NAME.png beside the current org file.
+Scratch files (.tex .pdf .log) go to /tmp/org-babel/.
+Returns relative path from the org file directory."
+  (let* ((tmp-dir  "/tmp/org-babel/")
+         (out-dir  (expand-file-name
+                    "images/"
+                    (file-name-directory
+                     (or (buffer-file-name) default-directory))))
+         (tex-file (concat tmp-dir name ".tex"))
+         (pdf-file (concat tmp-dir name ".pdf"))
+         (log-file (concat tmp-dir name ".log"))
+         (tmp-png  (concat tmp-dir name ".png"))   ; ← -singlefile output
+         (out-png  (expand-file-name (concat name ".png") out-dir)))
+    (unless (file-directory-p tmp-dir) (make-directory tmp-dir t))
+    (unless (file-directory-p out-dir) (make-directory out-dir t))
+    (dolist (f (list pdf-file out-png log-file))
+      (when (file-exists-p f) (delete-file f)))
+    (with-temp-file tex-file
+      (insert "\\documentclass[border=5mm]{standalone}\n"
+              "\\usepackage{tikz}\n"
+              "\\usetikzlibrary{calc,positioning}\n"
+              "\\usepackage[american,emptypmoscircle]{circuitikz}\n"
+              "\\usepackage{pgfplots}\n"
+              "\\usepgfplotslibrary{fillbetween}\n" 
+              "\\pgfplotsset{compat=1.18, lua backend=false}\n"
+              "\\begin{document}\n"
+              tikz-body "\n"
+              "\\end{document}\n"))
+    (let ((rc (call-process "lualatex" nil `(:file ,log-file) nil
+                            "-interaction=nonstopmode"
+                            (concat "-output-directory=" tmp-dir)
+                            tex-file)))
+      (unless (zerop rc)
+        (error "lualatex failed (rc=%d). See %s" rc log-file)))
+    (let ((rc (call-process "pdftoppm" nil nil nil   ; ← -singlefile: no wildcard needed
+                            "-png" "-r" "300" "-singlefile"
+                            pdf-file (concat tmp-dir name))))
+      (unless (zerop rc)
+        (error "pdftoppm failed (rc=%d)" rc)))
+    (rename-file tmp-png out-png t)
+    (file-relative-name out-png
+                        (file-name-directory
+                         (or (buffer-file-name) default-directory)))))
+#+END_SRC
 
 * Mathpix OCR Integration 
 #+BEGIN_SRC emacs-lisp
