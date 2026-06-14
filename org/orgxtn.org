@@ -468,7 +468,7 @@ Skips regeneration when TEX-FILE is up to date."
           (while (looking-at "^[ \t]*$") (forward-line 1))
           (while (looking-at "^- \\([^ ]+\\) :: \\(.*\\)")
             (push (list (match-string 1) (match-string 2)) glossary)
-            (forward-line 1))))
+            (forward-line 1)))))
 
       ;; Guard: abort if any key exists in both sections.
       ;; Duplicate labels cause a fatal LaTeX error; fix the .org source.

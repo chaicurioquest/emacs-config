@@ -44,6 +44,17 @@ These should be loaded *after* general Org settings.
 #+END_SRC
 
 
+* Project paths
+#+BEGIN_SRC emacs-lisp
+;; ── Project Root Paths ────────────────────────────────────────────────────
+;; Central place for all project-specific base directories.
+;; Used in org babel :tangle headers and emacs-lisp src blocks.
+(defvar my/vlsi-root    "/wspace/src/vlsi"
+  "Base directory for VLSI/FPGA project files.")
+;; Add new projects here as needed:
+;; (defvar my/riscv-root "/wspace/src/riscv" "Base for RISC-V project.")
+#+END_SRC
+
 * LaTeX Preview Setup (Including TikZ + CircuitTikZ)
 #+BEGIN_SRC emacs-lisp
     (setq org-format-latex-header
