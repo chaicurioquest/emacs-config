@@ -1,0 +1,17 @@
+# -*- mode: snippet -*-
+# name: circuitfig
+# key: circuitfig
+# --
+#+name: fig:${1:fig-name}
+#+BEGIN_SRC emacs-lisp :results value raw :exports results :var fig-name="${1:$(identity yas-text)}"
+(my/tikz-to-png fig-name
+  "\\begin{circuitikz}[american, thick]
+  $0
+\\end{circuitikz}"
+  nil)
+#+END_SRC
+#+caption: ${2:Caption}
+#+ATTR_LATEX: :width ${3:0.5}\\textwidth :placement [h]
+#+ATTR_ORG: :width 200
+#+RESULTS: fig:${1:$(identity yas-text)}
+[[file:images/${1:$(identity yas-text)}.png]]

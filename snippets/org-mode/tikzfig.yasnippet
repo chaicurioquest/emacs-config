@@ -1,0 +1,21 @@
+# -*- mode: snippet -*-
+# name: tikzfig
+# key: tikzfig
+# --
+#+name: fig:${1:fig-name}
+#+BEGIN_SRC emacs-lisp :results value raw :exports results :var fig-name="${1:$(identity yas-text)}"
+(my/tikz-to-png fig-name
+  "\\begin{tikzpicture}[
+  >=Stealth,
+  every state/.style={draw, circle, minimum size=1.4cm,
+    font=\\small\\ttfamily, thick},
+  node distance=3.2cm, auto]
+  $0
+\\end{tikzpicture}"
+  nil)
+#+END_SRC
+#+caption: ${2:Caption}
+#+ATTR_LATEX: :width ${3:0.5}\\textwidth :placement [h]
+#+ATTR_ORG: :width 200
+#+RESULTS: fig:${1:$(identity yas-text)}
+[[file:images/${1:$(identity yas-text)}.png]]
