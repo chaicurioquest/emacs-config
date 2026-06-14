@@ -152,7 +152,7 @@ Returns relative PNG path when beside .org, absolute path otherwise."
     (with-temp-file tex-file
       (insert "\\documentclass[border=5mm]{standalone}\n"
               "\\usepackage{tikz}\n"
-              "\\usetikzlibrary{calc,positioning,automata,arrows.meta}\n"
+              "\\usetikzlibrary{calc,positioning,automata,arrows.meta,fit}\n"
               "\\usepackage[american,emptypmoscircle]{circuitikz}\n"
               "\\usepackage{pgfplots}\n"
               "\\usepgfplotslibrary{fillbetween}\n"

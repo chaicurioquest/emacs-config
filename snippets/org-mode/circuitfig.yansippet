@@ -5,6 +5,7 @@
 #+name: fig:${1:fig-name}
 #+BEGIN_SRC emacs-lisp :results value raw :exports results :var fig-name="${1:$(identity yas-text)}"
 (my/tikz-to-png fig-name
+;; Paste TikZ here. Replace every \ with \\ (M-x replace-string \ RET \\ RET on selection)
   "\\begin{circuitikz}[american, thick]
   $0
 \\end{circuitikz}"
