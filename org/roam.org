@@ -58,6 +58,18 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, dail
       "* Default Note\n:PROPERTIES:\n:ID: %^{id-or-auto}\n:END:\n%?\n- %U")))
 #+END_SRC
 
+** ACTIVE Org-Attach for Roam
+#+BEGIN_SRC emacs-lisp
+;; ── Org-Attach: roam-scoped, UUID-based, refile-safe ─────────
+;; Scoped here because org-attach-id-dir is roam-specific.
+;; Non-roam org files use [[file:images/...]] or file-local overrides.
+(setq org-attach-id-dir
+      (expand-file-name "attachments/" org-roam-directory))
+(setq org-attach-use-inheritance t)
+(setq org-attach-auto-tag nil)
+(setq org-attach-store-link-p 'attach)
+#+END_SRC
+
 ** Org roam package installation
 #+BEGIN_SRC emacs-lisp
 (use-package org-roam
@@ -76,8 +88,11 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, dail
   (setq org-roam-db-location (expand-file-name "org-roam.db" org-roam-directory))
   (setq org-roam-db-gc-threshold most-positive-fixnum)
   ;; Ensure directories exist
-  (dolist (d (list org-roam-directory org-roam-dailies-directory))
-    (make-directory d t))
+  ;; CHANGE: add attachments/ to existing dolist
+    (dolist (d (list org-roam-directory
+                 org-roam-dailies-directory
+                 (expand-file-name "attachments/" org-roam-directory)))
+                    (make-directory d t))
 
   ;; Define ${filetitle} accessor for display template — not built-in, must be declared
   (cl-defmethod org-roam-node-filetitle ((node org-roam-node))

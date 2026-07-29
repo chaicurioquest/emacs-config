@@ -242,7 +242,7 @@ at any time.
 **Agenda file scanning is dynamic.** `my/update-agenda-files` scans
 `my/notes-root-dir` (top-level `.org` files) and `roam/` (recursive) on
 startup and after every Org save. Excluded dirs: `build`, `ltximg`, `images`,
-`.attach`, `.autosaves`, `.backups`, `bib`, `latex`, `.git`. No hardcoded
+`.attachments`, `.autosaves`, `.backups`, `bib`, `latex`, `.git`. No hardcoded
 file list to maintain.
 
 **org-alert uses a timer, not `org-alert-enable`.** `(org-alert-enable)` opens

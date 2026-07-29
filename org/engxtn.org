@@ -61,11 +61,17 @@ These should be loaded *after* general Org settings.
        "\\documentclass[varwidth=true,border=0pt]{standalone} % Fits image to content size
 \\usepackage{amsmath,mathtools} % Standard math environments & extensions
 \\DeclarePairedDelimiter{\\abs}{\\lvert}{\\rvert} % Smart |x|: use \\abs* for auto-scaling
-\\usepackage{cancel}            % For striking through terms (e.g. \\cancel{L})
+\\usepackage{xcolor}              % Basic color support
+\\usepackage[many]{tcolorbox}     % for shaded callout boxes
+\\tcbset{colupper=black, coltitle=white} % ✏️ FIX: Forces black text inside tcolorbox
+\\usepackage{fontawesome5}        % for \\faLightbulb icon support
+\\usepackage{cancel}  % Thick diagonal stays visible at dvipng small sizes
 \\renewcommand{\\CancelColor}{\\color{red}} % Makes strike-through lines red
-\\usepackage{xcolor}            % Basic color support
-\\usepackage{siunitx}           % Professional unit/number formatting
-\\usepackage{upgreek}           % Non-italicized Greek letters (\\upmu)
+% cancel: red default (\cancel), blue variants (\bluecancel, \bluecancelto)
+\\newcommand{\\bluecancel}[1]{{\\renewcommand{\\CancelColor}{\\color{blue}}\\cancel{#1}}}
+\\newcommand{\\bluecancelto}[2]{{\\renewcommand{\\CancelColor}{\\color{blue}}\\cancelto{#1}{#2}}}
+\\usepackage{siunitx}             % Professional unit/number formatting
+\\usepackage{upgreek}             % Non-italicized Greek letters (\\upmu)
 \\usepackage[active,tightpage,displaymath,textmath]{preview} % Tight-crop fragment images
 
 \\setlength\\PreviewBorder{0pt}  % No margin around preview images
@@ -76,6 +82,7 @@ These should be loaded *after* general Org settings.
 \\PreviewEnvironment{align}      % Render aligned equations
 \\PreviewEnvironment{align*}     % Render unnumbered aligned equations
 \\PreviewEnvironment{subequations} % Render grouped sub-equations
+\\PreviewEnvironment{tcolorbox}   % For full tcolorbox environments
 
 \\mathsurround=0pt               % No extra space around math
 \\setlength\\abovedisplayskip{0pt} % Tighten space above equations
@@ -87,7 +94,7 @@ These should be loaded *after* general Org settings.
 * Image Conversion Pipeline (pdftoppm → PNG)
 #+BEGIN_SRC emacs-lisp
 (with-eval-after-load 'org
-  (setq org-preview-latex-default-process 'dvipng))
+  (setq org-preview-latex-default-process 'dvisvgm))
 #+END_SRC
 
 * Theme-Aware Preview Refresh

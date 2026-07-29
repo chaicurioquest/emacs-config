@@ -31,15 +31,17 @@ This file contains consolidated configurations for general Org-mode extensions, 
 | External Archiving             | C-c C-x C-s                                   | Moves subtree to archive/<file>.org_archive (no clutter) |
 
 * ACTIVE General Org Settings
-General Org-mode variables, functions, hooks, and templates that are not tightly coupled to export or Babel. These were moved from ~config.org~'s * ACTIVE General Settings and related sections, as they are Org-specific and have no external dependencies beyond Org itself (e.g., ~setupfile~ is assumed defined globally in ~config.org~).
+General Org-mode variables, functions, hooks, and templates that are not tightly coupled to export or Babel. 
 
+** Directory structure
 #+BEGIN_SRC emacs-lisp
-;; Attachments relative to org file, in `.attach` folder
-  (setq org-attach-directory ".attach")
 ;; Temporary babel directory for babel output
 (unless (file-directory-p "/tmp/org-babel")
   (make-directory "/tmp/org-babel" t))
+#+END_SRC
 
+** Smart TAB-Yankpad,CDLatex, Org-Cycle
+#+BEGIN_SRC emacs-lisp
 (with-eval-after-load 'org
   (setq org-use-speed-commands t)   ;; single-key n/p/f/b/u navigation when point is on heading
   (setq org-startup-folded 'overview) ;; open Org files folded to top-level headings
@@ -66,7 +68,7 @@ General Org-mode variables, functions, hooks, and templates that are not tightly
 
 #+END_SRC
 
-* ACTIVE External Archiving (Clean)
+** ACTIVE External Archiving (Clean)
 #+BEGIN_SRC emacs-lisp
 ;; ── External Archiving — Cleanest & Recommended (no clutter) ─────────────
 ;; All .org_archive files go into archive/ subdirectory.

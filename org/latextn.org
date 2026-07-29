@@ -53,9 +53,9 @@
 
 ;; Tweak preview scale and other options
 (with-eval-after-load 'org
-  (plist-put org-format-latex-options :scale 1.0)
+  (plist-put org-format-latex-options :scale 1.6) ;; default 1.0
   (plist-put org-format-latex-options :foreground 'auto)  ; ✏️ was "White"
-  (plist-put org-format-latex-options :background 'auto)  ; ✏️ was "Transparent"
+  (plist-put org-format-latex-options :background "Transparent")  ; ✏️ was "Transparent"
   (setq org-highlight-latex-and-related '(native latex script))
   (setq org-startup-with-latex-preview nil))
 

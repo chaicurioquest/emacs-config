@@ -210,7 +210,7 @@ plus recursive .org files from the 'roam' subdirectory, excluding unwanted dirs.
   (interactive)
   (let* ((notes-dir (file-name-as-directory my/notes-root-dir))
          (roam-dir (expand-file-name "roam/" notes-dir))
-         (excluded-dirs '("build" "ltximg" "images" ".attach" ".autosaves" ".backups" "bib" "latex" ".git"))
+         (excluded-dirs '("build" "ltximg" "images" ".attachments" ".autosaves" ".backups" "bib" "latex" ".git"))
          (dir-predicate (lambda (d)
                           (let ((dirname (file-name-nondirectory d)))
                             (not (or (string-prefix-p "." dirname)
@@ -508,14 +508,8 @@ Heavy/laptop-specific packages → =org/workflow.org=; Roam/bib → =org/roam.or
   :after org
   :config
   ;; Configure org-download to integrate with org-attach
-  (setq org-download-method 'attach            ; Use org-attach directory
-        org-download-image-dir ".attach/images" ; Subdirectory for organization
-        org-download-screenshot-method "scrot -s %s") ; Use scrot for screenshots
-
-  ;; Bind screenshot shortcut only if scrot is available
-  (when (executable-find "scrot")
-    (bind-key "C-c C-x C-s" #'org-download-screenshot))
-
+  (setq org-download-method 'attach)            ; Use org-attach directory
+        
   ;; Enable org-download in org-mode
   (add-hook 'org-mode-hook #'org-download-enable))
 #+END_SRC
@@ -581,12 +575,12 @@ Heavy/laptop-specific packages → =org/workflow.org=; Roam/bib → =org/roam.or
   (recentf-max-saved-items 300)
   (recentf-save-file (expand-file-name "recentf" user-emacs-directory))
   (recentf-exclude
- (list (abbreviate-file-name (expand-file-name org-roam-directory))
-       (abbreviate-file-name (expand-file-name user-emacs-directory))
-       "/tmp/"
-       "\\.elc$"
-       "COMMIT_EDITMSG"
-       "\\.org_archive$"))
+  (list (expand-file-name "roam/" my/notes-root-dir)
+        (expand-file-name user-emacs-directory)
+        "/tmp/"
+        "\\.elc$"
+        "COMMIT_EDITMSG"
+        "\\.org_archive$"))
   :config
   (advice-add 'org-id-update-id-locations :around
               (lambda (orig &rest args)
@@ -881,6 +875,9 @@ If using AUCTeX for LaTeX exports, add reftex package.
 
 ** Magit is a Git GUI interface for Emacs
 #+BEGIN_SRC emacs-lisp
+;; Ensure Magit's deps are straight-managed before Magit loads
+(require 'transient)
+
 (use-package magit
   :straight t
   :defer t
@@ -888,6 +885,11 @@ If using AUCTeX for LaTeX exports, add reftex package.
   :config
   (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1
         magit-save-repository-buffers 'dontask))
+
+;; Remove stale hook at TOP LEVEL — must run before any magit command fires.
+;; :config runs too late (only when Magit loads, after the hook already fired).
+(with-eval-after-load 'magit
+  (remove-hook 'magit-post-refresh-hook #'magit-run-post-commit-hook))
 #+END_SRC
 
 * ACTIVE UI & General Settings
@@ -1091,24 +1093,31 @@ Note: If you are not using git source control for org notes across devices, comm
 
 ;; Manual pull function (replaces git-pull-repo)
 (defun magit-pull-org-repo ()
-  "Pull the Org notes repo using Magit (async)."
+  "Pull the Org notes repo from upstream."
   (interactive)
-  (if (fboundp 'magit-pull-from-upstream)
-      (magit-pull-from-upstream nil)
-    (magit-pull-current-branch))  ; Fallback to stable API
-  (message "Magit pull started."))
+  (let ((default-directory "/wspace/org/"))
+    (magit-pull-from-upstream nil)))
 
-;; Manual push function (replaces git-push-repo)
 (defun magit-push-org-repo ()
-  "Stage modified files, commit if needed (with prompt), then push using Magit (async)."
+  "Stage all org files (tracked + new), commit with message prompt, then push."
   (interactive)
-  (magit-stage-modified)
-  (when (and (fboundp 'magit-anything-staged-p) (magit-anything-staged-p))
-    (magit-commit-create))
-  (if (fboundp 'magit-push-current-to-upstream)
-      (magit-push-current-to-upstream nil)
-    (magit-push-current-branch))  ; Fallback
-  (message "Magit push started."))
+  (let ((default-directory "/wspace/org/"))
+    ;; Save any unsaved Org buffers first
+    (org-save-all-org-buffers)
+    ;; Stage tracked modified files
+    (magit-stage-modified)
+    ;; Stage any new untracked .org files
+    (dolist (file (magit-untracked-files))
+      (when (string-match-p "\\.org\\'" file)
+        (magit-stage-file file)))
+    ;; Commit synchronously if anything staged
+    (if (magit-anything-staged-p)
+        (let ((msg (read-string "Commit message: " "update")))
+          (magit-call-git "commit" "-m" msg)
+          (magit-push-current-to-upstream nil)
+          (message "Pushed to origin/main."))
+      (message "Nothing to commit."))))
+#+END_SRC
 
 * CANCELLED Deprecated Settings
 #+BEGIN_SRC emacs-lisp
