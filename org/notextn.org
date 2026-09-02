@@ -189,7 +189,7 @@ Kills buffer after saving only if this function opened it."
 ;; ──────────────────────────────────────────────────────────────
 (defun my/load-roam-bib-template (&optional citekey title)
   "Generate bibliography note from Citar entry."
-  (let* ((template (my/load-template "roam-bib.org"))
+  (let* ((template (my/load-template "template/roam-bib.org"))
          (citekey (or citekey (plist-get org-roam-capture--info 'citar-citekey) ""))
          (entry (ignore-errors (when citekey (citar-get-entry citekey))))
          (title (or title (plist-get org-roam-capture--info 'title)

@@ -5,7 +5,7 @@
 * LaTeX export & preview configuration
 #+BEGIN_SRC emacs-lisp
 ;; ------------------------------
-;; setup-latex.org
+;; Latex Configuration for Emacs Org to Latex Export
 ;; Default engine: LuaLaTeX
 ;; pdfLaTeX kept as standby for compatibility
 ;; ------------------------------
@@ -37,7 +37,18 @@
         ("" "hyperref" nil)))      ; Links/PDF metadata - ESSENTIAL
 
 ;; Note: graphicx, rotating, hyperref loaded in setup-latex.org
-;; Note: wrapfig removed (rarely used, avoid conflicts)     
+;; Note: wrapfig removed (rarely used, avoid conflicts)
+
+;; ------------------------------
+;; Tier 1: Table Defaults
+;; ------------------------------
+;; Every Org table exports as longtable (page-breakable) with no
+;; forced \begin{center} wrapper — avoids the tabular+center+landscape
+;; page-explosion bug. Override per-table with #+ATTR_LATEX: :environment ...
+(setq org-latex-default-table-environment "longtable")
+(setq org-latex-tables-centered nil)
+;; Enable booktabs for every table
+(setq org-latex-tables-booktabs t)
 
 ;; ------------------------------
 ;; Preview Configuration
@@ -54,7 +65,7 @@
 ;; Tweak preview scale and other options
 (with-eval-after-load 'org
   (plist-put org-format-latex-options :scale 1.6) ;; default 1.0
-  (plist-put org-format-latex-options :foreground 'auto)  ; ✏️ was "White"
+  (plist-put org-format-latex-options :foreground 'default)  ; ✏️ was "White"
   (plist-put org-format-latex-options :background "Transparent")  ; ✏️ was "Transparent"
   (setq org-highlight-latex-and-related '(native latex script))
   (setq org-startup-with-latex-preview nil))
@@ -105,16 +116,19 @@ Scans the buffer for existing #+name: lines with the prefix and a numeric suffix
 ;; Environment Variables for LaTeX
 ;; ------------------------------
 
-;; Set TEXINPUTS to include subdirs under root for LaTeX inputs
+;; Set TEXINPUTS to include subdirs under root, guaranteeing default search path is preserved
 (setenv "TEXINPUTS" (concat
                      (file-name-as-directory my/notes-root-dir) "latex:"
                      (file-name-as-directory my/notes-root-dir) "images:"
-                     (or (getenv "TEXINPUTS") "")))
+                     (file-name-as-directory my/notes-root-dir) "org/latex:"
+                     (or (getenv "TEXINPUTS") "")
+                     ":"))
 
-;; Set BIBINPUTS to include bib/ under root for bibliography files
+;; Set BIBINPUTS to include bib/ under root, same trailing-colon guarantee
 (setenv "BIBINPUTS" (concat
                      (file-name-as-directory my/notes-root-dir) "bib:"
-                     (or (getenv  "BIBINPUTS") "")))
+                     (or (getenv "BIBINPUTS") "")
+                     ":"))
 
 ;; ------------------------------
 ;; Export Process
@@ -122,7 +136,7 @@ Scans the buffer for existing #+name: lines with the prefix and a numeric suffix
 ;; Define LaTeX-to-PDF export commands with explicit multiple runs, without separate build dir
 (let ((latexmkrc (expand-file-name ".latexmkrc" (file-name-directory setupfile))))
   (setq org-latex-pdf-process
-        `(,(format "latexmk -lualatex -r %s -output-directory=%%o -f %%f" latexmkrc))))
+        `(,(format "timeout 300 latexmk -lualatex -r %s -output-directory=%%o %%f" latexmkrc))))
 
 ;; Keep .log for error inspection; remove other intermediates
 (setq org-latex-logfiles-extensions

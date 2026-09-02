@@ -98,12 +98,15 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, dail
   (cl-defmethod org-roam-node-filetitle ((node org-roam-node))
     "Return the #+TITLE of the file containing NODE."
   (org-roam-node-file-title node))
-  (add-hook 'org-roam-mode-hook
-            (lambda ()
-              (unless (bound-and-true-p my/org-roam-initialized)
-                (setq my/org-roam-initialized t)
-                (org-roam-db-autosync-mode 1)
-                (org-roam-db-sync)))))
+  ;; (add-hook 'org-roam-mode-hook
+  ;;           (lambda ()
+  ;;             (unless (bound-and-true-p my/org-roam-initialized)
+  ;;               (setq my/org-roam-initialized t)
+  ;;               (org-roam-db-autosync-mode 1)
+  ;;               (org-roam-db-sync)))))
+  
+  ;; Direct Org-Roam v2 startup (Replaces obsolete org-roam-mode-hook)
+  (org-roam-db-autosync-mode 1))
 #+END_SRC
 
 ** Org roam templates
@@ -114,6 +117,8 @@ Configure org-roam for Zettelkasten note-taking with unique IDs, backlinks, dail
          :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "") :unnarrowed t)
         ("f" "fleeting" entry ,(my/load-template "template/roam-fleeting.org")
          :target (file+olp "fleeting.org" ("Fleeting Captures")) :empty-lines 1 :unnarrowed t)
+        ("l" "literature" plain ,(my/load-template "template/roam-literature.org")
+         :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "") :unnarrowed t) 
         ("p" "permanent" plain ,(my/load-template "template/roam-permanent.org")
          :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "") :unnarrowed t)
         ("j" "journal" plain ,(my/load-template "template/roam-journal.org")

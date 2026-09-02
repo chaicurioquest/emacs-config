@@ -1,0 +1,22 @@
+#+setupfile: ${setupfile}
+#+title: ${title}
+#+filetags: :literature:
+#+options: toc:nil num:2
+#+roam_aliases:
+#+roam_refs:
+#+created: %U
+#+last_modified: %U
+
+# Toggle TOC: uncomment next line to enable, comment to disable
+# #+TOC: headlines 2
+
+* Summary
+%?
+
+* Derivation / Restated Content
+
+* Source Credit
+# URL, book, video timestamp, or PDF this note paraphrases
+
+* References (optional)
+# #+print_bibliography:

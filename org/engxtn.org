@@ -63,7 +63,9 @@ These should be loaded *after* general Org settings.
 \\DeclarePairedDelimiter{\\abs}{\\lvert}{\\rvert} % Smart |x|: use \\abs* for auto-scaling
 \\usepackage{xcolor}              % Basic color support
 \\usepackage[many]{tcolorbox}     % for shaded callout boxes
-\\tcbset{colupper=black, coltitle=white} % ✏️ FIX: Forces black text inside tcolorbox
+
+\\tcbset{every box/.style={colback=gray!85!black, colframe=gray!60, colupper=white, coltitle=white, fontupper=\\color{white}}, breakable=false, nobeforeafter}
+
 \\usepackage{fontawesome5}        % for \\faLightbulb icon support
 \\usepackage{cancel}  % Thick diagonal stays visible at dvipng small sizes
 \\renewcommand{\\CancelColor}{\\color{red}} % Makes strike-through lines red
